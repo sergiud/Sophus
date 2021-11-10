@@ -218,8 +218,9 @@ class SO2Base {
     ResultT const result_real = lhs_real * rhs_real - lhs_imag * rhs_imag;
     ResultT const result_imag = lhs_real * rhs_imag + lhs_imag * rhs_real;
 
-    ResultT const squared_norm =
-        result_real * result_real + result_imag * result_imag;
+    using std::hypot;
+
+    ResultT const norm = hypot(result_real, result_imag);
     // We can assume that the squared-norm is close to 1 since we deal with a
     // unit complex number. Due to numerical precision issues, there might
     // be a small drift after pose concatenation. Hence, we need to renormalizes
@@ -227,11 +228,7 @@ class SO2Base {
     // Since squared-norm is close to 1, we do not need to calculate the costly
     // square-root, but can use an approximation around 1 (see
     // http://stackoverflow.com/a/12934750 for details).
-    if (squared_norm != ResultT(1.0)) {
-      ResultT const scale = ResultT(2.0) / (ResultT(1.0) + squared_norm);
-      return SO2Product<OtherDerived>(result_real * scale, result_imag * scale);
-    }
-    return SO2Product<OtherDerived>(result_real, result_imag);
+    return SO2Product<OtherDerived>(result_real / norm, result_imag / norm);
   }
 
   /// Group action on 2-points.

@@ -164,14 +164,14 @@ class SE2Base {
     Tangent upsilon_theta;
     Scalar theta = so2().log();
     upsilon_theta[2] = theta;
-    Scalar halftheta = Scalar(0.5) * theta;
+    Scalar halftheta = theta / 2;
     Scalar halftheta_by_tan_of_halftheta;
 
     Vector2<Scalar> z = so2().unit_complex();
     Scalar real_minus_one = z.x() - Scalar(1.);
     if (abs(real_minus_one) < Constants<Scalar>::epsilon()) {
       halftheta_by_tan_of_halftheta =
-          Scalar(1.) - Scalar(1. / 12) * theta * theta;
+          Scalar(1.) - theta * theta / 12;
     } else {
       halftheta_by_tan_of_halftheta = -(halftheta * z.y()) / (real_minus_one);
     }
@@ -210,8 +210,7 @@ class SE2Base {
   ///
   SOPHUS_FUNC Matrix<Scalar, 2, 3> matrix2x3() const {
     Matrix<Scalar, 2, 3> matrix;
-    matrix.template topLeftCorner<2, 2>() = rotationMatrix();
-    matrix.col(2) = translation();
+    matrix << rotationMatrix(), translation();
     return matrix;
   }
 
@@ -580,19 +579,22 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
     Scalar one_minus_cos_theta_by_theta;
     using std::abs;
 
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+    if (abs(theta) < std::numeric_limits<Scalar>::epsilon()) {
       Scalar theta_sq = theta * theta;
-      sin_theta_by_theta = Scalar(1.) - Scalar(1. / 6.) * theta_sq;
+      sin_theta_by_theta = Scalar(1.) - theta_sq / 6;
       one_minus_cos_theta_by_theta =
-          Scalar(0.5) * theta - Scalar(1. / 24.) * theta * theta_sq;
+          theta * (1 - theta_sq / 48) / 2;
     } else {
       sin_theta_by_theta = so2.unit_complex().y() / theta;
       one_minus_cos_theta_by_theta =
           (Scalar(1.) - so2.unit_complex().x()) / theta;
     }
-    Vector2<Scalar> trans(
-        sin_theta_by_theta * a[0] - one_minus_cos_theta_by_theta * a[1],
-        one_minus_cos_theta_by_theta * a[0] + sin_theta_by_theta * a[1]);
+
+    Eigen::Matrix<Scalar, 2, 2> A;
+    A << sin_theta_by_theta,           -one_minus_cos_theta_by_theta,
+         one_minus_cos_theta_by_theta, sin_theta_by_theta;
+
+    Vector2<Scalar> trans = A * a.template head<2>();
     return SE2<Scalar>(so2, trans);
   }
 
