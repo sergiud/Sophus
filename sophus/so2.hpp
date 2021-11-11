@@ -4,6 +4,7 @@
 #ifndef SOPHUS_SO2_HPP
 #define SOPHUS_SO2_HPP
 
+#include <complex>
 #include <type_traits>
 
 // Include only the selective set of Eigen headers that we need.
@@ -213,16 +214,14 @@ class SO2Base {
   [[nodiscard]] SOPHUS_FUNC SO2Product<OtherDerived> operator*(
       SO2Base<OtherDerived> const& other) const {
     using ResultT = ReturnScalar<OtherDerived>;
-    Scalar const lhs_real = unit_complex().x();
-    Scalar const lhs_imag = unit_complex().y();
-    typename OtherDerived::Scalar const& rhs_real = other.unit_complex().x();
-    typename OtherDerived::Scalar const& rhs_imag = other.unit_complex().y();
+    std::complex<Scalar> const lhs{unit_complex().x(), unit_complex().y()};
+    std::complex<Scalar> const rhs{other.unit_complex().x(),
+                                   other.unit_complex().y()};
     // complex multiplication
-    ResultT const result_real = lhs_real * rhs_real - lhs_imag * rhs_imag;
-    ResultT const result_imag = lhs_real * rhs_imag + lhs_imag * rhs_real;
+    std::complex<Scalar> result = lhs * rhs;
 
-    ResultT const squared_norm =
-        result_real * result_real + result_imag * result_imag;
+    using std::norm;
+    ResultT const squared_norm = norm(result);
     // We can assume that the squared-norm is close to 1 since we deal with a
     // unit complex number. Due to numerical precision issues, there might
     // be a small drift after pose concatenation. Hence, we need to renormalizes
@@ -232,9 +231,10 @@ class SO2Base {
     // http://stackoverflow.com/a/12934750 for details).
     if (squared_norm != ResultT(1.0)) {
       ResultT const scale = ResultT(2.0) / (ResultT(1.0) + squared_norm);
-      return SO2Product<OtherDerived>(result_real * scale, result_imag * scale);
+      result *= scale;
+      return SO2Product<OtherDerived>(result.real(), result.imag());
     }
-    return SO2Product<OtherDerived>(result_real, result_imag);
+    return SO2Product<OtherDerived>(result.real(), result.imag());
   }
 
   /// Group action on 2-points.
@@ -247,10 +247,10 @@ class SO2Base {
       typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 2>::value>>
   [[nodiscard]] SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
-    Scalar const& real = unit_complex().x();
-    Scalar const& imag = unit_complex().y();
-    return PointProduct<PointDerived>(real * p[0] - imag * p[1],
-                                      imag * p[0] + real * p[1]);
+    std::complex<Scalar> const lhs{unit_complex().x(), unit_complex().y()};
+    std::complex<Scalar> const rhs{p.x(), p.y()};
+    std::complex<Scalar> const result = lhs * rhs;
+    return PointProduct<PointDerived>(result.real(), result.imag());
   }
 
   /// Group action on homogeneous 2-points.
@@ -263,10 +263,9 @@ class SO2Base {
       typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 3>::value>>
   [[nodiscard]] SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
-    Scalar const& real = unit_complex().x();
-    Scalar const& imag = unit_complex().y();
-    return HomogeneousPointProduct<HPointDerived>(
-        real * p[0] - imag * p[1], imag * p[0] + real * p[1], p[2]);
+    auto const& result = *this * p.template head<2>();
+    return HomogeneousPointProduct<HPointDerived>(result.x(), result.y(),
+                                                  p.z());
   }
 
   /// Group action on lines.
@@ -309,8 +308,8 @@ class SO2Base {
   ///
   [[nodiscard]] SOPHUS_FUNC Matrix<Scalar, num_parameters, DoF>
   Dx_this_mul_exp_x_at_0() const {
-    return Matrix<Scalar, num_parameters, DoF>(-unit_complex()[1],
-                                               unit_complex()[0]);
+    return Matrix<Scalar, num_parameters, DoF>(-unit_complex().y(),
+                                               unit_complex().x());
   }
 
   /// Returns internal parameters of SO(2).
@@ -539,7 +538,6 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   ///                |  a  0 |
   ///
   [[nodiscard]] SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
-    using std::abs;
     return Omega(1, 0);
   }
 
