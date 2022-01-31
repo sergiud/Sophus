@@ -517,6 +517,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x(const Tangent& a) {
+    using std::fpclassify;
     using std::hypot;
     Vector3<Scalar> const omega = a.template segment<3>(3);
     Vector3<Scalar> const upsilon = a.template head<3>();
@@ -526,7 +527,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
     Matrix3<Scalar> const Omega2 = Omega * Omega;
     Vector3<Scalar> theta_domega;
-    if (theta < Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta) == FP_ZERO) {
       theta_domega = Vector3<Scalar>::Zero();
     } else {
       theta_domega = omega / theta;

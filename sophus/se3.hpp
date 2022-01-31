@@ -615,6 +615,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x(Tangent const& upsilon_omega) {
     using std::cos;
+    using std::fpclassify;
     using std::hypot;
     using std::pow;
     using std::sin;
@@ -630,7 +631,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
     Scalar const h(0.5);
     Scalar const i(1);
 
-    if (c3 < Constants<Scalar>::epsilon()) {
+    if (fpclassify(c3) == FP_ZERO) {
       Scalar const ux = Scalar(0.5) * upsilon[0];
       Scalar const uy = Scalar(0.5) * upsilon[1];
       Scalar const uz = Scalar(0.5) * upsilon[2];
@@ -843,6 +844,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC static SE3<Scalar> exp(Tangent const& a) {
     using std::cos;
+    using std::fpclassify;
     using std::sin;
     Vector3<Scalar> const omega = a.template tail<3>();
 

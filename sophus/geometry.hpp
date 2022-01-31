@@ -26,8 +26,7 @@ Vector2<T> normalFromSO2(SO2<T> const& R_foo_line) {
 ///
 template <class T>
 SO2<T> SO2FromNormal(Vector2<T> normal_foo) {
-  SOPHUS_ENSURE(normal_foo.squaredNorm() > Constants<T>::epsilon(), "{}",
-                normal_foo.transpose());
+  SOPHUS_ENSURE(normal_foo.squaredNorm() > T(0), "{}", normal_foo.transpose());
   normal_foo.normalize();
   return SO2<T>(normal_foo.y(), -normal_foo.x());
 }
@@ -62,28 +61,25 @@ Matrix3<T> rotationFromNormal(Vector3<T> const& normal_foo,
   SOPHUS_ENSURE(xDirHint_foo.dot(yDirHint_foo) < Constants<T>::epsilon(),
                 "xDirHint ({}) and yDirHint ({}) must be perpendicular.",
                 xDirHint_foo.transpose(), yDirHint_foo.transpose());
-  using std::abs;
+  using std::fpclassify;
   using std::sqrt;
   T const xDirHint_foo_sqr_length = xDirHint_foo.squaredNorm();
   T const yDirHint_foo_sqr_length = yDirHint_foo.squaredNorm();
   T const normal_foo_sqr_length = normal_foo.squaredNorm();
-  SOPHUS_ENSURE(xDirHint_foo_sqr_length > Constants<T>::epsilon(), "{}",
-                xDirHint_foo.transpose());
-  SOPHUS_ENSURE(yDirHint_foo_sqr_length > Constants<T>::epsilon(), "{}",
-                yDirHint_foo.transpose());
-  SOPHUS_ENSURE(normal_foo_sqr_length > Constants<T>::epsilon(), "{}",
-                normal_foo.transpose());
+  SOPHUS_ENSURE(xDirHint_foo_sqr_length > T(0), "{}", xDirHint_foo.transpose());
+  SOPHUS_ENSURE(yDirHint_foo_sqr_length > T(0), "{}", yDirHint_foo.transpose());
+  SOPHUS_ENSURE(normal_foo_sqr_length > T(0), "{}", normal_foo.transpose());
 
   Matrix3<T> basis_foo;
   basis_foo.col(2) = normal_foo;
 
-  if (abs(xDirHint_foo_sqr_length - T(1)) > Constants<T>::epsilon()) {
+  if (fpclassify(xDirHint_foo_sqr_length - T(1)) != FP_ZERO) {
     xDirHint_foo.normalize();
   }
-  if (abs(yDirHint_foo_sqr_length - T(1)) > Constants<T>::epsilon()) {
+  if (fpclassify(yDirHint_foo_sqr_length - T(1)) != FP_ZERO) {
     yDirHint_foo.normalize();
   }
-  if (abs(normal_foo_sqr_length - T(1)) > Constants<T>::epsilon()) {
+  if (fpclassify(normal_foo_sqr_length - T(1)) != FP_ZERO) {
     basis_foo.col(2).normalize();
   }
 

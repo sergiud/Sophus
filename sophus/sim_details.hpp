@@ -8,18 +8,18 @@ namespace details {
 template <class Scalar, int N>
 Matrix<Scalar, N, N> calcW(Matrix<Scalar, N, N> const &Omega,
                            Scalar const theta, Scalar const sigma) {
-  using std::abs;
   using std::cos;
   using std::exp;
+  using std::fpclassify;
   using std::sin;
   static Scalar const one(1);
   static Scalar const half(0.5);
   Matrix<Scalar, N, N> const Omega2 = Omega * Omega;
   Scalar const scale = exp(sigma);
   Scalar A, B, C;
-  if (abs(sigma) < Constants<Scalar>::epsilon()) {
+  if (fpclassify(sigma) == FP_ZERO) {
     C = one;
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta) == FP_ZERO) {
       A = half;
       B = Scalar(1. / 6.);
     } else {
@@ -29,7 +29,7 @@ Matrix<Scalar, N, N> calcW(Matrix<Scalar, N, N> const &Omega,
     }
   } else {
     C = (scale - one) / sigma;
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta) == FP_ZERO) {
       Scalar sigma_sq = sigma * sigma;
       A = ((sigma - one) * scale + one) / sigma_sq;
       B = (scale * half * sigma_sq + scale - one - sigma * scale) /
@@ -50,9 +50,9 @@ template <class Scalar>
 void calcW_derivatives(Scalar const theta, Scalar const sigma, Scalar &A,
                        Scalar &B, Scalar &C, Scalar &A_dsigma, Scalar &B_dsigma,
                        Scalar &C_dsigma, Scalar &A_dtheta, Scalar &B_dtheta) {
-  using std::abs;
   using std::cos;
   using std::exp;
+  using std::fpclassify;
   using std::sin;
   static Scalar const zero(0.0);
   static Scalar const one(1.0);
@@ -68,10 +68,10 @@ void calcW_derivatives(Scalar const theta, Scalar const sigma, Scalar &A,
   Scalar const sigma_sq = sigma * sigma;
   Scalar const sigma_c = sigma * sigma_sq;
 
-  if (abs(sigma) < Constants<Scalar>::epsilon()) {
+  if (fpclassify(sigma) == FP_ZERO) {
     C = one;
     C_dsigma = half;
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta) == FP_ZERO) {
       A = half;
       B = Scalar(1. / 6.);
       A_dtheta = A_dsigma = zero;
@@ -89,7 +89,7 @@ void calcW_derivatives(Scalar const theta, Scalar const sigma, Scalar &A,
   } else {
     C = (scale - one) / sigma;
     C_dsigma = (scale * (sigma - one) + one) / sigma_sq;
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta) == FP_ZERO) {
       A = ((sigma - one) * scale + one) / sigma_sq;
       B = (scale * half * sigma_sq + scale - one - sigma * scale) / sigma_c;
       A_dsigma = (scale * (sigma_sq - two * sigma + two) - two) / sigma_c;
@@ -141,8 +141,8 @@ template <class Scalar, int N>
 Matrix<Scalar, N, N> calcWInv(Matrix<Scalar, N, N> const &Omega,
                               Scalar const theta, Scalar const sigma,
                               Scalar const scale) {
-  using std::abs;
   using std::cos;
+  using std::fpclassify;
   using std::sin;
   static Scalar const half(0.5);
   static Scalar const one(1);
@@ -154,10 +154,10 @@ Matrix<Scalar, N, N> calcWInv(Matrix<Scalar, N, N> const &Omega,
   Scalar const cos_theta = cos(theta);
 
   Scalar a, b, c;
-  if (abs(sigma * sigma) < Constants<Scalar>::epsilon()) {
+  if (fpclassify(sigma * sigma) == FP_ZERO) {
     c = one - half * sigma;
     a = -half;
-    if (abs(theta_sq) < Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta_sq) == FP_ZERO) {
       b = Scalar(1. / 12.);
     } else {
       b = (theta * sin_theta + two * cos_theta - two) /
@@ -166,7 +166,7 @@ Matrix<Scalar, N, N> calcWInv(Matrix<Scalar, N, N> const &Omega,
   } else {
     Scalar const scale_cu = scale_sq * scale;
     c = sigma / (scale - one);
-    if (abs(theta_sq) < Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta_sq) == FP_ZERO) {
       a = (-sigma * scale + scale - one) / ((scale - one) * (scale - one));
       b = (scale_sq * sigma - two * scale_sq + scale * sigma + two * scale) /
           (two * scale_cu - Scalar(6) * scale_sq + Scalar(6) * scale - two);

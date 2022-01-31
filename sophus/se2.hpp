@@ -173,7 +173,7 @@ class SE2Base {
   /// of SE(2).
   ///
   [[nodiscard]] SOPHUS_FUNC Tangent log() const {
-    using std::abs;
+    using std::fpclassify;
 
     Tangent upsilon_theta;
     Scalar theta = so2().log();
@@ -183,7 +183,7 @@ class SE2Base {
 
     Vector2<Scalar> z = so2().unit_complex();
     Scalar real_minus_one = z.x() - Scalar(1.);
-    if (abs(real_minus_one) < Constants<Scalar>::epsilon()) {
+    if (fpclassify(real_minus_one) == FP_ZERO) {
       halftheta_by_tan_of_halftheta =
           Scalar(1.) - Scalar(1. / 12) * theta * theta;
     } else {
@@ -501,15 +501,15 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x(Tangent const& upsilon_theta) {
-    using std::abs;
     using std::cos;
+    using std::fpclassify;
     using std::pow;
     using std::sin;
     Sophus::Matrix<Scalar, num_parameters, DoF> J;
     Sophus::Vector<Scalar, 2> upsilon = upsilon_theta.template head<2>();
     Scalar theta = upsilon_theta[2];
 
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta) == FP_ZERO) {
       Scalar const o(0);
       Scalar const i(1);
 
@@ -601,13 +601,11 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
     SO2<Scalar> so2 = SO2<Scalar>::exp(theta);
     Scalar sin_theta_by_theta;
     Scalar one_minus_cos_theta_by_theta;
-    using std::abs;
+    using std::fpclassify;
 
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
-      Scalar theta_sq = theta * theta;
-      sin_theta_by_theta = Scalar(1.) - Scalar(1. / 6.) * theta_sq;
-      one_minus_cos_theta_by_theta =
-          Scalar(0.5) * theta - Scalar(1. / 24.) * theta * theta_sq;
+    if (fpclassify(theta) == FP_ZERO) {
+      sin_theta_by_theta = Scalar(1.);
+      one_minus_cos_theta_by_theta = Scalar(0);
     } else {
       sin_theta_by_theta = so2.unit_complex().y() / theta;
       one_minus_cos_theta_by_theta =

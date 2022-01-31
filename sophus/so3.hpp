@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <optional>
 
 #include "rotation_matrix.hpp"
@@ -272,6 +273,7 @@ class SO3Base {
     TangentAndTheta J;
     using std::abs;
     using std::atan2;
+    using std::fpclassify;
     using std::hypot;
     Scalar squared_n = unit_quaternion().vec().squaredNorm();
     Scalar w = unit_quaternion().w();
@@ -285,12 +287,10 @@ class SO3Base {
     /// Representation through Encapsulation of Manifolds"
     /// Information Fusion, 2011
 
-    if (squared_n <
-        Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
+    if (fpclassify(squared_n) == FP_ZERO) {
       // If quaternion is normalized and n=0, then w should be 1;
       // w=0 should never happen here!
-      SOPHUS_ENSURE(abs(w) >= Constants<Scalar>::epsilon(),
-                    "Quaternion ({}) should be normalized!",
+      SOPHUS_ENSURE(abs(w) > 0, "Quaternion ({}) should be normalized!",
                     unit_quaternion().coeffs().transpose());
       Scalar squared_w = w * w;
       two_atan_nbyw_by_n =
@@ -325,8 +325,7 @@ class SO3Base {
   ///
   SOPHUS_FUNC void normalize() {
     Scalar length = unit_quaternion_nonconst().coeffs().hypotNorm();
-    SOPHUS_ENSURE(length >= Constants<Scalar>::epsilon(),
-                  "Quaternion ({}) should not be close to zero!",
+    SOPHUS_ENSURE(length > 0, "Quaternion ({}) should not be close to zero!",
                   unit_quaternion_nonconst().coeffs().transpose());
     unit_quaternion_nonconst().coeffs() /= length;
   }
@@ -548,6 +547,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   leftJacobian(Tangent const& omega,
                std::optional<Scalar> const& theta_o = std::nullopt) {
     using std::cos;
+    using std::fpclassify;
     using std::hypot;
     using std::sin;
 
@@ -556,8 +556,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     Matrix3<Scalar> const Omega_sq = Omega * Omega;
     Matrix3<Scalar> V;
 
-    if (theta_sq <
-        Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta_sq) == FP_ZERO) {
       V = Matrix3<Scalar>::Identity() + Scalar(0.5) * Omega;
     } else {
       Scalar theta =
@@ -573,14 +572,14 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   leftJacobianInverse(Tangent const& omega,
                       std::optional<Scalar> const& theta_o = std::nullopt) {
     using std::cos;
+    using std::fpclassify;
     using std::hypot;
     using std::sin;
     Scalar const theta_sq = theta_o ? *theta_o * *theta_o : omega.squaredNorm();
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
 
     Matrix3<Scalar> V_inv;
-    if (theta_sq <
-        Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta_sq) == FP_ZERO) {
       V_inv = Matrix3<Scalar>::Identity() - Scalar(0.5) * Omega +
               Scalar(1. / 12.) * (Omega * Omega);
 
@@ -603,6 +602,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   Dx_exp_x(Tangent const& omega) {
     using std::cos;
     using std::exp;
+    using std::fpclassify;
     using std::hypot;
     using std::sin;
     Scalar const c0 = omega[0] * omega[0];
@@ -610,7 +610,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     Scalar const c2 = omega[2] * omega[2];
     Scalar const c3 = c0 + c1 + c2;
 
-    if (c3 < Constants<Scalar>::epsilon()) {
+    if (fpclassify(c3) == FP_ZERO) {
       return Dx_exp_x_at_0();
     }
 
@@ -697,20 +697,17 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     SOPHUS_ENSURE(theta != nullptr, "must not be nullptr.");
     using std::abs;
     using std::cos;
+    using std::fpclassify;
     using std::hypot;
     using std::sin;
     Scalar theta_sq = omega.squaredNorm();
 
     Scalar imag_factor;
     Scalar real_factor;
-    if (theta_sq <
-        Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
+    if (fpclassify(theta_sq) == FP_ZERO) {
       *theta = Scalar(0);
-      Scalar theta_po4 = theta_sq * theta_sq;
-      imag_factor = Scalar(0.5) - Scalar(1.0 / 48.0) * theta_sq +
-                    Scalar(1.0 / 3840.0) * theta_po4;
-      real_factor = Scalar(1) - Scalar(1.0 / 8.0) * theta_sq +
-                    Scalar(1.0 / 384.0) * theta_po4;
+      imag_factor = Scalar(0.5);
+      real_factor = Scalar(1);
     } else {
       *theta = hypot(omega.x(), omega.y(), omega.z());
       Scalar half_theta = Scalar(0.5) * (*theta);

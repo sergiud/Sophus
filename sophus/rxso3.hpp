@@ -60,8 +60,8 @@ namespace Sophus {
 /// This class has the explicit class invariant that the scale ``s`` is not
 /// too close to either zero or infinity. Strictly speaking, it must hold that:
 ///
-///   ``quaternion().squaredNorm() >= Constants::epsilon()`` and
-///   ``1. / quaternion().squaredNorm() >= Constants::epsilon()``.
+///   ``quaternion().squaredNorm() > 0`` and
+///   ``1. / quaternion().squaredNorm() > 0``.
 ///
 /// In order to obey this condition, group multiplication is implemented with
 /// saturation such that a product always has a scale which is equal or greater
@@ -244,6 +244,7 @@ class RxSO3Base {
   template <typename OtherDerived>
   [[nodiscard]] SOPHUS_FUNC RxSO3Product<OtherDerived> operator*(
       RxSO3Base<OtherDerived> const& other) const {
+    using std::fpclassify;
     using std::sqrt;
     using ResultT = ReturnScalar<OtherDerived>;
     using QuaternionProductType =
@@ -254,13 +255,13 @@ class RxSO3Base {
             quaternion(), other.quaternion()));
 
     ResultT scale = result_quaternion.squaredNorm();
-    if (scale < Constants<ResultT>::epsilon()) {
-      SOPHUS_ENSURE(scale > ResultT(0), "Scale must be greater zero.");
+    SOPHUS_ENSURE(scale >= ResultT(0), "Scale must be greater or equal zero.");
+    if (fpclassify(scale) == FP_ZERO) {
       /// Saturation to ensure class invariant.
       result_quaternion.normalize();
       result_quaternion.coeffs() *= sqrt(Constants<ResultT>::epsilonPlus());
-    }
-    if (scale > ResultT(1.) / Constants<ResultT>::epsilon()) {
+    } else if (scale > ResultT(1.) / Constants<ResultT>::epsilon()) {
+      /// Saturation to ensure class invariant.
       result_quaternion.normalize();
       result_quaternion.coeffs() /= sqrt(Constants<ResultT>::epsilonPlus());
     }
@@ -354,9 +355,8 @@ class RxSO3Base {
   ///
   /// Precondition: ``quat`` must not be close to either zero or infinity
   SOPHUS_FUNC void setQuaternion(Eigen::Quaternion<Scalar> const& quat) {
-    SOPHUS_ENSURE(quat.squaredNorm() > Constants<Scalar>::epsilon() *
-                                           Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
+    SOPHUS_ENSURE(quat.squaredNorm() > Scalar(0),
+                  "Scale factor must be greater zero.");
     SOPHUS_ENSURE(
         quat.squaredNorm() < Scalar(1.) / (Constants<Scalar>::epsilon() *
                                            Constants<Scalar>::epsilon()),
@@ -413,9 +413,8 @@ class RxSO3Base {
   SOPHUS_FUNC void setScaledRotationMatrix(Transformation const& sR) {
     Transformation squared_sR = sR * sR.transpose();
     Scalar squared_scale = Scalar(1. / 3.) * squared_sR.diagonal().sum();
-    SOPHUS_ENSURE(squared_scale >= Constants<Scalar>::epsilon() *
-                                       Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
+    SOPHUS_ENSURE(squared_scale > Scalar(0),
+                  "Scale factor must be greater zero.");
     SOPHUS_ENSURE(squared_scale < Scalar(1.) / (Constants<Scalar>::epsilon() *
                                                 Constants<Scalar>::epsilon()),
                   "Inverse scale factor must be greater-equal epsilon.");
@@ -542,7 +541,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC RxSO3(Scalar const& scale, Transformation const& R)
       : quaternion_(R) {
-    SOPHUS_ENSURE(scale >= Constants<Scalar>::epsilon(),
+    SOPHUS_ENSURE(scale > Scalar(0),
                   "Scale factor must be greater-equal epsilon.");
     SOPHUS_ENSURE(scale < Scalar(1.) / Constants<Scalar>::epsilon(),
                   "Inverse scale factor must be greater-equal epsilon.");
@@ -556,8 +555,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC RxSO3(Scalar const& scale, SO3<Scalar> const& so3)
       : quaternion_(so3.unit_quaternion()) {
-    SOPHUS_ENSURE(scale >= Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
+    SOPHUS_ENSURE(scale > Scalar(0), "Scale factor must be greater zero.");
     SOPHUS_ENSURE(scale < Scalar(1.) / Constants<Scalar>::epsilon(),
                   "Inverse scale factor must be greater-equal epsilon.");
     using std::sqrt;
@@ -573,7 +571,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
       : quaternion_(quat) {
     static_assert(std::is_same_v<typename D::Scalar, Scalar>,
                   "must be same Scalar type.");
-    SOPHUS_ENSURE(quaternion_.squaredNorm() >= Constants<Scalar>::epsilon(),
+    SOPHUS_ENSURE(quaternion_.squaredNorm() > Scalar(0),
                   "Scale factor must be greater-equal epsilon.");
     SOPHUS_ENSURE(
         quat.squaredNorm() < Scalar(1.) / Constants<Scalar>::epsilon(),

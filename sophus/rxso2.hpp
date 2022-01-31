@@ -224,14 +224,14 @@ class RxSO2Base {
 
     const ResultT squared_scale = result_complex.squaredNorm();
 
-    if (squared_scale <
-        Constants<ResultT>::epsilon() * Constants<ResultT>::epsilon()) {
+    using std::fpclassify;
+
+    if (fpclassify(squared_scale) == FP_ZERO) {
       /// Saturation to ensure class invariant.
       result_complex.normalize();
       result_complex *= Constants<ResultT>::epsilonPlus();
-    }
-    if (squared_scale > Scalar(1.) / (Constants<ResultT>::epsilon() *
-                                      Constants<ResultT>::epsilon())) {
+    } else if (squared_scale > Scalar(1.) / (Constants<ResultT>::epsilon() *
+                                             Constants<ResultT>::epsilon())) {
       /// Saturation to ensure class invariant.
       result_complex.normalize();
       result_complex /= Constants<ResultT>::epsilonPlus();
@@ -340,9 +340,8 @@ class RxSO2Base {
   ///
   /// Precondition: ``z`` must not be close to either zero or infinity.
   SOPHUS_FUNC void setComplex(Vector2<Scalar> const& z) {
-    SOPHUS_ENSURE(z.squaredNorm() > Constants<Scalar>::epsilon() *
-                                        Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
+    SOPHUS_ENSURE(z.squaredNorm() > Scalar(0),
+                  "Scale factor must be greater zero.");
     SOPHUS_ENSURE(z.squaredNorm() < Scalar(1.) / (Constants<Scalar>::epsilon() *
                                                   Constants<Scalar>::epsilon()),
                   "Inverse scale factor must be greate-equal epsilon.");
@@ -485,11 +484,9 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC explicit RxSO2(Vector2<Scalar> const& z)
       : complex_(z) {
-    SOPHUS_ENSURE(complex_.squaredNorm() >= Constants<Scalar>::epsilon() *
-                                                Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon: {} vs {}",
-                  complex_.squaredNorm(),
-                  Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon());
+    SOPHUS_ENSURE(complex_.squaredNorm() > Scalar(0),
+                  "Scale factor must be greater zero but is {}",
+                  complex_.squaredNorm());
     SOPHUS_ENSURE(
         complex_.squaredNorm() <= Scalar(1.) / (Constants<Scalar>::epsilon() *
                                                 Constants<Scalar>::epsilon()),
