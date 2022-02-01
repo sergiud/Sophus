@@ -391,17 +391,11 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   using SO2Member = SO2<Scalar, Options>;
   using TranslationMember = Vector2<Scalar, Options>;
 
-  using Base::operator=;
-
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /// Default constructor initializes rigid body motion to the identity.
   ///
   SOPHUS_FUNC SE2();
-
-  /// Copy constructor
-  ///
-  SOPHUS_FUNC SE2(SE2 const& other) = default;
 
   /// Copy-like constructor from OtherDerived
   ///

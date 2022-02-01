@@ -467,10 +467,6 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   SOPHUS_FUNC SO3()
       : unit_quaternion_(Scalar(1), Scalar(0), Scalar(0), Scalar(0)) {}
 
-  /// Copy constructor
-  ///
-  SOPHUS_FUNC SO3(SO3 const& other) = default;
-
   /// Copy-like constructor from OtherDerived.
   ///
   template <class OtherDerived>

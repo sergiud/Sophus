@@ -493,10 +493,6 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   SOPHUS_FUNC RxSO3()
       : quaternion_(Scalar(1), Scalar(0), Scalar(0), Scalar(0)) {}
 
-  /// Copy constructor
-  ///
-  SOPHUS_FUNC RxSO3(RxSO3 const& other) = default;
-
   /// Copy-like constructor from OtherDerived
   ///
   template <class OtherDerived>

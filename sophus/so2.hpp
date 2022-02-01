@@ -364,17 +364,11 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   /// ``Base`` is friend so unit_complex_nonconst can be accessed from ``Base``.
   friend class SO2Base<SO2<Scalar, Options>>;
 
-  using Base::operator=;
-
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /// Default constructor initializes unit complex number to identity rotation.
   ///
   SOPHUS_FUNC SO2() : unit_complex_(Scalar(1), Scalar(0)) {}
-
-  /// Copy constructor
-  ///
-  SOPHUS_FUNC SO2(SO2 const& other) = default;
 
   /// Copy-like constructor from OtherDerived.
   ///

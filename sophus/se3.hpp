@@ -454,17 +454,11 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   using SO3Member = SO3<Scalar, Options>;
   using TranslationMember = Vector3<Scalar, Options>;
 
-  using Base::operator=;
-
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /// Default constructor initializes rigid body motion to the identity.
   ///
   SOPHUS_FUNC SE3();
-
-  /// Copy constructor
-  ///
-  SOPHUS_FUNC SE3(SE3 const& other) = default;
 
   /// Copy-like constructor from OtherDerived.
   ///
