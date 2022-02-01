@@ -764,8 +764,6 @@ class Map<Sophus::RxSO3<Scalar_>, Options>
   friend class Sophus::RxSO3Base<Map<Sophus::RxSO3<Scalar_>, Options>>;
 
   using Base::operator=;
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC Map(Scalar* coeffs) : quaternion_(coeffs) {}
 

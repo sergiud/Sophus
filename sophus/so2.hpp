@@ -568,8 +568,6 @@ class Map<Sophus::SO2<Scalar_>, Options>
   friend class Sophus::SO2Base<Map<Sophus::SO2<Scalar_>, Options>>;
 
   using Base::operator=;
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC
   Map(Scalar* coeffs) : unit_complex_(coeffs) {}

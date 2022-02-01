@@ -423,8 +423,6 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
   /// ``Base`` is friend so complex_nonconst can be accessed from ``Base``.
   friend class RxSO2Base<RxSO2<Scalar_, Options>>;
 
-  using Base::operator=;
-
   static int constexpr DoF = Base::DoF;
   static int constexpr num_parameters = Base::num_parameters;
 
@@ -673,8 +671,6 @@ class Map<Sophus::RxSO2<Scalar_>, Options>
   friend class Sophus::RxSO2Base<Map<Sophus::RxSO2<Scalar_>, Options>>;
 
   using Base::operator=;
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC Map(Scalar* coeffs) : complex_(coeffs) {}
 
@@ -708,9 +704,6 @@ class Map<Sophus::RxSO2<Scalar_> const, Options>
   using HomogeneousPoint = typename Base::HomogeneousPoint;
   using Tangent = typename Base::Tangent;
   using Adjoint = typename Base::Adjoint;
-
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC
   Map(Scalar const* coeffs) : complex_(coeffs) {}

@@ -458,8 +458,6 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   /// ``Base``.
   friend class SO3Base<SO3<Scalar, Options>>;
 
-  using Base::operator=;
-
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /// Default constructor initializes unit quaternion to identity rotation.
@@ -801,8 +799,6 @@ class Map<Sophus::SO3<Scalar_>, Options>
   friend class Sophus::SO3Base<Map<Sophus::SO3<Scalar_>, Options>>;
 
   using Base::operator=;
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC Map(Scalar* coeffs) : unit_quaternion_(coeffs) {}
 
@@ -839,9 +835,6 @@ class Map<Sophus::SO3<Scalar_> const, Options>
   using HomogeneousPoint = typename Base::HomogeneousPoint;
   using Tangent = typename Base::Tangent;
   using Adjoint = typename Base::Adjoint;
-
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC Map(Scalar const* coeffs) : unit_quaternion_(coeffs) {}
 

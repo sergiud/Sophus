@@ -1007,8 +1007,6 @@ class Map<Sophus::SE3<Scalar_>, Options>
   using Adjoint = typename Base::Adjoint;
 
   using Base::operator=;
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC Map(Scalar* coeffs)
       : so3_(coeffs),
@@ -1055,9 +1053,6 @@ class Map<Sophus::SE3<Scalar_> const, Options>
   using HomogeneousPoint = typename Base::HomogeneousPoint;
   using Tangent = typename Base::Tangent;
   using Adjoint = typename Base::Adjoint;
-
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC Map(Scalar const* coeffs)
       : so3_(coeffs),

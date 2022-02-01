@@ -391,8 +391,6 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
   using RxSo2Member = RxSO2<Scalar, Options>;
   using TranslationMember = Vector2<Scalar, Options>;
 
-  using Base::operator=;
-
   static int constexpr DoF = Base::DoF;
   static int constexpr num_parameters = Base::num_parameters;
 
@@ -723,8 +721,6 @@ class Map<Sophus::Sim2<Scalar_>, Options>
   using Adjoint = typename Base::Adjoint;
 
   using Base::operator=;
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC Map(Scalar* coeffs)
       : rxso2_(coeffs),
@@ -770,9 +766,6 @@ class Map<Sophus::Sim2<Scalar_> const, Options>
   using HomogeneousPoint = typename Base::HomogeneousPoint;
   using Tangent = typename Base::Tangent;
   using Adjoint = typename Base::Adjoint;
-
-  using Base::operator*=;
-  using Base::operator*;
 
   SOPHUS_FUNC Map(Scalar const* coeffs)
       : rxso2_(coeffs),
