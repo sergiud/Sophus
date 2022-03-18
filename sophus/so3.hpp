@@ -256,7 +256,7 @@ class SO3Base {
     TangentAndTheta J;
     using std::abs;
     using std::atan2;
-    using std::sqrt;
+    using std::hypot;
     Scalar squared_n = unit_quaternion().vec().squaredNorm();
     Scalar w = unit_quaternion().w();
 
@@ -281,7 +281,8 @@ class SO3Base {
           Scalar(2) / w - Scalar(2.0 / 3.0) * (squared_n) / (w * squared_w);
       J.theta = Scalar(2) * squared_n / w;
     } else {
-      Scalar n = sqrt(squared_n);
+      const auto& v = unit_quaternion().vec();
+      Scalar n = hypot(v.x(), v.y(), v.z());
 
       // w < 0 ==> cos(theta/2) < 0 ==> theta > pi
       //
@@ -306,7 +307,7 @@ class SO3Base {
   /// this function directly.
   ///
   SOPHUS_FUNC void normalize() {
-    Scalar length = unit_quaternion_nonconst().norm();
+    Scalar length = unit_quaternion_nonconst().coeffs().hypotNorm();
     SOPHUS_ENSURE(length >= Constants<Scalar>::epsilon(),
                   "Quaternion ({}) should not be close to zero!",
                   unit_quaternion_nonconst().coeffs().transpose());
@@ -530,8 +531,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   leftJacobian(Tangent const& omega,
                std::optional<Scalar> const& theta_o = std::nullopt) {
     using std::cos;
+    using std::hypot;
     using std::sin;
-    using std::sqrt;
 
     Scalar const theta_sq = theta_o ? *theta_o * *theta_o : omega.squaredNorm();
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
@@ -542,7 +543,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
         Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
       V = Matrix3<Scalar>::Identity() + Scalar(0.5) * Omega;
     } else {
-      Scalar theta = theta_o ? *theta_o : sqrt(theta_sq);
+      Scalar theta =
+          theta_o ? *theta_o : hypot(omega.x(), omega.y(), omega.z());
       V = Matrix3<Scalar>::Identity() +
           (Scalar(1) - cos(theta)) / theta_sq * Omega +
           (theta - sin(theta)) / (theta_sq * theta) * Omega_sq;
@@ -554,8 +556,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   leftJacobianInverse(Tangent const& omega,
                       std::optional<Scalar> const& theta_o = std::nullopt) {
     using std::cos;
+    using std::hypot;
     using std::sin;
-    using std::sqrt;
     Scalar const theta_sq = theta_o ? *theta_o * *theta_o : omega.squaredNorm();
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
 
@@ -566,7 +568,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
               Scalar(1. / 12.) * (Omega * Omega);
 
     } else {
-      Scalar const theta = theta_o ? *theta_o : sqrt(theta_sq);
+      Scalar const theta =
+          theta_o ? *theta_o : hypot(omega.x(), omega.y(), omega.z());
       Scalar const half_theta = Scalar(0.5) * theta;
 
       V_inv = Matrix3<Scalar>::Identity() - Scalar(0.5) * Omega +
@@ -583,8 +586,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   Dx_exp_x(Tangent const& omega) {
     using std::cos;
     using std::exp;
+    using std::hypot;
     using std::sin;
-    using std::sqrt;
     Scalar const c0 = omega[0] * omega[0];
     Scalar const c1 = omega[1] * omega[1];
     Scalar const c2 = omega[2] * omega[2];
@@ -594,7 +597,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
       return Dx_exp_x_at_0();
     }
 
-    Scalar const c4 = sqrt(c3);
+    Scalar const c4 = hypot(omega[0], omega[1], omega[2]);
     Scalar const c5 = 1.0 / c4;
     Scalar const c6 = 0.5 * c4;
     Scalar const c7 = sin(c6);
@@ -670,8 +673,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     SOPHUS_ENSURE(theta != nullptr, "must not be nullptr.");
     using std::abs;
     using std::cos;
+    using std::hypot;
     using std::sin;
-    using std::sqrt;
     Scalar theta_sq = omega.squaredNorm();
 
     Scalar imag_factor;
@@ -685,7 +688,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
       real_factor = Scalar(1) - Scalar(1.0 / 8.0) * theta_sq +
                     Scalar(1.0 / 384.0) * theta_po4;
     } else {
-      *theta = sqrt(theta_sq);
+      *theta = hypot(omega.x(), omega.y(), omega.z());
       Scalar half_theta = Scalar(0.5) * (*theta);
       Scalar sin_half_theta = sin(half_theta);
       imag_factor = sin_half_theta / (*theta);
@@ -693,9 +696,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     }
 
     SO3 q;
-    q.unit_quaternion_nonconst() =
-        QuaternionMember(real_factor, imag_factor * omega.x(),
-                         imag_factor * omega.y(), imag_factor * omega.z());
+    q.unit_quaternion_nonconst().coeffs() << imag_factor * omega, real_factor;
+
     SOPHUS_ENSURE(abs(q.unit_quaternion().squaredNorm() - Scalar(1)) <
                       Sophus::Constants<Scalar>::epsilon(),
                   "SO3::exp failed! omega: {}, real: {}, img: {}",
@@ -809,6 +811,10 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     static_assert(IsUniformRandomBitGenerator<UniformRandomBitGenerator>::value,
                   "generator must meet the UniformRandomBitGenerator concept");
 
+    using std::cos;
+    using std::sin;
+    using std::sqrt;
+
     std::uniform_real_distribution<Scalar> uniform(Scalar(0), Scalar(1));
     std::uniform_real_distribution<Scalar> uniform_twopi(
         Scalar(0), 2 * Constants<Scalar>::pi());
@@ -817,7 +823,6 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     const Scalar u2 = uniform_twopi(generator);
     const Scalar u3 = uniform_twopi(generator);
 
-    using std::sqrt;
     const Scalar a = sqrt(1 - u1);
     const Scalar b = sqrt(u1);
 

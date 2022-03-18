@@ -492,10 +492,11 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x(const Tangent& a) {
+    using std::hypot;
     Vector3<Scalar> const omega = a.template segment<3>(3);
     Vector3<Scalar> const upsilon = a.template head<3>();
     Scalar const sigma = a[6];
-    Scalar const theta = omega.norm();
+    Scalar const theta = hypot(omega.x(), omega.y(), omega.z());
 
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
     Matrix3<Scalar> const Omega2 = Omega * Omega;

@@ -538,8 +538,8 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   [[nodiscard]] SOPHUS_FUNC static Matrix3<Scalar> jacobianUpperRightBlock(
       Vector3<Scalar> const& upsilon, Vector3<Scalar> const& omega) {
     using std::cos;
+    using std::hypot;
     using std::sin;
-    using std::sqrt;
 
     Scalar const k1By2(0.5);
 
@@ -552,7 +552,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
       Q = k1By2 * Upsilon;
 
     } else {
-      Scalar const theta = sqrt(theta_sq);
+      Scalar const theta = hypot(omega.x(), omega.y(), omega.z());
       Scalar const i_theta = Scalar(1) / theta;
       Scalar const i_theta_sq = i_theta * i_theta;
       Scalar const i_theta_po4 = i_theta_sq * i_theta_sq;
@@ -601,9 +601,9 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x(Tangent const& upsilon_omega) {
     using std::cos;
+    using std::hypot;
     using std::pow;
     using std::sin;
-    using std::sqrt;
     Sophus::Matrix<Scalar, num_parameters, DoF> J;
     Sophus::Vector<Scalar, 3> upsilon = upsilon_omega.template head<3>();
     Sophus::Vector<Scalar, 3> omega = upsilon_omega.template tail<3>();
@@ -628,7 +628,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
       return J;
     }
 
-    Scalar const c4 = sqrt(c3);
+    Scalar const c4 = hypot(omega[0], omega[1], omega[2]);
     Scalar const c5 = Scalar(1.0) / c4;
     Scalar const c6 = Scalar(0.5) * c4;
     Scalar const c7 = sin(c6);
