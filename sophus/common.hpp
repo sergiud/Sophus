@@ -180,62 +180,11 @@ struct Constants<float> {
   }
 };
 
-/// Nullopt type of lightweight optional class.
-struct nullopt_t {
-  explicit constexpr nullopt_t() {}
-};
-
-constexpr nullopt_t nullopt{};
-
-/// Lightweight optional implementation which requires ``T`` to have a
-/// default constructor.
-///
-/// TODO: Replace with std::optional once Sophus moves to c++17.
-///
-template <class T>
-class optional {
- public:
-  optional() : is_valid_(false) {}
-
-  optional(nullopt_t) : is_valid_(false) {}
-
-  optional(T const& type) : type_(type), is_valid_(true) {}
-
-  explicit operator bool() const { return is_valid_; }
-
-  T const* operator->() const {
-    SOPHUS_ENSURE(is_valid_, "must be valid");
-    return &type_;
-  }
-
-  T* operator->() {
-    SOPHUS_ENSURE(is_valid_, "must be valid");
-    return &type_;
-  }
-
-  T const& operator*() const {
-    SOPHUS_ENSURE(is_valid_, "must be valid");
-    return type_;
-  }
-
-  T& operator*() {
-    SOPHUS_ENSURE(is_valid_, "must be valid");
-    return type_;
-  }
-
- private:
-  T type_;
-  bool is_valid_;
-};
-
-template <bool B, class T = void>
-using enable_if_t = typename std::enable_if<B, T>::type;
-
 template <class G>
 struct IsUniformRandomBitGenerator {
-  static const bool value = std::is_unsigned<typename G::result_type>::value &&
-                            std::is_unsigned<decltype(G::min())>::value &&
-                            std::is_unsigned<decltype(G::max())>::value;
+  static const bool value = std::is_unsigned_v<typename G::result_type> &&
+                            std::is_unsigned_v<decltype(G::min())> &&
+                            std::is_unsigned_v<decltype(G::max())>;
 };
 }  // namespace Sophus
 

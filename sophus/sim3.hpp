@@ -221,9 +221,9 @@ class Sim3Base {
   ///
   ///   ``p_bar = bar_sR_foo * p_foo + t_bar``.
   ///
-  template <typename PointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<PointDerived, 3>::value>::type>
+  template <
+      typename PointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 3>::value>>
   SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
     return rxso3() * p + translation();
@@ -231,9 +231,9 @@ class Sim3Base {
 
   /// Group action on homogeneous 3-points. See above for more details.
   ///
-  template <typename HPointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<HPointDerived, 4>::value>::type>
+  template <
+      typename HPointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 4>::value>>
   SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
     const PointProduct<HPointDerived> tp =
@@ -271,9 +271,8 @@ class Sim3Base {
   /// In-place group multiplication. This method is only valid if the return
   /// type of the multiplication is compatible with this SO3's Scalar type.
   ///
-  template <typename OtherDerived,
-            typename = typename std::enable_if<
-                std::is_same<Scalar, ReturnScalar<OtherDerived>>::value>::type>
+  template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
+                                       Scalar, ReturnScalar<OtherDerived>>>>
   SOPHUS_FUNC Sim3Base<Derived>& operator*=(
       Sim3Base<OtherDerived> const& other) {
     *static_cast<Derived*>(this) = *this * other;
@@ -405,7 +404,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   template <class OtherDerived>
   SOPHUS_FUNC Sim3(Sim3Base<OtherDerived> const& other)
       : rxso3_(other.rxso3()), translation_(other.translation()) {
-    static_assert(std::is_same<typename OtherDerived::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename OtherDerived::Scalar, Scalar>,
                   "must be same Scalar type");
   }
 
@@ -415,9 +414,9 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   SOPHUS_FUNC Sim3(RxSO3Base<OtherDerived> const& rxso3,
                    Eigen::MatrixBase<D> const& translation)
       : rxso3_(rxso3), translation_(translation) {
-    static_assert(std::is_same<typename OtherDerived::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename OtherDerived::Scalar, Scalar>,
                   "must be same Scalar type");
-    static_assert(std::is_same<typename D::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename D::Scalar, Scalar>,
                   "must be same Scalar type");
   }
 
@@ -429,9 +428,9 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   SOPHUS_FUNC Sim3(Eigen::QuaternionBase<D1> const& quaternion,
                    Eigen::MatrixBase<D2> const& translation)
       : rxso3_(quaternion), translation_(translation) {
-    static_assert(std::is_same<typename D1::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename D1::Scalar, Scalar>,
                   "must be same Scalar type");
-    static_assert(std::is_same<typename D2::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename D2::Scalar, Scalar>,
                   "must be same Scalar type");
   }
 
@@ -725,7 +724,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
 
 template <class Scalar, int Options>
 Sim3<Scalar, Options>::Sim3() : translation_(TranslationMember::Zero()) {
-  static_assert(std::is_standard_layout<Sim3>::value,
+  static_assert(std::is_standard_layout_v<Sim3>,
                 "Assume standard layout for the use of offsetof check below.");
   static_assert(
       offsetof(Sim3, rxso3_) + sizeof(Scalar) * RxSO3<Scalar>::num_parameters ==

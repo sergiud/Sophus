@@ -25,9 +25,6 @@ bool testSmokeDetails() {
   Matrix<float, 1, 2> expected_row(1, 7);
   SOPHUS_TEST_EQUAL(passed, row, expected_row, "");
 
-  optional<int> opt(nullopt);
-  SOPHUS_TEST(passed, !opt, "");
-
   return passed;
 }
 

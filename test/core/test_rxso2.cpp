@@ -63,7 +63,7 @@ class Tests {
   }
 
   template <class S = Scalar>
-  enable_if_t<std::is_floating_point<S>::value, bool> testFit() {
+  std::enable_if_t<std::is_floating_point<S>::value, bool> testFit() {
     bool passed = true;
     for (int i = 0; i < 10; ++i) {
       Matrix2<Scalar> M = Matrix2<Scalar>::Random();
@@ -82,7 +82,7 @@ class Tests {
   }
 
   template <class S = Scalar>
-  enable_if_t<!std::is_floating_point<S>::value, bool> testFit() {
+  std::enable_if_t<!std::is_floating_point<S>::value, bool> testFit() {
     return true;
   }
 

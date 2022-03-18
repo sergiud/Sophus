@@ -270,9 +270,9 @@ class RxSO3Base {
   ///
   ///   ``p_bar = s * (bar_R_foo * p_foo)``.
   ///
-  template <typename PointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<PointDerived, 3>::value>::type>
+  template <
+      typename PointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 3>::value>>
   SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
     // Follows http:///eigen.tuxfamily.org/bz/show_bug.cgi?id=459
@@ -285,9 +285,9 @@ class RxSO3Base {
 
   /// Group action on homogeneous 3-points. See above for more details.
   ///
-  template <typename HPointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<HPointDerived, 4>::value>::type>
+  template <
+      typename HPointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 4>::value>>
   SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
     const auto rsp = *this * p.template head<3>();
@@ -327,9 +327,8 @@ class RxSO3Base {
   /// Note: This function performs saturation for products close to zero in
   /// order to ensure the class invariant.
   ///
-  template <typename OtherDerived,
-            typename = typename std::enable_if<
-                std::is_same<Scalar, ReturnScalar<OtherDerived>>::value>::type>
+  template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
+                                       Scalar, ReturnScalar<OtherDerived>>>>
   SOPHUS_FUNC RxSO3Base<Derived>& operator*=(
       RxSO3Base<OtherDerived> const& other) {
     *static_cast<Derived*>(this) = *this * other;
@@ -549,7 +548,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   template <class D>
   SOPHUS_FUNC explicit RxSO3(Eigen::QuaternionBase<D> const& quat)
       : quaternion_(quat) {
-    static_assert(std::is_same<typename D::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename D::Scalar, Scalar>,
                   "must be same Scalar type.");
     SOPHUS_ENSURE(quaternion_.squaredNorm() >= Constants<Scalar>::epsilon(),
                   "Scale factor must be greater-equal epsilon.");

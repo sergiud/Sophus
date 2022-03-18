@@ -211,12 +211,12 @@ auto transpose(T const& p) -> decltype(details::Transpose<T>::impl(T())) {
 
 template <class Scalar>
 struct IsFloatingPoint {
-  static bool const value = std::is_floating_point<Scalar>::value;
+  static bool const value = std::is_floating_point_v<Scalar>;
 };
 
 template <class Scalar, int M, int N>
 struct IsFloatingPoint<Matrix<Scalar, M, N>> {
-  static bool const value = std::is_floating_point<Scalar>::value;
+  static bool const value = std::is_floating_point_v<Scalar>;
 };
 
 template <class Scalar_>
@@ -232,9 +232,9 @@ struct GetScalar<Matrix<Scalar_, M, N>> {
 /// If the Vector type is of fixed size, then IsFixedSizeVector::value will be
 /// true.
 template <typename Vector, int NumDimensions,
-          typename = typename std::enable_if<
-              Vector::RowsAtCompileTime == NumDimensions &&
-              Vector::ColsAtCompileTime == 1>::type>
+          typename =
+              std::enable_if_t<Vector::RowsAtCompileTime == NumDimensions &&
+                               Vector::ColsAtCompileTime == 1>>
 struct IsFixedSizeVector : std::true_type {};
 
 /// Planes in 3d are hyperplanes.

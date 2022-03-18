@@ -20,7 +20,7 @@ class Pretty {
 };
 
 template <class Ptr>
-class Pretty<Ptr, enable_if_t<std::is_pointer<Ptr>::value>> {
+class Pretty<Ptr, std::enable_if_t<std::is_pointer_v<Ptr>>> {
  public:
   static std::string impl(Ptr ptr) {
     std::stringstream sstr;

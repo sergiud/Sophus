@@ -19,7 +19,7 @@ class Curve {
   template <class Fn>
   static auto num_diff(Fn curve, Scalar t, Scalar h) -> decltype(curve(t)) {
     using ReturnType = decltype(curve(t));
-    static_assert(std::is_floating_point<Scalar>::value,
+    static_assert(std::is_floating_point_v<Scalar>,
                   "Scalar must be a floating point type.");
     static_assert(IsFloatingPoint<ReturnType>::value,
                   "ReturnType must be either a floating point scalar, "
@@ -36,7 +36,7 @@ class VectorField {
       std::function<Sophus::Vector<Scalar, N>(Sophus::Vector<Scalar, M>)>
           vector_field,
       Sophus::Vector<Scalar, M> const& a, Scalar eps) {
-    static_assert(std::is_floating_point<Scalar>::value,
+    static_assert(std::is_floating_point_v<Scalar>,
                   "Scalar must be a floating point type.");
     Eigen::Matrix<Scalar, N, M> J;
     Sophus::Vector<Scalar, M> h;

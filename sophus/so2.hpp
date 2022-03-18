@@ -238,9 +238,9 @@ class SO2Base {
   /// This function rotates a 2 dimensional point ``p`` by the SO2 element
   ///  ``bar_R_foo`` (= rotation matrix): ``p_bar = bar_R_foo * p_foo``.
   ///
-  template <typename PointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<PointDerived, 2>::value>::type>
+  template <
+      typename PointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 2>::value>>
   SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
     Scalar const& real = unit_complex().x();
@@ -254,9 +254,9 @@ class SO2Base {
   /// This function rotates a homogeneous 2 dimensional point ``p`` by the SO2
   /// element ``bar_R_foo`` (= rotation matrix): ``p_bar = bar_R_foo * p_foo``.
   ///
-  template <typename HPointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<HPointDerived, 3>::value>::type>
+  template <
+      typename HPointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 3>::value>>
   SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
     Scalar const& real = unit_complex().x();
@@ -294,9 +294,8 @@ class SO2Base {
   /// In-place group multiplication. This method is only valid if the return
   /// type of the multiplication is compatible with this SO2's Scalar type.
   ///
-  template <typename OtherDerived,
-            typename = typename std::enable_if<
-                std::is_same<Scalar, ReturnScalar<OtherDerived>>::value>::type>
+  template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
+                                       Scalar, ReturnScalar<OtherDerived>>>>
   SOPHUS_FUNC SO2Base<Derived> operator*=(SO2Base<OtherDerived> const& other) {
     *static_cast<Derived*>(this) = *this * other;
     return *this;
@@ -405,7 +404,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   template <class D>
   SOPHUS_FUNC explicit SO2(Eigen::MatrixBase<D> const& complex)
       : unit_complex_(complex) {
-    static_assert(std::is_same<typename D::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename D::Scalar, Scalar>,
                   "must be same Scalar type");
     Base::normalize();
   }
@@ -494,7 +493,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   /// Returns closed SO2 given arbitrary 2x2 matrix.
   ///
   template <class S = Scalar>
-  static SOPHUS_FUNC enable_if_t<std::is_floating_point<S>::value, SO2>
+  static SOPHUS_FUNC std::enable_if_t<std::is_floating_point_v<S>, SO2>
   fitToSO2(Transformation const& R) {
     return SO2(makeRotationMatrix(R));
   }

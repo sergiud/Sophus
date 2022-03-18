@@ -300,9 +300,9 @@ class SE3Base {
   ///
   ///   ``p_bar = bar_R_foo * p_foo + t_bar``.
   ///
-  template <typename PointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<PointDerived, 3>::value>::type>
+  template <
+      typename PointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 3>::value>>
   SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
     return so3() * p + translation();
@@ -310,9 +310,9 @@ class SE3Base {
 
   /// Group action on homogeneous 3-points. See above for more details.
   ///
-  template <typename HPointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<HPointDerived, 4>::value>::type>
+  template <
+      typename HPointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 4>::value>>
   SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
     const PointProduct<HPointDerived> tp =
@@ -349,9 +349,8 @@ class SE3Base {
   /// In-place group multiplication. This method is only valid if the return
   /// type of the multiplication is compatible with this SE3's Scalar type.
   ///
-  template <typename OtherDerived,
-            typename = typename std::enable_if<
-                std::is_same<Scalar, ReturnScalar<OtherDerived>>::value>::type>
+  template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
+                                       Scalar, ReturnScalar<OtherDerived>>>>
   SOPHUS_FUNC SE3Base<Derived>& operator*=(SE3Base<OtherDerived> const& other) {
     *static_cast<Derived*>(this) = *this * other;
     return *this;
@@ -451,7 +450,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   template <class OtherDerived>
   SOPHUS_FUNC SE3(SE3Base<OtherDerived> const& other)
       : so3_(other.so3()), translation_(other.translation()) {
-    static_assert(std::is_same<typename OtherDerived::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename OtherDerived::Scalar, Scalar>,
                   "must be same Scalar type");
   }
 
@@ -461,9 +460,9 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   SOPHUS_FUNC SE3(SO3Base<OtherDerived> const& so3,
                   Eigen::MatrixBase<D> const& translation)
       : so3_(so3), translation_(translation) {
-    static_assert(std::is_same<typename OtherDerived::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename OtherDerived::Scalar, Scalar>,
                   "must be same Scalar type");
-    static_assert(std::is_same<typename D::Scalar, Scalar>::value,
+    static_assert(std::is_same_v<typename D::Scalar, Scalar>,
                   "must be same Scalar type");
   }
 
@@ -828,7 +827,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   /// Returns closest SE3 given arbirary 4x4 matrix.
   ///
   template <class S = Scalar>
-  SOPHUS_FUNC static enable_if_t<std::is_floating_point<S>::value, SE3>
+  SOPHUS_FUNC static std::enable_if_t<std::is_floating_point_v<S>, SE3>
   fitToSE3(Matrix4<Scalar> const& T) {
     return SE3(SO3<Scalar>::fitToSO3(T.template block<3, 3>(0, 0)),
                T.template block<3, 1>(0, 3));
@@ -1012,7 +1011,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
 
 template <class Scalar, int Options>
 SE3<Scalar, Options>::SE3() : translation_(TranslationMember::Zero()) {
-  static_assert(std::is_standard_layout<SE3>::value,
+  static_assert(std::is_standard_layout_v<SE3>,
                 "Assume standard layout for the use of offsetof check below.");
   static_assert(
       offsetof(SE3, so3_) + sizeof(Scalar) * SO3<Scalar>::num_parameters ==

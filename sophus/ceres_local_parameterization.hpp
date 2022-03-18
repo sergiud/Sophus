@@ -44,7 +44,7 @@ struct Mapper {
 };
 
 template <typename T>
-struct Mapper<T, typename std::enable_if<IsMappableV<T>>::type> {
+struct Mapper<T, std::enable_if_t<IsMappableV<T>>> {
   using Scalar = typename T::Scalar;
   using Map = Eigen::Map<T>;
   using ConstMap = Eigen::Map<const T>;

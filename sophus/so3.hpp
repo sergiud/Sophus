@@ -4,6 +4,8 @@
 #ifndef SOPHUS_SO3_HPP
 #define SOPHUS_SO3_HPP
 
+#include <optional>
+
 #include "rotation_matrix.hpp"
 #include "so2.hpp"
 #include "types.hpp"
@@ -133,7 +135,7 @@ class SO3Base {
   /// Extract rotation angle about canonical X-axis
   ///
   template <class S = Scalar>
-  SOPHUS_FUNC enable_if_t<std::is_floating_point<S>::value, S> angleX() const {
+  SOPHUS_FUNC std::enable_if_t<std::is_floating_point_v<S>, S> angleX() const {
     Sophus::Matrix3<Scalar> R = matrix();
     Sophus::Matrix2<Scalar> Rx = R.template block<2, 2>(1, 1);
     return SO2<Scalar>(makeRotationMatrix(Rx)).log();
@@ -142,7 +144,7 @@ class SO3Base {
   /// Extract rotation angle about canonical Y-axis
   ///
   template <class S = Scalar>
-  SOPHUS_FUNC enable_if_t<std::is_floating_point<S>::value, S> angleY() const {
+  SOPHUS_FUNC std::enable_if_t<std::is_floating_point_v<S>, S> angleY() const {
     Sophus::Matrix3<Scalar> R = matrix();
     Sophus::Matrix2<Scalar> Ry;
     // clang-format off
@@ -156,7 +158,7 @@ class SO3Base {
   /// Extract rotation angle about canonical Z-axis
   ///
   template <class S = Scalar>
-  SOPHUS_FUNC enable_if_t<std::is_floating_point<S>::value, S> angleZ() const {
+  SOPHUS_FUNC std::enable_if_t<std::is_floating_point_v<S>, S> angleZ() const {
     Sophus::Matrix3<Scalar> R = matrix();
     Sophus::Matrix2<Scalar> Rz = R.template block<2, 2>(0, 0);
     return SO2<Scalar>(makeRotationMatrix(Rz)).log();
@@ -364,9 +366,9 @@ class SO3Base {
   ///
   /// For ``vee``-operator, see below.
   ///
-  template <typename PointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<PointDerived, 3>::value>::type>
+  template <
+      typename PointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 3>::value>>
   SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
     /// NOTE: We cannot use Eigen's Quaternion transformVector because it always
@@ -379,9 +381,9 @@ class SO3Base {
   }
 
   /// Group action on homogeneous 3-points. See above for more details.
-  template <typename HPointDerived,
-            typename = typename std::enable_if<
-                IsFixedSizeVector<HPointDerived, 4>::value>::type>
+  template <
+      typename HPointDerived,
+      typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 4>::value>>
   SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
     const auto rp = *this * p.template head<3>();
@@ -414,9 +416,8 @@ class SO3Base {
   /// In-place group multiplication. This method is only valid if the return
   /// type of the multiplication is compatible with this SO3's Scalar type.
   ///
-  template <typename OtherDerived,
-            typename = typename std::enable_if<
-                std::is_same<Scalar, ReturnScalar<OtherDerived>>::value>::type>
+  template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
+                                       Scalar, ReturnScalar<OtherDerived>>>>
   SOPHUS_FUNC SO3Base<Derived>& operator*=(SO3Base<OtherDerived> const& other) {
     *static_cast<Derived*>(this) = *this * other;
     return *this;
@@ -501,7 +502,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   SOPHUS_FUNC explicit SO3(Eigen::QuaternionBase<D> const& quat)
       : unit_quaternion_(quat) {
     static_assert(
-        std::is_same<typename Eigen::QuaternionBase<D>::Scalar, Scalar>::value,
+        std::is_same_v<typename Eigen::QuaternionBase<D>::Scalar, Scalar>,
         "Input must be of same scalar type");
     Base::normalize();
   }
@@ -521,7 +522,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   ///          internal quaternion representation of SO3 wrt the tangent vector
   ///
   SOPHUS_FUNC static Sophus::Matrix<Scalar, DoF, DoF> leftJacobian(
-      Tangent const& omega, optional<Scalar> const& theta_o = nullopt) {
+      Tangent const& omega,
+      std::optional<Scalar> const& theta_o = std::nullopt) {
     using std::cos;
     using std::sin;
     using std::sqrt;
@@ -544,7 +546,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   }
 
   SOPHUS_FUNC static Sophus::Matrix<Scalar, DoF, DoF> leftJacobianInverse(
-      Tangent const& omega, optional<Scalar> const& theta_o = nullopt) {
+      Tangent const& omega,
+      std::optional<Scalar> const& theta_o = std::nullopt) {
     using std::cos;
     using std::sin;
     using std::sqrt;
@@ -698,7 +701,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   /// Returns closest SO3 given arbitrary 3x3 matrix.
   ///
   template <class S = Scalar>
-  static SOPHUS_FUNC enable_if_t<std::is_floating_point<S>::value, SO3>
+  static SOPHUS_FUNC std::enable_if_t<std::is_floating_point_v<S>, SO3>
   fitToSO3(Transformation const& R) {
     return SO3(::Sophus::makeRotationMatrix(R));
   }

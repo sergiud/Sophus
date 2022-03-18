@@ -56,14 +56,8 @@ target_include_directories (sophus INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# Declare all used C++14 features
 target_compile_features (sophus INTERFACE
-  cxx_auto_type
-  cxx_decltype
-  cxx_nullptr
-  cxx_right_angle_brackets
-  cxx_variadic_macros
-  cxx_variadic_templates
+  cxx_std_17
 )
 
 # Create 'test' make target using ctest
