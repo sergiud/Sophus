@@ -10,10 +10,9 @@ SET( TEST_SOURCES test_common
                   test_sim3
                   test_velocities
                   test_geometry)
-find_package( Ceres 2.0.0 QUIET )
 
 FOREACH(test_src ${TEST_SOURCES})
-  ADD_EXECUTABLE( ${test_src} ${test_src}.cpp tests.hpp ../../sophus/test_macros.hpp)
+  ADD_EXECUTABLE( ${test_src} ${test_src}.cpp tests.hpp ${Sophus_SOURCE_DIR}/sophus/test_macros.hpp)
   TARGET_LINK_LIBRARIES( ${test_src} sophus)
   if( Ceres_FOUND )
       TARGET_LINK_LIBRARIES( ${test_src} Ceres::ceres )
