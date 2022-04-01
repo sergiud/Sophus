@@ -103,7 +103,7 @@ class Sim3Base {
   /// element ``A`` such that for all ``x`` it holds that
   /// ``hat(Ad_A * x) = A * hat(x) A^{-1}``. See hat-operator below.
   ///
-  SOPHUS_FUNC Adjoint Adj() const {
+  [[nodiscard]] SOPHUS_FUNC Adjoint Adj() const {
     Matrix3<Scalar> const R = rxso3().rotationMatrix();
     Adjoint res;
     // clang-format off
@@ -117,14 +117,14 @@ class Sim3Base {
   /// Returns copy of instance casted to NewScalarType.
   ///
   template <class NewScalarType>
-  SOPHUS_FUNC Sim3<NewScalarType> cast() const {
+  [[nodiscard]] SOPHUS_FUNC Sim3<NewScalarType> cast() const {
     return Sim3<NewScalarType>(rxso3().template cast<NewScalarType>(),
                                translation().template cast<NewScalarType>());
   }
 
   /// Returns group inverse.
   ///
-  SOPHUS_FUNC Sim3<Scalar> inverse() const {
+  [[nodiscard]] SOPHUS_FUNC Sim3<Scalar> inverse() const {
     RxSO3<Scalar> invR = rxso3().inverse();
     return Sim3<Scalar>(invR, invR * (translation() * Scalar(-1)));
   }
@@ -139,7 +139,7 @@ class Sim3Base {
   /// ``logmat(.)`` being the matrix logarithm and ``vee(.)`` the vee-operator
   /// of Sim(3).
   ///
-  SOPHUS_FUNC Tangent log() const {
+  [[nodiscard]] SOPHUS_FUNC Tangent log() const {
     // The derivation of the closed-form Sim(3) logarithm for is done
     // analogously to the closed-form solution of the SE(3) logarithm, see
     // J. Gallier, D. Xu, "Computing exponentials of skew symmetric matrices
@@ -171,7 +171,7 @@ class Sim3Base {
   /// where ``R`` is a 3x3 rotation matrix, ``s`` a scale factor, ``t`` a
   /// translation 3-vector and ``o`` a 3-column vector of zeros.
   ///
-  SOPHUS_FUNC Transformation matrix() const {
+  [[nodiscard]] SOPHUS_FUNC Transformation matrix() const {
     Transformation homogenious_matrix;
     homogenious_matrix.template topLeftCorner<3, 4>() = matrix3x4();
     homogenious_matrix.row(3) =
@@ -181,7 +181,7 @@ class Sim3Base {
 
   /// Returns the significant first three rows of the matrix above.
   ///
-  SOPHUS_FUNC Matrix<Scalar, 3, 4> matrix3x4() const {
+  [[nodiscard]] SOPHUS_FUNC Matrix<Scalar, 3, 4> matrix3x4() const {
     Matrix<Scalar, 3, 4> matrix;
     matrix << rxso3().matrix(), translation();
     return matrix;
@@ -203,7 +203,7 @@ class Sim3Base {
   /// details.
   ///
   template <typename OtherDerived>
-  SOPHUS_FUNC Sim3Product<OtherDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC Sim3Product<OtherDerived> operator*(
       Sim3Base<OtherDerived> const& other) const {
     return Sim3Product<OtherDerived>(
         rxso3() * other.rxso3(), translation() + rxso3() * other.translation());
@@ -220,7 +220,7 @@ class Sim3Base {
   template <
       typename PointDerived,
       typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 3>::value>>
-  SOPHUS_FUNC PointProduct<PointDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
     return rxso3() * p + translation();
   }
@@ -230,7 +230,7 @@ class Sim3Base {
   template <
       typename HPointDerived,
       typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 4>::value>>
-  SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
     const PointProduct<HPointDerived> tp =
         rxso3() * p.template head<3>() + p(3) * translation();
@@ -245,7 +245,7 @@ class Sim3Base {
   /// Origin ``o`` is rotated, scaled and translated
   /// Direction ``d`` is rotated
   ///
-  SOPHUS_FUNC Line operator*(Line const& l) const {
+  [[nodiscard]] SOPHUS_FUNC Line operator*(Line const& l) const {
     Line rotatedLine = rxso3() * l;
     return Line(rotatedLine.origin() + translation(), rotatedLine.direction());
   }
@@ -258,7 +258,7 @@ class Sim3Base {
   /// Normal vector ``n`` is rotated
   /// Offset ``d`` is adjusted for scale and translation
   ///
-  SOPHUS_FUNC Hyperplane operator*(Hyperplane const& p) const {
+  [[nodiscard]] SOPHUS_FUNC Hyperplane operator*(Hyperplane const& p) const {
     Hyperplane const rotated = rxso3() * p;
     return Hyperplane(rotated.normal(),
                       rotated.offset() - translation().dot(rotated.normal()));
@@ -277,8 +277,8 @@ class Sim3Base {
 
   /// Returns derivative of  this * Sim3::exp(x) w.r.t. x at x = 0
   ///
-  SOPHUS_FUNC Matrix<Scalar, num_parameters, DoF> Dx_this_mul_exp_x_at_0()
-      const {
+  [[nodiscard]] SOPHUS_FUNC Matrix<Scalar, num_parameters, DoF>
+  Dx_this_mul_exp_x_at_0() const {
     Matrix<Scalar, num_parameters, DoF> J;
     // clang-format off
     J << Matrix<Scalar, 4, 3>::Zero(), rxso3().Dx_this_mul_exp_x_at_0(),
@@ -292,7 +292,8 @@ class Sim3Base {
   /// It returns (q.imag[0], q.imag[1], q.imag[2], q.real, t[0], t[1], t[2]),
   /// with q being the quaternion, t the translation 3-vector.
   ///
-  SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params() const {
+  [[nodiscard]] SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params()
+      const {
     Sophus::Vector<Scalar, num_parameters> p;
     p << rxso3().params(), translation();
     return p;
@@ -308,31 +309,31 @@ class Sim3Base {
 
   /// Accessor of quaternion.
   ///
-  SOPHUS_FUNC QuaternionType const& quaternion() const {
+  [[nodiscard]] SOPHUS_FUNC QuaternionType const& quaternion() const {
     return rxso3().quaternion();
   }
 
   /// Returns Rotation matrix
   ///
-  SOPHUS_FUNC Matrix3<Scalar> rotationMatrix() const {
+  [[nodiscard]] SOPHUS_FUNC Matrix3<Scalar> rotationMatrix() const {
     return rxso3().rotationMatrix();
   }
 
   /// Mutator of SO3 group.
   ///
-  SOPHUS_FUNC RxSO3Type& rxso3() {
+  [[nodiscard]] SOPHUS_FUNC RxSO3Type& rxso3() {
     return static_cast<Derived*>(this)->rxso3();
   }
 
   /// Accessor of SO3 group.
   ///
-  SOPHUS_FUNC RxSO3Type const& rxso3() const {
+  [[nodiscard]] SOPHUS_FUNC RxSO3Type const& rxso3() const {
     return static_cast<Derived const*>(this)->rxso3();
   }
 
   /// Returns scale.
   ///
-  SOPHUS_FUNC Scalar scale() const { return rxso3().scale(); }
+  [[nodiscard]] SOPHUS_FUNC Scalar scale() const { return rxso3().scale(); }
 
   /// Setter of quaternion using rotation matrix ``R``, leaves scale as is.
   ///
@@ -358,13 +359,13 @@ class Sim3Base {
 
   /// Mutator of translation vector
   ///
-  SOPHUS_FUNC TranslationType& translation() {
+  [[nodiscard]] SOPHUS_FUNC TranslationType& translation() {
     return static_cast<Derived*>(this)->translation();
   }
 
   /// Accessor of translation vector
   ///
-  SOPHUS_FUNC TranslationType const& translation() const {
+  [[nodiscard]] SOPHUS_FUNC TranslationType const& translation() const {
     return static_cast<Derived const*>(this)->translation();
   }
 };
@@ -392,12 +393,12 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
 
   /// Default constructor initializes similarity transform to the identity.
   ///
-  SOPHUS_FUNC Sim3();
+  [[nodiscard]] SOPHUS_FUNC Sim3();
 
   /// Copy-like constructor from OtherDerived.
   ///
   template <class OtherDerived>
-  SOPHUS_FUNC Sim3(Sim3Base<OtherDerived> const& other)
+  [[nodiscard]] SOPHUS_FUNC Sim3(Sim3Base<OtherDerived> const& other)
       : rxso3_(other.rxso3()), translation_(other.translation()) {
     static_assert(std::is_same_v<typename OtherDerived::Scalar, Scalar>,
                   "must be same Scalar type");
@@ -406,8 +407,8 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// Constructor from RxSO3 and translation vector
   ///
   template <class OtherDerived, class D>
-  SOPHUS_FUNC Sim3(RxSO3Base<OtherDerived> const& rxso3,
-                   Eigen::MatrixBase<D> const& translation)
+  [[nodiscard]] SOPHUS_FUNC Sim3(RxSO3Base<OtherDerived> const& rxso3,
+                                 Eigen::MatrixBase<D> const& translation)
       : rxso3_(rxso3), translation_(translation) {
     static_assert(std::is_same_v<typename OtherDerived::Scalar, Scalar>,
                   "must be same Scalar type");
@@ -420,8 +421,8 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// Precondition: quaternion must not be close to zero.
   ///
   template <class D1, class D2>
-  SOPHUS_FUNC Sim3(Eigen::QuaternionBase<D1> const& quaternion,
-                   Eigen::MatrixBase<D2> const& translation)
+  [[nodiscard]] SOPHUS_FUNC Sim3(Eigen::QuaternionBase<D1> const& quaternion,
+                                 Eigen::MatrixBase<D2> const& translation)
       : rxso3_(quaternion), translation_(translation) {
     static_assert(std::is_same_v<typename D1::Scalar, Scalar>,
                   "must be same Scalar type");
@@ -434,7 +435,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// Precondition: Top-left 3x3 matrix needs to be "scaled-orthogonal" with
   ///               positive determinant. The last row must be ``(0, 0, 0, 1)``.
   ///
-  SOPHUS_FUNC explicit Sim3(Matrix<Scalar, 4, 4> const& T)
+  [[nodiscard]] SOPHUS_FUNC explicit Sim3(Matrix<Scalar, 4, 4> const& T)
       : rxso3_(T.template topLeftCorner<3, 3>()),
         translation_(T.template rightCols<1>().template head<3>()) {}
 
@@ -443,39 +444,41 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// using direct write access, the user needs to take care of that the
   /// quaternion is not set close to zero.
   ///
-  SOPHUS_FUNC Scalar* data() {
+  [[nodiscard]] SOPHUS_FUNC Scalar* data() {
     // rxso3_ and translation_ are laid out sequentially with no padding
     return rxso3_.data();
   }
 
   /// Const version of data() above.
   ///
-  SOPHUS_FUNC Scalar const* data() const {
+  [[nodiscard]] SOPHUS_FUNC Scalar const* data() const {
     // rxso3_ and translation_ are laid out sequentially with no padding
     return rxso3_.data();
   }
 
   /// Accessor of RxSO3
   ///
-  SOPHUS_FUNC RxSo3Member& rxso3() { return rxso3_; }
+  [[nodiscard]] SOPHUS_FUNC RxSo3Member& rxso3() { return rxso3_; }
 
   /// Mutator of RxSO3
   ///
-  SOPHUS_FUNC RxSo3Member const& rxso3() const { return rxso3_; }
+  [[nodiscard]] SOPHUS_FUNC RxSo3Member const& rxso3() const { return rxso3_; }
 
   /// Mutator of translation vector
   ///
-  SOPHUS_FUNC TranslationMember& translation() { return translation_; }
+  [[nodiscard]] SOPHUS_FUNC TranslationMember& translation() {
+    return translation_;
+  }
 
   /// Accessor of translation vector
   ///
-  SOPHUS_FUNC TranslationMember const& translation() const {
+  [[nodiscard]] SOPHUS_FUNC TranslationMember const& translation() const {
     return translation_;
   }
 
   /// Returns derivative of exp(x) wrt. x_i at x=0.
   ///
-  SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
+  [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x_at_0() {
     Sophus::Matrix<Scalar, num_parameters, DoF> J;
     // clang-format off
@@ -487,8 +490,8 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
 
   /// Returns derivative of exp(x) wrt. x.
   ///
-  SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF> Dx_exp_x(
-      const Tangent& a) {
+  [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
+  Dx_exp_x(const Tangent& a) {
     Vector3<Scalar> const omega = a.template segment<3>(3);
     Vector3<Scalar> const upsilon = a.template head<3>();
     Scalar const sigma = a[6];
@@ -541,7 +544,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
 
   /// Returns derivative of exp(x).matrix() wrt. ``x_i at x=0``.
   ///
-  SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int i) {
+  [[nodiscard]] SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int i) {
     return generator(i);
   }
 
@@ -558,7 +561,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// ``expmat(.)`` being the matrix exponential and ``hat(.)`` the hat-operator
   /// of Sim(3), see below.
   ///
-  SOPHUS_FUNC static Sim3<Scalar> exp(Tangent const& a) {
+  [[nodiscard]] SOPHUS_FUNC static Sim3<Scalar> exp(Tangent const& a) {
     // For the derivation of the exponential map of Sim(3) see
     // H. Strasdat, "Local Accuracy and Global Consistency for Efficient Visual
     // SLAM", PhD thesis, 2012.
@@ -618,7 +621,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   ///
   /// Precondition: ``i`` must be in [0, 6].
   ///
-  SOPHUS_FUNC static Transformation generator(int i) {
+  [[nodiscard]] SOPHUS_FUNC static Transformation generator(int i) {
     SOPHUS_ENSURE(i >= 0 || i <= 6, "i should be in range [0,6].");
     Tangent e;
     e.setZero();
@@ -639,7 +642,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   ///
   /// The corresponding inverse is the vee()-operator, see below.
   ///
-  SOPHUS_FUNC static Transformation hat(Tangent const& a) {
+  [[nodiscard]] SOPHUS_FUNC static Transformation hat(Tangent const& a) {
     Transformation Omega;
     Omega << RxSO3<Scalar>::hat(a.template tail<4>()), a.template head<3>(),
         Matrix<Scalar, 1, 4>::Zero();
@@ -655,7 +658,8 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// with ``[A,B] := AB-BA`` being the matrix commutator, ``hat(.)`` the
   /// hat()-operator and ``vee(.)`` the vee()-operator of Sim(3).
   ///
-  SOPHUS_FUNC static Tangent lieBracket(Tangent const& a, Tangent const& b) {
+  [[nodiscard]] SOPHUS_FUNC static Tangent lieBracket(Tangent const& a,
+                                                      Tangent const& b) {
     Vector3<Scalar> const upsilon1 = a.template head<3>();
     Vector3<Scalar> const upsilon2 = b.template head<3>();
     Vector3<Scalar> const omega1 = a.template segment<3>(3);
@@ -701,7 +705,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   ///                | -e  d  g  c |
   ///                |  0  0  0  0 |
   ///
-  SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
+  [[nodiscard]] SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
     Tangent upsilon_omega_sigma;
     upsilon_omega_sigma << Omega.template rightCols<1>().template head<3>(),
         RxSO3<Scalar>::vee(Omega.template topLeftCorner<3, 3>());
@@ -749,28 +753,33 @@ class Map<Sophus::Sim3<Scalar_>, Options>
   using Base::operator*=;
   using Base::operator*;
 
-  SOPHUS_FUNC explicit Map(Scalar* coeffs)
+  [[nodiscard]] SOPHUS_FUNC explicit Map(Scalar* coeffs)
       : rxso3_(coeffs),
         translation_(coeffs + Sophus::RxSO3<Scalar>::num_parameters) {}
 
   /// Mutator of RxSO3
   ///
-  SOPHUS_FUNC Map<Sophus::RxSO3<Scalar>, Options>& rxso3() { return rxso3_; }
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::RxSO3<Scalar>, Options>& rxso3() {
+    return rxso3_;
+  }
 
   /// Accessor of RxSO3
   ///
-  SOPHUS_FUNC Map<Sophus::RxSO3<Scalar>, Options> const& rxso3() const {
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::RxSO3<Scalar>, Options> const& rxso3()
+      const {
     return rxso3_;
   }
 
   /// Mutator of translation vector
   ///
-  SOPHUS_FUNC Map<Sophus::Vector3<Scalar>, Options>& translation() {
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::Vector3<Scalar>, Options>&
+  translation() {
     return translation_;
   }
 
   /// Accessor of translation vector
-  SOPHUS_FUNC Map<Sophus::Vector3<Scalar>, Options> const& translation() const {
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::Vector3<Scalar>, Options> const&
+  translation() const {
     return translation_;
   }
 
@@ -798,20 +807,21 @@ class Map<Sophus::Sim3<Scalar_> const, Options>
   using Base::operator*=;
   using Base::operator*;
 
-  SOPHUS_FUNC explicit Map(Scalar const* coeffs)
+  [[nodiscard]] SOPHUS_FUNC explicit Map(Scalar const* coeffs)
       : rxso3_(coeffs),
         translation_(coeffs + Sophus::RxSO3<Scalar>::num_parameters) {}
 
   /// Accessor of RxSO3
   ///
-  SOPHUS_FUNC Map<Sophus::RxSO3<Scalar> const, Options> const& rxso3() const {
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::RxSO3<Scalar> const, Options> const&
+  rxso3() const {
     return rxso3_;
   }
 
   /// Accessor of translation vector
   ///
-  SOPHUS_FUNC Map<Sophus::Vector3<Scalar> const, Options> const& translation()
-      const {
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::Vector3<Scalar> const, Options> const&
+  translation() const {
     return translation_;
   }
 

@@ -227,11 +227,11 @@ class SplineImpl {
     return parent_Ts_control_point_;
   }
 
-  int getNumSegments() const {
+  [[nodiscard]] int getNumSegments() const {
     return int(parent_Ts_control_point_.size()) - 1;
   }
 
-  double delta_t() const { return delta_t_; }
+  [[nodiscard]] double delta_t() const { return delta_t_; }
 
   void recomputeControlTangentVectors() {
     control_tagent_vectors_.clear();
@@ -299,9 +299,11 @@ class Spline {
     return impl_.Dt2_parent_T_spline(index_and_u.i, index_and_u.u);
   }
 
-  double t0() const { return t0_; }
+  [[nodiscard]] double t0() const { return t0_; }
 
-  double tmax() const { return t0_ + impl_.delta_t() * getNumSegments(); }
+  [[nodiscard]] double tmax() const {
+    return t0_ + impl_.delta_t() * getNumSegments();
+  }
 
   const std::vector<LieGroup>& parent_Ts_control_point() const {
     return impl_.parent_Ts_control_point();
@@ -315,7 +317,7 @@ class Spline {
     impl_.recomputeControlTangentVectors();
   }
 
-  int getNumSegments() const { return impl_.getNumSegments(); }
+  [[nodiscard]] int getNumSegments() const { return impl_.getNumSegments(); }
 
  private:
   struct IndexAndU {
@@ -323,7 +325,7 @@ class Spline {
     double u;
   };
 
-  double s(double t) const { return (t - t0_) / impl_.delta_t(); }
+  [[nodiscard]] double s(double t) const { return (t - t0_) / impl_.delta_t(); }
 
   IndexAndU index_and_u(double t) const {
     SOPHUS_ENSURE(t >= t0_, "{} vs. {}", t, t0_);

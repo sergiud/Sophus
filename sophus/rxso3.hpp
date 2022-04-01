@@ -123,7 +123,7 @@ class RxSO3Base {
   ///
   /// For RxSO(3), it simply returns the rotation matrix corresponding to ``A``.
   ///
-  SOPHUS_FUNC Adjoint Adj() const {
+  [[nodiscard]] SOPHUS_FUNC Adjoint Adj() const {
     Adjoint res;
     res << rotationMatrix(), Matrix<Scalar, 3, 1>::Zero(),
         Matrix<Scalar, 1, 4>::UnitW();
@@ -133,7 +133,7 @@ class RxSO3Base {
   /// Returns copy of instance casted to NewScalarType.
   ///
   template <class NewScalarType>
-  SOPHUS_FUNC RxSO3<NewScalarType> cast() const {
+  [[nodiscard]] SOPHUS_FUNC RxSO3<NewScalarType> cast() const {
     return RxSO3<NewScalarType>(quaternion().template cast<NewScalarType>());
   }
 
@@ -145,17 +145,19 @@ class RxSO3Base {
   /// Note: The first three Scalars represent the imaginary parts, while the
   /// forth Scalar represent the real part.
   ///
-  SOPHUS_FUNC Scalar* data() { return quaternion_nonconst().coeffs().data(); }
+  [[nodiscard]] SOPHUS_FUNC Scalar* data() {
+    return quaternion_nonconst().coeffs().data();
+  }
 
   /// Const version of data() above.
   ///
-  SOPHUS_FUNC Scalar const* data() const {
+  [[nodiscard]] SOPHUS_FUNC Scalar const* data() const {
     return quaternion().coeffs().data();
   }
 
   /// Returns group inverse.
   ///
-  SOPHUS_FUNC RxSO3<Scalar> inverse() const {
+  [[nodiscard]] SOPHUS_FUNC RxSO3<Scalar> inverse() const {
     return RxSO3<Scalar>(quaternion().inverse());
   }
 
@@ -169,11 +171,13 @@ class RxSO3Base {
   /// ``logmat(.)`` being the matrix logarithm and ``vee(.)`` the vee-operator
   /// of RxSO3.
   ///
-  SOPHUS_FUNC Tangent log() const { return logAndTheta().tangent; }
+  [[nodiscard]] SOPHUS_FUNC Tangent log() const {
+    return logAndTheta().tangent;
+  }
 
   /// As above, but also returns ``theta = |omega|``.
   ///
-  SOPHUS_FUNC TangentAndTheta logAndTheta() const {
+  [[nodiscard]] SOPHUS_FUNC TangentAndTheta logAndTheta() const {
     using std::log;
 
     Scalar scale = quaternion().squaredNorm();
@@ -190,7 +194,7 @@ class RxSO3Base {
   /// with ``det(R)=s^3``, thus a scaled rotation matrix ``R``  with scale
   /// ``s``.
   ///
-  SOPHUS_FUNC Transformation matrix() const {
+  [[nodiscard]] SOPHUS_FUNC Transformation matrix() const {
     Transformation sR;
 
     Scalar const vx_sq = quaternion().vec().x() * quaternion().vec().x();
@@ -237,7 +241,7 @@ class RxSO3Base {
   /// order to ensure the class invariant.
   ///
   template <typename OtherDerived>
-  SOPHUS_FUNC RxSO3Product<OtherDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC RxSO3Product<OtherDerived> operator*(
       RxSO3Base<OtherDerived> const& other) const {
     using std::sqrt;
     using ResultT = ReturnScalar<OtherDerived>;
@@ -273,7 +277,7 @@ class RxSO3Base {
   template <
       typename PointDerived,
       typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 3>::value>>
-  SOPHUS_FUNC PointProduct<PointDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
     // Follows http:///eigen.tuxfamily.org/bz/show_bug.cgi?id=459
     Scalar scale = quaternion().squaredNorm();
@@ -288,7 +292,7 @@ class RxSO3Base {
   template <
       typename HPointDerived,
       typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 4>::value>>
-  SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
     const auto rsp = *this * p.template head<3>();
     return HomogeneousPointProduct<HPointDerived>(rsp(0), rsp(1), rsp(2), p(3));
@@ -302,7 +306,7 @@ class RxSO3Base {
   /// Origin ``o`` is rotated and scaled
   /// Direction ``d`` is rotated (preserving it's norm)
   ///
-  SOPHUS_FUNC Line operator*(Line const& l) const {
+  [[nodiscard]] SOPHUS_FUNC Line operator*(Line const& l) const {
     return Line((*this) * l.origin(),
                 (*this) * l.direction() / quaternion().squaredNorm());
   }
@@ -315,7 +319,7 @@ class RxSO3Base {
   /// Normal vector ``n`` is rotated
   /// Offset ``d`` is scaled
   ///
-  SOPHUS_FUNC Hyperplane operator*(Hyperplane const& p) const {
+  [[nodiscard]] SOPHUS_FUNC Hyperplane operator*(Hyperplane const& p) const {
     const auto this_scale = scale();
     return Hyperplane((*this) * p.normal() / this_scale,
                       this_scale * p.offset());
@@ -340,7 +344,8 @@ class RxSO3Base {
   /// It returns (q.imag[0], q.imag[1], q.imag[2], q.real), with q being the
   /// quaternion.
   ///
-  SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params() const {
+  [[nodiscard]] SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params()
+      const {
     return quaternion().coeffs();
   }
 
@@ -360,13 +365,13 @@ class RxSO3Base {
 
   /// Accessor of quaternion.
   ///
-  SOPHUS_FUNC QuaternionType const& quaternion() const {
+  [[nodiscard]] SOPHUS_FUNC QuaternionType const& quaternion() const {
     return static_cast<Derived const*>(this)->quaternion();
   }
 
   /// Returns rotation matrix.
   ///
-  SOPHUS_FUNC Transformation rotationMatrix() const {
+  [[nodiscard]] SOPHUS_FUNC Transformation rotationMatrix() const {
     QuaternionTemporaryType norm_quad = quaternion();
     norm_quad.normalize();
     return norm_quad.toRotationMatrix();
@@ -374,8 +379,9 @@ class RxSO3Base {
 
   /// Returns scale.
   ///
-  SOPHUS_FUNC
-  Scalar scale() const { return quaternion().squaredNorm(); }
+  [[nodiscard]] SOPHUS_FUNC Scalar scale() const {
+    return quaternion().squaredNorm();
+  }
 
   /// Setter of quaternion using rotation matrix ``R``, leaves scale as is.
   ///
@@ -426,12 +432,14 @@ class RxSO3Base {
     quaternion_nonconst().coeffs() *= sqrt(saved_scale);
   }
 
-  SOPHUS_FUNC SO3<Scalar> so3() const { return SO3<Scalar>(quaternion()); }
+  [[nodiscard]] SOPHUS_FUNC SO3<Scalar> so3() const {
+    return SO3<Scalar>(quaternion());
+  }
 
   /// Returns derivative of  this * RxSO3::exp(x) wrt. x at x=0
   ///
-  SOPHUS_FUNC Matrix<Scalar, num_parameters, DoF> Dx_this_mul_exp_x_at_0()
-      const {
+  [[nodiscard]] SOPHUS_FUNC Matrix<Scalar, num_parameters, DoF>
+  Dx_this_mul_exp_x_at_0() const {
     Matrix<Scalar, num_parameters, DoF> J;
     Eigen::Quaternion<Scalar> const q = quaternion();
     J.col(3) = q.coeffs() * Scalar(0.5);
@@ -460,7 +468,7 @@ class RxSO3Base {
  private:
   /// Mutator of quaternion is private to ensure class invariant.
   ///
-  SOPHUS_FUNC QuaternionType& quaternion_nonconst() {
+  [[nodiscard]] SOPHUS_FUNC QuaternionType& quaternion_nonconst() {
     return static_cast<Derived*>(this)->quaternion_nonconst();
   }
 };
@@ -491,13 +499,13 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// Default constructor initializes quaternion to identity rotation and scale
   /// to 1.
   ///
-  SOPHUS_FUNC RxSO3()
+  [[nodiscard]] SOPHUS_FUNC RxSO3()
       : quaternion_(Scalar(1), Scalar(0), Scalar(0), Scalar(0)) {}
 
   /// Copy-like constructor from OtherDerived
   ///
   template <class OtherDerived>
-  SOPHUS_FUNC RxSO3(RxSO3Base<OtherDerived> const& other)
+  [[nodiscard]] SOPHUS_FUNC RxSO3(RxSO3Base<OtherDerived> const& other)
       : quaternion_(other.quaternion()) {}
 
   /// Constructor from scaled rotation matrix
@@ -505,7 +513,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// Precondition: rotation matrix need to be scaled orthogonal with
   /// determinant of ``s^3``.
   ///
-  SOPHUS_FUNC explicit RxSO3(Transformation const& sR) {
+  [[nodiscard]] SOPHUS_FUNC explicit RxSO3(Transformation const& sR) {
     this->setScaledRotationMatrix(sR);
   }
 
@@ -515,7 +523,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///               of 1 and ``scale`` must not be close to either zero or
   ///               infinity.
   ///
-  SOPHUS_FUNC RxSO3(Scalar const& scale, Transformation const& R)
+  [[nodiscard]] SOPHUS_FUNC RxSO3(Scalar const& scale, Transformation const& R)
       : quaternion_(R) {
     SOPHUS_ENSURE(scale >= Constants<Scalar>::epsilon(),
                   "Scale factor must be greater-equal epsilon.");
@@ -529,7 +537,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   /// Precondition: ``scale`` must not to be close to either zero or infinity.
   ///
-  SOPHUS_FUNC RxSO3(Scalar const& scale, SO3<Scalar> const& so3)
+  [[nodiscard]] SOPHUS_FUNC RxSO3(Scalar const& scale, SO3<Scalar> const& so3)
       : quaternion_(so3.unit_quaternion()) {
     SOPHUS_ENSURE(scale >= Constants<Scalar>::epsilon(),
                   "Scale factor must be greater-equal epsilon.");
@@ -544,7 +552,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// Precondition: quaternion must not be close to either zero or infinity.
   ///
   template <class D>
-  SOPHUS_FUNC explicit RxSO3(Eigen::QuaternionBase<D> const& quat)
+  [[nodiscard]] SOPHUS_FUNC explicit RxSO3(Eigen::QuaternionBase<D> const& quat)
       : quaternion_(quat) {
     static_assert(std::is_same_v<typename D::Scalar, Scalar>,
                   "must be same Scalar type.");
@@ -557,11 +565,13 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
 
   /// Accessor of quaternion.
   ///
-  SOPHUS_FUNC QuaternionMember const& quaternion() const { return quaternion_; }
+  [[nodiscard]] SOPHUS_FUNC QuaternionMember const& quaternion() const {
+    return quaternion_;
+  }
 
   /// Returns derivative of exp(x) wrt. x_i at x=0.
   ///
-  SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
+  [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x_at_0() {
     static Scalar const h(0.5);
     return h * Sophus::Matrix<Scalar, num_parameters, DoF>::Identity();
@@ -569,8 +579,8 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
 
   /// Returns derivative of exp(x) wrt. x.
   ///
-  SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF> Dx_exp_x(
-      const Tangent& a) {
+  [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
+  Dx_exp_x(const Tangent& a) {
     using std::exp;
     using std::sqrt;
     Sophus::Matrix<Scalar, num_parameters, DoF> J;
@@ -589,7 +599,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
 
   /// Returns derivative of exp(x).matrix() wrt. ``x_i at x=0``.
   ///
-  SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int i) {
+  [[nodiscard]] SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int i) {
     return generator(i);
   }
   /// Group exponential
@@ -602,7 +612,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// with ``expmat(.)`` being the matrix exponential and ``hat(.)`` being the
   /// hat()-operator of RSO3.
   ///
-  SOPHUS_FUNC static RxSO3<Scalar> exp(Tangent const& a) {
+  [[nodiscard]] SOPHUS_FUNC static RxSO3<Scalar> exp(Tangent const& a) {
     Scalar theta;
     return expAndTheta(a, &theta);
   }
@@ -611,8 +621,8 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   /// Precondition: ``theta`` must not be ``nullptr``.
   ///
-  SOPHUS_FUNC static RxSO3<Scalar> expAndTheta(Tangent const& a,
-                                               Scalar* theta) {
+  [[nodiscard]] SOPHUS_FUNC static RxSO3<Scalar> expAndTheta(Tangent const& a,
+                                                             Scalar* theta) {
     SOPHUS_ENSURE(theta != nullptr, "must not be nullptr.");
     using std::exp;
     using std::max;
@@ -656,7 +666,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   /// Precondition: ``i`` must be 0, 1, 2 or 3.
   ///
-  SOPHUS_FUNC static Transformation generator(int i) {
+  [[nodiscard]] SOPHUS_FUNC static Transformation generator(int i) {
     SOPHUS_ENSURE(i >= 0 && i <= 3, "i should be in range [0,3].");
     Tangent e;
     e.setZero();
@@ -678,7 +688,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   /// The corresponding inverse is the vee()-operator, see below.
   ///
-  SOPHUS_FUNC static Transformation hat(Tangent const& a) {
+  [[nodiscard]] SOPHUS_FUNC static Transformation hat(Tangent const& a) {
     Transformation A;
     // clang-format off
     A <<  a(3), -a(2),  a(1),
@@ -697,7 +707,8 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// with ``[A,B] := AB-BA`` being the matrix commutator, ``hat(.)`` the
   /// hat()-operator and ``vee(.)`` the vee()-operator of RxSO3.
   ///
-  SOPHUS_FUNC static Tangent lieBracket(Tangent const& a, Tangent const& b) {
+  [[nodiscard]] SOPHUS_FUNC static Tangent lieBracket(Tangent const& a,
+                                                      Tangent const& b) {
     Vector3<Scalar> const omega1 = a.template head<3>();
     Vector3<Scalar> const omega2 = b.template head<3>();
     Vector4<Scalar> res;
@@ -712,7 +723,8 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// hence the scale is in [0.5, 2].
   ///
   template <class UniformRandomBitGenerator>
-  static RxSO3 sampleUniform(UniformRandomBitGenerator& generator) {
+  [[nodiscard]] static RxSO3 sampleUniform(
+      UniformRandomBitGenerator& generator) {
     std::uniform_real_distribution<Scalar> uniform(Scalar(-1), Scalar(1));
     using std::exp2;
     return RxSO3(exp2(uniform(generator)),
@@ -732,13 +744,15 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///                |  c  d -a |
   ///                | -b  a  d |
   ///
-  SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
+  [[nodiscard]] SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
     using std::abs;
     return Tangent(Omega(2, 1), Omega(0, 2), Omega(1, 0), Omega(0, 0));
   }
 
  protected:
-  SOPHUS_FUNC QuaternionMember& quaternion_nonconst() { return quaternion_; }
+  [[nodiscard]] SOPHUS_FUNC QuaternionMember& quaternion_nonconst() {
+    return quaternion_;
+  }
 
   QuaternionMember quaternion_;
 };
@@ -770,17 +784,19 @@ class Map<Sophus::RxSO3<Scalar_>, Options>
   using Base::operator*=;
   using Base::operator*;
 
-  SOPHUS_FUNC explicit Map(Scalar* coeffs) : quaternion_(coeffs) {}
+  [[nodiscard]] SOPHUS_FUNC explicit Map(Scalar* coeffs)
+      : quaternion_(coeffs) {}
 
   /// Accessor of quaternion.
   ///
-  SOPHUS_FUNC
-  Map<Eigen::Quaternion<Scalar>, Options> const& quaternion() const {
+  [[nodiscard]] SOPHUS_FUNC Map<Eigen::Quaternion<Scalar>, Options> const&
+  quaternion() const {
     return quaternion_;
   }
 
  protected:
-  SOPHUS_FUNC Map<Eigen::Quaternion<Scalar>, Options>& quaternion_nonconst() {
+  [[nodiscard]] SOPHUS_FUNC Map<Eigen::Quaternion<Scalar>, Options>&
+  quaternion_nonconst() {
     return quaternion_;
   }
 
@@ -806,13 +822,13 @@ class Map<Sophus::RxSO3<Scalar_> const, Options>
   using Base::operator*=;
   using Base::operator*;
 
-  SOPHUS_FUNC
-  explicit Map(Scalar const* coeffs) : quaternion_(coeffs) {}
+  [[nodiscard]] SOPHUS_FUNC explicit Map(Scalar const* coeffs)
+      : quaternion_(coeffs) {}
 
   /// Accessor of quaternion.
   ///
-  SOPHUS_FUNC
-  Map<Eigen::Quaternion<Scalar> const, Options> const& quaternion() const {
+  [[nodiscard]] SOPHUS_FUNC Map<Eigen::Quaternion<Scalar> const, Options> const&
+  quaternion() const {
     return quaternion_;
   }
 

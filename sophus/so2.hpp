@@ -123,12 +123,12 @@ class SO2Base {
   ///
   /// It simply ``1``, since ``SO(2)`` is a commutative group.
   ///
-  SOPHUS_FUNC Adjoint Adj() const { return Scalar(1); }
+  [[nodiscard]] SOPHUS_FUNC Adjoint Adj() const { return Scalar(1); }
 
   /// Returns copy of instance casted to NewScalarType.
   ///
   template <class NewScalarType>
-  SOPHUS_FUNC SO2<NewScalarType> cast() const {
+  [[nodiscard]] SOPHUS_FUNC SO2<NewScalarType> cast() const {
     return SO2<NewScalarType>(unit_complex().template cast<NewScalarType>());
   }
 
@@ -137,15 +137,19 @@ class SO2Base {
   /// write access, the user needs to take care of that the complex number stays
   /// normalized.
   ///
-  SOPHUS_FUNC Scalar* data() { return unit_complex_nonconst().data(); }
+  [[nodiscard]] SOPHUS_FUNC Scalar* data() {
+    return unit_complex_nonconst().data();
+  }
 
   /// Const version of data() above.
   ///
-  SOPHUS_FUNC Scalar const* data() const { return unit_complex().data(); }
+  [[nodiscard]] SOPHUS_FUNC Scalar const* data() const {
+    return unit_complex().data();
+  }
 
   /// Returns group inverse.
   ///
-  SOPHUS_FUNC SO2<Scalar> inverse() const {
+  [[nodiscard]] SOPHUS_FUNC SO2<Scalar> inverse() const {
     return SO2<Scalar>(unit_complex().x(), -unit_complex().y());
   }
 
@@ -159,7 +163,7 @@ class SO2Base {
   /// ``logmat(.)`` being the matrix logarithm and ``vee(.)`` the vee-operator
   /// of SO(2).
   ///
-  SOPHUS_FUNC Scalar log() const {
+  [[nodiscard]] SOPHUS_FUNC Scalar log() const {
     using std::atan2;
     return atan2(unit_complex().y(), unit_complex().x());
   }
@@ -183,7 +187,7 @@ class SO2Base {
   /// For SO(2), the matrix representation is an orthogonal matrix ``R`` with
   /// ``det(R)=1``, thus the so-called "rotation matrix".
   ///
-  SOPHUS_FUNC Transformation matrix() const {
+  [[nodiscard]] SOPHUS_FUNC Transformation matrix() const {
     Scalar const& real = unit_complex().x();
     Scalar const& imag = unit_complex().y();
     Transformation R;
@@ -206,7 +210,7 @@ class SO2Base {
   /// Group multiplication, which is rotation concatenation.
   ///
   template <typename OtherDerived>
-  SOPHUS_FUNC SO2Product<OtherDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC SO2Product<OtherDerived> operator*(
       SO2Base<OtherDerived> const& other) const {
     using ResultT = ReturnScalar<OtherDerived>;
     Scalar const lhs_real = unit_complex().x();
@@ -241,7 +245,7 @@ class SO2Base {
   template <
       typename PointDerived,
       typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 2>::value>>
-  SOPHUS_FUNC PointProduct<PointDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
     Scalar const& real = unit_complex().x();
     Scalar const& imag = unit_complex().y();
@@ -257,7 +261,7 @@ class SO2Base {
   template <
       typename HPointDerived,
       typename = std::enable_if_t<IsFixedSizeVector<HPointDerived, 3>::value>>
-  SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
+  [[nodiscard]] SOPHUS_FUNC HomogeneousPointProduct<HPointDerived> operator*(
       Eigen::MatrixBase<HPointDerived> const& p) const {
     Scalar const& real = unit_complex().x();
     Scalar const& imag = unit_complex().y();
@@ -272,7 +276,7 @@ class SO2Base {
   ///
   /// Both direction ``d`` and origin ``o`` are rotated as a 2 dimensional point
   ///
-  SOPHUS_FUNC Line operator*(Line const& l) const {
+  [[nodiscard]] SOPHUS_FUNC Line operator*(Line const& l) const {
     return Line((*this) * l.origin(), (*this) * l.direction());
   }
 
@@ -287,7 +291,7 @@ class SO2Base {
   /// Note that in 2d-case hyper-planes are just another parametrization of
   /// lines
   ///
-  SOPHUS_FUNC Hyperplane operator*(Hyperplane const& p) const {
+  [[nodiscard]] SOPHUS_FUNC Hyperplane operator*(Hyperplane const& p) const {
     return Hyperplane((*this) * p.normal(), p.offset());
   }
 
@@ -303,8 +307,8 @@ class SO2Base {
 
   /// Returns derivative of  this * SO2::exp(x)  wrt. x at x=0.
   ///
-  SOPHUS_FUNC Matrix<Scalar, num_parameters, DoF> Dx_this_mul_exp_x_at_0()
-      const {
+  [[nodiscard]] SOPHUS_FUNC Matrix<Scalar, num_parameters, DoF>
+  Dx_this_mul_exp_x_at_0() const {
     return Matrix<Scalar, num_parameters, DoF>(-unit_complex()[1],
                                                unit_complex()[0]);
   }
@@ -313,7 +317,8 @@ class SO2Base {
   ///
   /// It returns (c[0], c[1]), with c being the unit complex number.
   ///
-  SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params() const {
+  [[nodiscard]] SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params()
+      const {
     return unit_complex();
   }
 
@@ -328,8 +333,7 @@ class SO2Base {
 
   /// Accessor of unit quaternion.
   ///
-  SOPHUS_FUNC
-  ComplexT const& unit_complex() const {
+  [[nodiscard]] SOPHUS_FUNC ComplexT const& unit_complex() const {
     return static_cast<Derived const*>(this)->unit_complex();
   }
 
@@ -337,8 +341,7 @@ class SO2Base {
   /// Mutator of unit_complex is private to ensure class invariant. That is
   /// the complex number must stay close to unit length.
   ///
-  SOPHUS_FUNC
-  ComplexT& unit_complex_nonconst() {
+  [[nodiscard]] SOPHUS_FUNC ComplexT& unit_complex_nonconst() {
     return static_cast<Derived*>(this)->unit_complex_nonconst();
   }
 };
@@ -368,19 +371,20 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
 
   /// Default constructor initializes unit complex number to identity rotation.
   ///
-  SOPHUS_FUNC SO2() : unit_complex_(Matrix<Scalar, 2, 1>::UnitX()) {}
+  [[nodiscard]] SOPHUS_FUNC SO2()
+      : unit_complex_(Matrix<Scalar, 2, 1>::UnitX()) {}
 
   /// Copy-like constructor from OtherDerived.
   ///
   template <class OtherDerived>
-  SOPHUS_FUNC SO2(SO2Base<OtherDerived> const& other)
+  [[nodiscard]] SOPHUS_FUNC SO2(SO2Base<OtherDerived> const& other)
       : unit_complex_(other.unit_complex()) {}
 
   /// Constructor from rotation matrix
   ///
   /// Precondition: rotation matrix need to be orthogonal with determinant of 1.
   ///
-  SOPHUS_FUNC explicit SO2(Transformation const& R)
+  [[nodiscard]] SOPHUS_FUNC explicit SO2(Transformation const& R)
       : unit_complex_(Scalar(0.5) * Matrix<Scalar, 2, 1>{R.diagonal().sum(),
                                                          R(1, 0) - R(0, 1)}) {
     SOPHUS_ENSURE(isOrthogonal(R), "R is not orthogonal:\n {}", R);
@@ -392,7 +396,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   ///
   /// Precondition: The pair must not be close to zero.
   ///
-  SOPHUS_FUNC SO2(Scalar const& real, Scalar const& imag)
+  [[nodiscard]] SOPHUS_FUNC SO2(Scalar const& real, Scalar const& imag)
       : unit_complex_(real, imag) {
     Base::normalize();
   }
@@ -402,7 +406,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   /// Precondition: The vector must not be close to zero.
   ///
   template <class D>
-  SOPHUS_FUNC explicit SO2(Eigen::MatrixBase<D> const& complex)
+  [[nodiscard]] SOPHUS_FUNC explicit SO2(Eigen::MatrixBase<D> const& complex)
       : unit_complex_(complex) {
     static_assert(std::is_same_v<typename D::Scalar, Scalar>,
                   "must be same Scalar type");
@@ -411,13 +415,13 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
 
   /// Constructor from an rotation angle.
   ///
-  SOPHUS_FUNC explicit SO2(Scalar theta) {
+  [[nodiscard]] SOPHUS_FUNC explicit SO2(Scalar theta) {
     unit_complex_nonconst() = SO2<Scalar>::exp(theta).unit_complex();
   }
 
   /// Accessor of unit complex number
   ///
-  SOPHUS_FUNC ComplexMember const& unit_complex() const {
+  [[nodiscard]] SOPHUS_FUNC ComplexMember const& unit_complex() const {
     return unit_complex_;
   }
 
@@ -430,7 +434,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   /// with ``expmat(.)`` being the matrix exponential and ``hat(.)`` being the
   /// hat()-operator of SO(2).
   ///
-  SOPHUS_FUNC static SO2<Scalar> exp(Tangent const& theta) {
+  [[nodiscard]] SOPHUS_FUNC static SO2<Scalar> exp(Tangent const& theta) {
     using std::cos;
     using std::sin;
     return SO2<Scalar>(cos(theta), sin(theta));
@@ -438,8 +442,8 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
 
   /// Returns derivative of exp(x) wrt. x.
   ///
-  SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF> Dx_exp_x(
-      Tangent const& theta) {
+  [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
+  Dx_exp_x(Tangent const& theta) {
     using std::cos;
     using std::sin;
     return Sophus::Matrix<Scalar, num_parameters, DoF>(-sin(theta), cos(theta));
@@ -447,14 +451,14 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
 
   /// Returns derivative of exp(x) wrt. x_i at x=0.
   ///
-  SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
+  [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x_at_0() {
     return Sophus::Matrix<Scalar, num_parameters, DoF>::UnitY();
   }
 
   /// Returns derivative of exp(x).matrix() wrt. ``x_i at x=0``.
   ///
-  SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int) {
+  [[nodiscard]] SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int) {
     return generator();
   }
 
@@ -465,7 +469,9 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   ///     |  0 -1 |
   ///     |  1  0 |
   ///
-  SOPHUS_FUNC static Transformation generator() { return hat(Scalar(1)); }
+  [[nodiscard]] SOPHUS_FUNC static Transformation generator() {
+    return hat(Scalar(1));
+  }
 
   /// hat-operator
   ///
@@ -480,7 +486,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   ///
   /// The corresponding inverse is the vee()-operator, see below.
   ///
-  SOPHUS_FUNC static Transformation hat(Tangent const& theta) {
+  [[nodiscard]] SOPHUS_FUNC static Transformation hat(Tangent const& theta) {
     Transformation Omega;
     // clang-format off
     Omega <<
@@ -493,8 +499,9 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   /// Returns closed SO2 given arbitrary 2x2 matrix.
   ///
   template <class S = Scalar>
-  static SOPHUS_FUNC std::enable_if_t<std::is_floating_point_v<S>, SO2>
-  fitToSO2(Transformation const& R) {
+  [[nodiscard]] static SOPHUS_FUNC
+      std::enable_if_t<std::is_floating_point_v<S>, SO2>
+      fitToSO2(Transformation const& R) {
     return SO2(makeRotationMatrix(R));
   }
 
@@ -503,14 +510,15 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   /// It returns the Lie bracket of SO(2). Since SO(2) is a commutative group,
   /// the Lie bracket is simple ``0``.
   ///
-  SOPHUS_FUNC static Tangent lieBracket(Tangent const&, Tangent const&) {
+  [[nodiscard]] SOPHUS_FUNC static Tangent lieBracket(Tangent const&,
+                                                      Tangent const&) {
     return Scalar(0);
   }
 
   /// Draw uniform sample from SO(2) manifold.
   ///
   template <class UniformRandomBitGenerator>
-  static SO2 sampleUniform(UniformRandomBitGenerator& generator) {
+  [[nodiscard]] static SO2 sampleUniform(UniformRandomBitGenerator& generator) {
     static_assert(IsUniformRandomBitGenerator<UniformRandomBitGenerator>::value,
                   "generator must meet the UniformRandomBitGenerator concept");
     std::uniform_real_distribution<Scalar> uniform(-Constants<Scalar>::pi(),
@@ -530,7 +538,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   ///                |  0 -a |
   ///                |  a  0 |
   ///
-  SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
+  [[nodiscard]] SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
     using std::abs;
     return Omega(1, 0);
   }
@@ -538,7 +546,9 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
  protected:
   /// Mutator of complex number is protected to ensure class invariant.
   ///
-  SOPHUS_FUNC ComplexMember& unit_complex_nonconst() { return unit_complex_; }
+  [[nodiscard]] SOPHUS_FUNC ComplexMember& unit_complex_nonconst() {
+    return unit_complex_;
+  }
 
   ComplexMember unit_complex_;
 };
@@ -571,21 +581,21 @@ class Map<Sophus::SO2<Scalar_>, Options>
   using Base::operator*=;
   using Base::operator*;
 
-  SOPHUS_FUNC
-  explicit Map(Scalar* coeffs) : unit_complex_(coeffs) {}
+  [[nodiscard]] SOPHUS_FUNC explicit Map(Scalar* coeffs)
+      : unit_complex_(coeffs) {}
 
   /// Accessor of unit complex number.
   ///
-  SOPHUS_FUNC
-  Map<Sophus::Vector2<Scalar>, Options> const& unit_complex() const {
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::Vector2<Scalar>, Options> const&
+  unit_complex() const {
     return unit_complex_;
   }
 
  protected:
   /// Mutator of unit_complex is protected to ensure class invariant.
   ///
-  SOPHUS_FUNC
-  Map<Sophus::Vector2<Scalar>, Options>& unit_complex_nonconst() {
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::Vector2<Scalar>, Options>&
+  unit_complex_nonconst() {
     return unit_complex_;
   }
 
@@ -611,12 +621,14 @@ class Map<Sophus::SO2<Scalar_> const, Options>
   using Base::operator*=;
   using Base::operator*;
 
-  SOPHUS_FUNC explicit Map(Scalar const* coeffs) : unit_complex_(coeffs) {}
+  [[nodiscard]] SOPHUS_FUNC explicit Map(Scalar const* coeffs)
+      : unit_complex_(coeffs) {}
 
   /// Accessor of unit complex number.
   ///
-  SOPHUS_FUNC Map<Sophus::Vector2<Scalar> const, Options> const& unit_complex()
-      const {
+
+  [[nodiscard]] SOPHUS_FUNC Map<Sophus::Vector2<Scalar> const, Options> const&
+  unit_complex() const {
     return unit_complex_;
   }
 
