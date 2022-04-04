@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.14)
 project (Sophus
-  VERSION 1.1.0
+  VERSION 2.0.0
   DESCRIPTION "C++ implementation of Lie Groups using Eigen"
   HOMEPAGE_URL https://github.com/sergiud/Sophus
   LANGUAGES CXX
