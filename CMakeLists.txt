@@ -99,7 +99,7 @@ configure_package_config_file (
 write_basic_package_version_file (
   SophusConfigVersion.cmake
   VERSION ${Sophus_VERSION}
-  COMPATIBILITY SameMajorVersion
+  COMPATIBILITY AnyNewerVersion
   ARCH_INDEPENDENT
 )
 
