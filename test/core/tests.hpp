@@ -50,6 +50,7 @@ class LieGroupTests {
   using Line = typename LieGroup::Line;
   using Hyperplane = typename LieGroup::Hyperplane;
   using Adjoint = typename LieGroup::Adjoint;
+  static int constexpr Dim = LieGroup::Dim;
   static int constexpr N = LieGroup::N;
   static int constexpr DoF = LieGroup::DoF;
   static int constexpr num_parameters = LieGroup::num_parameters;
@@ -90,7 +91,7 @@ class LieGroupTests {
   std::enable_if_t<std::is_same<G, SO3<Scalar>>::value ||
                        std::is_same<G, SE3<Scalar>>::value,
                    bool>
-  jacobianTest() {
+  leftJacobianTest() {
     bool passed = true;
     for (const auto& x : tangent_vec_) {
       LieGroup const inv_exp_x = LieGroup::exp(x).inverse();
@@ -120,11 +121,27 @@ class LieGroupTests {
   }
 
   template <class G = LieGroup>
-  std::enable_if_t<!(std::is_same<G, SO3<Scalar>>::value ||
-                     std::is_same<G, SE3<Scalar>>::value),
-                   bool>
-  jacobianTest() {
+  std::enable_if_t<
+      !(std::is_same_v<G, SO3<Scalar>> || std::is_same_v<G, SE3<Scalar>>), bool>
+  leftJacobianTest() {
     return true;
+  }
+
+  bool moreJacobiansTest() {
+    bool passed = true;
+    for (auto const& point : point_vec_) {
+      Matrix<Scalar, Dim, DoF> J = LieGroup::Dx_exp_x_times_point_at_0(point);
+      Tangent t;
+      setToZero(t);
+      Matrix<Scalar, Dim, DoF> const J_num =
+          vectorFieldNumDiff<Scalar, Dim, DoF>(
+              [point](Tangent const& x) { return LieGroup::exp(x) * point; },
+              t);
+
+      SOPHUS_TEST_APPROX(passed, J, J_num, kSmallEpsSqrt,
+                         "Dx_exp_x_times_point_at_0");
+    }
+    return passed;
   }
 
   bool contructorAndAssignmentTest() {
@@ -238,6 +255,17 @@ class LieGroupTests {
                          "Dx_this_mul_exp_x_at_0 case: %", i);
     }
 
+    for (size_t i = 0; i < group_vec_.size(); ++i) {
+      LieGroup T = group_vec_[i];
+
+      Eigen::Matrix<Scalar, DoF, DoF> J =
+          T.Dx_log_this_inv_by_x_at_this() * T.Dx_this_mul_exp_x_at_0();
+      Eigen::Matrix<Scalar, DoF, DoF> J_exp =
+          Eigen::Matrix<Scalar, DoF, DoF>::Identity();
+
+      SOPHUS_TEST_APPROX(passed, J, J_exp, kSmallEpsSqrt,
+                         "Dy_log_this_inv_by_at_x case: %", i);
+    }
     return passed;
   }
 
@@ -548,7 +576,7 @@ class LieGroupTests {
           control_poses.push_back(T_world_inter);
         }
 
-        SplineImpl<LieGroup> spline(control_poses, 1.0);
+        BasisSplineImpl<LieGroup> spline(control_poses, 1.0);
 
         LieGroup T = spline.parent_T_spline(0.0, 1.0);
         LieGroup T2 = spline.parent_T_spline(1.0, 0.0);
@@ -578,7 +606,7 @@ class LieGroupTests {
         for (double frac : {0.01, 0.25, 0.5, 0.9, 0.99}) {
           double t0 = 1.0;
           double delta_t = 0.1;
-          Spline<LieGroup> spline(control_poses, t0, delta_t);
+          BasisSpline<LieGroup> spline(control_poses, t0, delta_t);
           double t = t0 + frac * delta_t;
 
           Transformation Dt_parent_T_spline = spline.Dt_parent_T_spline(t);
@@ -639,7 +667,8 @@ class LieGroupTests {
     passed &= interpolateAndMeanTest();
     passed &= testRandomSmoke();
     passed &= testSpline();
-    passed &= jacobianTest();
+    passed &= leftJacobianTest();
+    passed &= moreJacobiansTest();
     return passed;
   }
 

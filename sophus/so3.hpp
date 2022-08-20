@@ -1,8 +1,7 @@
 /// @file
 /// Special orthogonal group SO(3) - rotation in 3d.
 
-#ifndef SOPHUS_SO3_HPP
-#define SOPHUS_SO3_HPP
+#pragma once
 
 #include <optional>
 
@@ -90,6 +89,9 @@ class SO3Base {
   static int constexpr num_parameters = 4;
   /// Group transformations are 3x3 matrices.
   static int constexpr N = 3;
+  /// Points are 3-dimensional
+  static int constexpr Dim = 3;
+
   using Transformation = Matrix<Scalar, N, N>;
   using Point = Vector3<Scalar>;
   using HomogeneousPoint = Vector4<Scalar>;
@@ -221,6 +223,20 @@ class SO3Base {
     return J;
   }
 
+  /// Returns derivative of log(this^{-1} * x) by x at x=this.
+  ///
+  SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
+      const {
+    auto& q = unit_quaternion();
+    Matrix<Scalar, DoF, num_parameters> J;
+    // clang-format off
+    J << q.w(),  q.z(), -q.y(), -q.x(),
+        -q.z(),  q.w(),  q.x(), -q.y(),
+         q.y(), -q.x(),  q.w(), -q.z();
+    // clang-format on
+    return J * Scalar(2.);
+  }
+
   /// Returns internal parameters of SO(3).
   ///
   /// It returns (q.imag[0], q.imag[1], q.imag[2], q.real), with q being the
@@ -292,7 +308,8 @@ class SO3Base {
       // theta - pi = atan(sin(theta - pi), cos(theta - pi))
       //            = atan(-sin(theta), -cos(theta))
       //
-      Scalar atan_nbyw = (w < Scalar(0)) ? atan2(-n, -w) : atan2(n, w);
+      Scalar atan_nbyw =
+          (w < Scalar(0)) ? Scalar(atan2(-n, -w)) : Scalar(atan2(n, w));
       two_atan_nbyw_by_n = Scalar(2) * atan_nbyw / n;
       J.theta = two_atan_nbyw_by_n * n;
     }
@@ -644,6 +661,13 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     return J;
   }
 
+  /// Returns derivative of exp(x) * p wrt. x_i at x=0.
+  ///
+  SOPHUS_FUNC static Sophus::Matrix<Scalar, 3, DoF> Dx_exp_x_times_point_at_0(
+      Point const& point) {
+    return hat(-point);
+  }
+
   /// Returns derivative of exp(x).matrix() wrt. ``x_i at x=0``.
   ///
   [[nodiscard]] SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int i) {
@@ -940,5 +964,3 @@ class Map<Sophus::SO3<Scalar_> const, Options>
   Map<Eigen::Quaternion<Scalar> const, Options> const unit_quaternion_;
 };
 }  // namespace Eigen
-
-#endif

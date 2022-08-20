@@ -7,6 +7,7 @@
 #include <complex>
 #include <optional>
 
+#include "cartesian.hpp"
 #include "common.hpp"
 #include "rxso2.hpp"
 #include "rxso3.hpp"
@@ -63,6 +64,24 @@ template <class SequenceContainer, class Scalar>
 std::optional<typename SequenceContainer::value_type> average(
     SequenceContainer const& foo_Ts_bar);
 #else
+
+// Mean implementation for Cartesian.
+template <class SequenceContainer, int Dim = SequenceContainer::value_type::DoF,
+          class Scalar = typename SequenceContainer::value_type::Scalar>
+std::enable_if_t<std::is_same_v<typename SequenceContainer::value_type,
+                                Cartesian<Scalar, Dim> >,
+                 std::optional<typename SequenceContainer::value_type> >
+average(SequenceContainer const& foo_Ts_bar) {
+  size_t N = std::distance(std::begin(foo_Ts_bar), std::end(foo_Ts_bar));
+  SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
+
+  Sophus::Vector<Scalar, Dim> average;
+  average.setZero();
+  for (Cartesian<Scalar, Dim> const& foo_T_bar : foo_Ts_bar) {
+    average += foo_T_bar.params();
+  }
+  return Cartesian<Scalar, Dim>(average / Scalar(N));
+}
 
 // Mean implementation for SO(2).
 template <class SequenceContainer,
@@ -214,4 +233,4 @@ average(SequenceContainer const& foo_Ts_bar, int max_num_iterations = 20) {
 
 }  // namespace Sophus
 
-#endif  // SOPHUS_AVERAGE_HPP
+#endif

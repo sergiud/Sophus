@@ -70,6 +70,8 @@ class SE2Base {
   static int constexpr num_parameters = 4;
   /// Group transformations are 3x3 matrices.
   static int constexpr N = 3;
+  /// Points are 2-dimensional
+  static int constexpr Dim = 2;
   using Transformation = Matrix<Scalar, N, N>;
   using Point = Vector2<Scalar>;
   using HomogeneousPoint = Vector3<Scalar>;
@@ -138,6 +140,18 @@ class SE2Base {
     J(3, 0) = c[1];
     J(3, 1) = c[0];
     J(3, 2) = o;
+    return J;
+  }
+
+  /// Returns derivative of log(this^{-1} * x) by x at x=this.
+  ///
+  SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
+      const {
+    Matrix<Scalar, DoF, num_parameters> J;
+    J.template block<2, 2>(0, 0).setZero();
+    J.template block<2, 2>(0, 2) = so2().inverse().matrix();
+    J.template block<1, 2>(2, 0) = so2().Dx_log_this_inv_by_x_at_this();
+    J.template block<1, 2>(2, 2).setZero();
     return J;
   }
 
@@ -500,8 +514,10 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
       Scalar const i(1);
 
       // clang-format off
-      J << o, o, o, o, o, i, i, o, -Scalar(0.5) * upsilon[1], o, i,
-          Scalar(0.5) * upsilon[0];
+      J << o, o, o,
+           o, o, i,
+           i, o, -Scalar(0.5) * upsilon[1],
+           o, i,  Scalar(0.5) * upsilon[0];
       // clang-format on
       return J;
     }
@@ -544,8 +560,21 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
     Scalar const i(1);
 
     // clang-format off
-    J << o, o, o, o, o, i, i, o, o, o, i, o;
+    J << o, o, o,
+         o, o, i,
+         i, o, o,
+         o, i, o;
     // clang-format on
+    return J;
+  }
+
+  /// Returns derivative of exp(x) * p wrt. x_i at x=0.
+  ///
+  SOPHUS_FUNC static Sophus::Matrix<Scalar, 2, DoF> Dx_exp_x_times_point_at_0(
+      Point const& point) {
+    Sophus::Matrix<Scalar, 2, DoF> J;
+    J << Sophus::Matrix2<Scalar>::Identity(),
+        Sophus::SO2<Scalar>::Dx_exp_x_times_point_at_0(point);
     return J;
   }
 
@@ -740,7 +769,8 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
 };
 
 template <class Scalar, int Options>
-SE2<Scalar, Options>::SE2() : translation_(TranslationMember::Zero()) {
+SOPHUS_FUNC SE2<Scalar, Options>::SE2()
+    : translation_(TranslationMember::Zero()) {
   static_assert(std::is_standard_layout_v<SE2>,
                 "Assume standard layout for the use of offsetof check below.");
   static_assert(

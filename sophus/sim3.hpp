@@ -1,8 +1,7 @@
 /// @file
 /// Similarity group Sim(3) - scaling, rotation and translation in 3d.
 
-#ifndef SOPHUS_SIM3_HPP
-#define SOPHUS_SIM3_HPP
+#pragma once
 
 #include "rxso3.hpp"
 #include "sim_details.hpp"
@@ -72,6 +71,8 @@ class Sim3Base {
   static int constexpr num_parameters = 7;
   /// Group transformations are 4x4 matrices.
   static int constexpr N = 4;
+  /// Points are 3-dimensional
+  static int constexpr Dim = 3;
   using Transformation = Matrix<Scalar, N, N>;
   using Point = Vector3<Scalar>;
   using HomogeneousPoint = Vector4<Scalar>;
@@ -287,6 +288,18 @@ class Sim3Base {
     return J;
   }
 
+  /// Returns derivative of log(this^{-1} * x) by x at x=this.
+  ///
+  SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
+      const {
+    Matrix<Scalar, DoF, num_parameters> J;
+    J.template block<3, 4>(0, 0).setZero();
+    J.template block<3, 3>(0, 4) = rxso3().inverse().matrix();
+    J.template block<4, 4>(3, 0) = rxso3().Dx_log_this_inv_by_x_at_this();
+    J.template block<4, 3>(3, 4).setZero();
+    return J;
+  }
+
   /// Returns internal parameters of Sim(3).
   ///
   /// It returns (q.imag[0], q.imag[1], q.imag[2], q.real, t[0], t[1], t[2]),
@@ -407,8 +420,9 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// Constructor from RxSO3 and translation vector
   ///
   template <class OtherDerived, class D>
-  [[nodiscard]] SOPHUS_FUNC Sim3(RxSO3Base<OtherDerived> const& rxso3,
-                                 Eigen::MatrixBase<D> const& translation)
+  [[nodiscard]] SOPHUS_FUNC explicit Sim3(
+      RxSO3Base<OtherDerived> const& rxso3,
+      Eigen::MatrixBase<D> const& translation)
       : rxso3_(rxso3), translation_(translation) {
     static_assert(std::is_same_v<typename OtherDerived::Scalar, Scalar>,
                   "must be same Scalar type");
@@ -421,14 +435,25 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// Precondition: quaternion must not be close to zero.
   ///
   template <class D1, class D2>
-  [[nodiscard]] SOPHUS_FUNC Sim3(Eigen::QuaternionBase<D1> const& quaternion,
-                                 Eigen::MatrixBase<D2> const& translation)
+  [[nodiscard]] SOPHUS_FUNC explicit Sim3(
+      Eigen::QuaternionBase<D1> const& quaternion,
+      Eigen::MatrixBase<D2> const& translation)
       : rxso3_(quaternion), translation_(translation) {
     static_assert(std::is_same_v<typename D1::Scalar, Scalar>,
                   "must be same Scalar type");
     static_assert(std::is_same_v<typename D2::Scalar, Scalar>,
                   "must be same Scalar type");
   }
+
+  /// Constructor from scale factor, unit quaternion, and translation vector.
+  ///
+  /// Precondition: quaternion must not be close to zero.
+  ///
+  template <class D1, class D2>
+  SOPHUS_FUNC explicit Sim3(Scalar const& scale,
+                            Eigen::QuaternionBase<D1> const& unit_quaternion,
+                            Eigen::MatrixBase<D2> const& translation)
+      : Sim3(RxSO3<Scalar>(scale, unit_quaternion), translation) {}
 
   /// Constructor from 4x4 matrix
   ///
@@ -540,6 +565,16 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
                                     C_dsigma * Matrix3<Scalar>::Identity()) *
                                    upsilon;
 
+    return J;
+  }
+
+  /// Returns derivative of exp(x) * p wrt. x_i at x=0.
+  ///
+  SOPHUS_FUNC static Sophus::Matrix<Scalar, 3, DoF> Dx_exp_x_times_point_at_0(
+      Point const& point) {
+    Sophus::Matrix<Scalar, 3, DoF> J;
+    J << Sophus::Matrix3<Scalar>::Identity(),
+        Sophus::RxSO3<Scalar>::Dx_exp_x_times_point_at_0(point);
     return J;
   }
 
@@ -719,7 +754,8 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
 };
 
 template <class Scalar, int Options>
-Sim3<Scalar, Options>::Sim3() : translation_(TranslationMember::Zero()) {
+SOPHUS_FUNC Sim3<Scalar, Options>::Sim3()
+    : translation_(TranslationMember::Zero()) {
   static_assert(std::is_standard_layout_v<Sim3>,
                 "Assume standard layout for the use of offsetof check below.");
   static_assert(
@@ -831,5 +867,3 @@ class Map<Sophus::Sim3<Scalar_> const, Options>
   Map<Sophus::Vector3<Scalar> const, Options> const translation_;
 };
 }  // namespace Eigen
-
-#endif

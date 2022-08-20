@@ -1,5 +1,4 @@
-#ifndef SOPHUS_SIM_DETAILS_HPP
-#define SOPHUS_SIM_DETAILS_HPP
+#pragma once
 
 #include "types.hpp"
 
@@ -188,5 +187,3 @@ Matrix<Scalar, N, N> calcWInv(Matrix<Scalar, N, N> const &Omega,
 
 }  // namespace details
 }  // namespace Sophus
-
-#endif

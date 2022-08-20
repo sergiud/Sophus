@@ -6,7 +6,7 @@ set -e # exit on error
 cmake --version
 
 sudo apt-get -qq update
-sudo apt-get install gfortran libc++-dev libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev libceres-dev
+sudo apt-get install gfortran libc++-dev libgoogle-glog-dev libatlas-base-dev libsuitesparse-dev libceres-dev ccache
 wget https://gitlab.com/libeigen/eigen/-/archive/3.3.4/eigen-3.3.4.tar.bz2
 tar xvf eigen-3.3.4.tar.bz2
 mkdir build-eigen
@@ -17,7 +17,7 @@ cd ..
 
 git clone https://ceres-solver.googlesource.com/ceres-solver ceres-solver
 cd ceres-solver
-git reset --hard 399cda773035d99eaf1f4a129a666b3c4df9d1b1
+git reset --hard b0aef211db734379319c19c030e734d6e23436b0
 mkdir build
 cd build
 ccache -s

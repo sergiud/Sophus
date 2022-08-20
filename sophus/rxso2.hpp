@@ -1,8 +1,7 @@
 /// @file
 /// Direct product R X SO(2) - rotation and scaling in 2d.
 
-#ifndef SOPHUS_RXSO2_HPP
-#define SOPHUS_RXSO2_HPP
+#pragma once
 
 #include "so2.hpp"
 
@@ -91,6 +90,8 @@ class RxSO2Base {
   static int constexpr num_parameters = 2;
   /// Group transformations are 2x2 matrices.
   static int constexpr N = 2;
+  /// Points are 2-dimensional
+  static int constexpr Dim = 2;
   using Transformation = Matrix<Scalar, N, N>;
   using Point = Vector2<Scalar>;
   using HomogeneousPoint = Vector3<Scalar>;
@@ -316,6 +317,16 @@ class RxSO2Base {
     return J;
   }
 
+  /// Returns derivative of log(this^{-1} * x) by x at x=this.
+  ///
+  SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
+      const {
+    Matrix<Scalar, DoF, num_parameters> J;
+    const Scalar norm_sq_inv = Scalar(1.) / complex().squaredNorm();
+    J << -complex().y(), complex().x(), complex().x(), complex().y();
+    return J * norm_sq_inv;
+  }
+
   /// Returns internal parameters of RxSO(2).
   ///
   /// It returns (c[0], c[1]), with c being the  complex number.
@@ -521,11 +532,21 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
         .reverse();
   }
 
+  /// Returns derivative of exp(x) * p wrt. x_i at x=0.
+  ///
+  SOPHUS_FUNC static Sophus::Matrix<Scalar, 2, DoF> Dx_exp_x_times_point_at_0(
+      Point const& point) {
+    Sophus::Matrix<Scalar, 2, DoF> j;
+    j << Sophus::SO2<Scalar>::Dx_exp_x_times_point_at_0(point), point;
+    return j;
+  }
+
   /// Returns derivative of exp(x).matrix() wrt. ``x_i at x=0``.
   ///
   [[nodiscard]] SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int i) {
     return generator(i);
   }
+
   /// Group exponential
   ///
   /// This functions takes in an element of tangent space (= rotation angle
@@ -719,5 +740,3 @@ class Map<Sophus::RxSO2<Scalar_> const, Options>
   Map<Sophus::Vector2<Scalar> const, Options> const complex_;
 };
 }  // namespace Eigen
-
-#endif  /// SOPHUS_RXSO2_HPP

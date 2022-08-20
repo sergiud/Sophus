@@ -70,6 +70,8 @@ class SE3Base {
   static int constexpr num_parameters = 7;
   /// Group transformations are 4x4 matrices.
   static int constexpr N = 4;
+  /// Points are 3-dimensional
+  static int constexpr Dim = 3;
   using Transformation = Matrix<Scalar, N, N>;
   using Point = Vector3<Scalar>;
   using HomogeneousPoint = Vector4<Scalar>;
@@ -201,6 +203,18 @@ class SE3Base {
     J(6, 3) = 0;
     J(6, 4) = 0;
     J(6, 5) = 0;
+    return J;
+  }
+
+  /// Returns derivative of log(this^{-1} * x) by x at x=this.
+  ///
+  SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
+      const {
+    Matrix<Scalar, DoF, num_parameters> J;
+    J.template block<3, 4>(0, 0).setZero();
+    J.template block<3, 3>(0, 4) = so3().inverse().matrix();
+    J.template block<3, 4>(3, 0) = so3().Dx_log_this_inv_by_x_at_this();
+    J.template block<3, 3>(3, 4).setZero();
     return J;
   }
 
@@ -788,12 +802,13 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
     Scalar const i(1);
 
     // clang-format off
-    J << o, o, o, h, o, o, o,
-         o, o, o, h, o, o, o,
-         o, o, o, h, o, o, o,
-         o, o, o, i, o, o, o,
-         o, o, o, i, o, o, o,
-         o, o, o, i, o, o, o;
+    J << o, o, o, h, o, o,
+         o, o, o, o, h, o,
+	 o, o, o, o, o, h,
+	 o, o, o, o, o, o,
+	 i, o, o, o, o, o,
+	 o, i, o, o, o, o,
+	 o, o, i, o, o, o;
     // clang-format on
     return J;
   }
@@ -802,6 +817,16 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC static Transformation Dxi_exp_x_matrix_at_0(int i) {
     return generator(i);
+  }
+
+  /// Returns derivative of exp(x) * p wrt. x_i at x=0.
+  ///
+  SOPHUS_FUNC static Sophus::Matrix<Scalar, 3, DoF> Dx_exp_x_times_point_at_0(
+      Point const& point) {
+    Sophus::Matrix<Scalar, 3, DoF> J;
+    J << Sophus::Matrix3<Scalar>::Identity(),
+        Sophus::SO3<Scalar>::Dx_exp_x_times_point_at_0(point);
+    return J;
   }
 
   /// Group exponential
@@ -827,7 +852,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
     return SE3<Scalar>(so3, V * a.template head<3>());
   }
 
-  /// Returns closest SE3 given arbirary 4x4 matrix.
+  /// Returns closest SE3 given arbitrary 4x4 matrix.
   ///
   template <class S = Scalar>
   [[nodiscard]] SOPHUS_FUNC static std::enable_if_t<std::is_floating_point_v<S>,
@@ -1013,7 +1038,8 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
 };
 
 template <class Scalar, int Options>
-SE3<Scalar, Options>::SE3() : translation_(TranslationMember::Zero()) {
+SOPHUS_FUNC SE3<Scalar, Options>::SE3()
+    : translation_(TranslationMember::Zero()) {
   static_assert(std::is_standard_layout_v<SE3>,
                 "Assume standard layout for the use of offsetof check below.");
   static_assert(

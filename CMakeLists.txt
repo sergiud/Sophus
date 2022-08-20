@@ -23,6 +23,10 @@ add_library (Sophus::Sophus ALIAS sophus)
 
 target_sources (sophus PRIVATE
   sophus/average.hpp
+  sophus/cartesian.hpp
+  sophus/ceres_local_parameterization.hpp
+  sophus/ceres_manifold.hpp
+  sophus/ceres_typetraits.hpp
   sophus/common.hpp
   sophus/geometry.hpp
   sophus/interpolate.hpp
