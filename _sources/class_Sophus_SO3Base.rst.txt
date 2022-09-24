@@ -50,6 +50,7 @@ Overview
 		static constexpr int :ref:`DoF<doxid-class_sophus_1_1_s_o3_base_1af7f4a85af50fbb862737c1bae89cb285>` = 3;
 		static constexpr int :ref:`num_parameters<doxid-class_sophus_1_1_s_o3_base_1adcced501092a9e6652ea9998b179f860>` = 4;
 		static constexpr int :ref:`N<doxid-class_sophus_1_1_s_o3_base_1ab80bb53a6a6dd721c668ac55e8bffa15>` = 3;
+		static constexpr int :ref:`Dim<doxid-class_sophus_1_1_s_o3_base_1a0da207bbbf7a8118c4249a2ba42242e3>` = 3;
 
 		// methods
 	
@@ -70,6 +71,7 @@ Overview
 		:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>`* :ref:`data<doxid-class_sophus_1_1_s_o3_base_1a947393dc983df54f9b9085bbd4d78b26>`();
 		:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>` const* :ref:`data<doxid-class_sophus_1_1_s_o3_base_1a1bd5623f64eb01f75e5484cc84046d12>`() const;
 		:ref:`Matrix<doxid-namespace_sophus_1a6da48bb60b569fdd4619fcd8f5fb2498>`<:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>`, :ref:`num_parameters<doxid-class_sophus_1_1_s_o3_base_1adcced501092a9e6652ea9998b179f860>`, :ref:`DoF<doxid-class_sophus_1_1_s_o3_base_1af7f4a85af50fbb862737c1bae89cb285>`> :ref:`Dx_this_mul_exp_x_at_0<doxid-class_sophus_1_1_s_o3_base_1a1c2ff1ac40f4f15c62fef4a04377c40f>`() const;
+		:ref:`Matrix<doxid-namespace_sophus_1a6da48bb60b569fdd4619fcd8f5fb2498>`<:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>`, :ref:`DoF<doxid-class_sophus_1_1_s_o3_base_1af7f4a85af50fbb862737c1bae89cb285>`, :ref:`num_parameters<doxid-class_sophus_1_1_s_o3_base_1adcced501092a9e6652ea9998b179f860>`> :ref:`Dx_log_this_inv_by_x_at_this<doxid-class_sophus_1_1_s_o3_base_1ae083a71889677a2106f31de30b5eb134>`() const;
 		:ref:`Sophus::Vector<doxid-namespace_sophus_1abf9f6f1b37fa7bef4d2df65d63154cdf>`<:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>`, :ref:`num_parameters<doxid-class_sophus_1_1_s_o3_base_1adcced501092a9e6652ea9998b179f860>`> :ref:`params<doxid-class_sophus_1_1_s_o3_base_1a2739a6ff4d2f97b6c08cb7e2aa962ffd>`() const;
 		:ref:`SO3<doxid-class_sophus_1_1_s_o3>`<:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>`> :ref:`inverse<doxid-class_sophus_1_1_s_o3_base_1a80b4d61873aca0991a0f79cd01782ff2>`() const;
 		:ref:`Tangent<doxid-class_sophus_1_1_s_o3_base_1ab16109010b18d52c553fe0909f1a7530>` :ref:`log<doxid-class_sophus_1_1_s_o3_base_1aee3b6eb8bfd3faf804fdcaef264cfcd8>`() const;
@@ -106,6 +108,16 @@ Overview
 	
 		void :ref:`setQuaternion<doxid-class_sophus_1_1_s_o3_base_1a25cac542342b6f4215e8eedb9c51b0ed>`(Eigen::Quaternion<:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>`> const& quaternion);
 		:ref:`QuaternionType<doxid-class_sophus_1_1_s_o3_base_1a1e370b275fb63d7c870f2d186a501689>` const& :ref:`unit_quaternion<doxid-class_sophus_1_1_s_o3_base_1a6353aab1a8c265a681c9a0035b90dcfd>`() const;
+	
+		template <
+			typename QuaternionProductType,
+			typename QuaternionTypeA,
+			typename QuaternionTypeB
+			>
+		static QuaternionProductType :target:`QuaternionProduct<doxid-class_sophus_1_1_s_o3_base_1ab929ad83fadc65e3016a7fd027819e05>`(
+			const QuaternionTypeA& a,
+			const QuaternionTypeB& b
+			);
 	};
 
 	// direct descendants
@@ -175,6 +187,16 @@ Number of internal parameters used (quaternion is a 4-tuple).
 	static constexpr int N = 3
 
 Group transformations are 3x3 matrices.
+
+.. index:: pair: variable; Dim
+.. _doxid-class_sophus_1_1_s_o3_base_1a0da207bbbf7a8118c4249a2ba42242e3:
+
+.. ref-code-block:: cpp
+	:class: doxyrest-title-code-block
+
+	static constexpr int Dim = 3
+
+Points are 3-dimensional.
 
 Methods
 -------
@@ -266,6 +288,16 @@ Const version of :ref:`data() <doxid-class_sophus_1_1_s_o3_base_1a947393dc983df5
 	:ref:`Matrix<doxid-namespace_sophus_1a6da48bb60b569fdd4619fcd8f5fb2498>`<:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>`, :ref:`num_parameters<doxid-class_sophus_1_1_s_o3_base_1adcced501092a9e6652ea9998b179f860>`, :ref:`DoF<doxid-class_sophus_1_1_s_o3_base_1af7f4a85af50fbb862737c1bae89cb285>`> Dx_this_mul_exp_x_at_0() const
 
 Returns derivative of this \* SO3::exp(x) wrt. x at x=0.
+
+.. index:: pair: function; Dx_log_this_inv_by_x_at_this
+.. _doxid-class_sophus_1_1_s_o3_base_1ae083a71889677a2106f31de30b5eb134:
+
+.. ref-code-block:: cpp
+	:class: doxyrest-title-code-block
+
+	:ref:`Matrix<doxid-namespace_sophus_1a6da48bb60b569fdd4619fcd8f5fb2498>`<:ref:`Scalar<doxid-class_sophus_1_1_s_o3_base_1a9278bd344193c917f5cbf3c91bea3d2c>`, :ref:`DoF<doxid-class_sophus_1_1_s_o3_base_1af7f4a85af50fbb862737c1bae89cb285>`, :ref:`num_parameters<doxid-class_sophus_1_1_s_o3_base_1adcced501092a9e6652ea9998b179f860>`> Dx_log_this_inv_by_x_at_this() const
+
+Returns derivative of log(this^{-1} \* x) by x at x=this.
 
 .. index:: pair: function; params
 .. _doxid-class_sophus_1_1_s_o3_base_1a2739a6ff4d2f97b6c08cb7e2aa962ffd:

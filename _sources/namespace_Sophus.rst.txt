@@ -7,16 +7,27 @@ namespace Sophus
 .. toctree::
 	:hidden:
 
+	enum_Sophus_SegmentCase.rst
+	struct_Sophus_BasisSplineSegment.rst
 	struct_Sophus_Constants.rst
 	struct_Sophus_Constants-2.rst
 	struct_Sophus_GetScalar.rst
 	struct_Sophus_GetScalar-2.rst
+	struct_Sophus_IndexAndU.rst
 	struct_Sophus_IsFixedSizeVector.rst
 	struct_Sophus_IsFloatingPoint.rst
 	struct_Sophus_IsFloatingPoint-2.rst
 	struct_Sophus_IsUniformRandomBitGenerator.rst
+	struct_Sophus_Mapper.rst
+	struct_Sophus_Mapper-2.rst
 	struct_Sophus_nullopt_t.rst
-	class_Sophus_BasisFunction.rst
+	class_Sophus_BasisSpline.rst
+	class_Sophus_BasisSplineFn.rst
+	class_Sophus_BasisSplineImpl.rst
+	class_Sophus_Cartesian.rst
+	class_Sophus_CartesianBase.rst
+	class_Sophus_LocalParameterization.rst
+	class_Sophus_Manifold.rst
 	class_Sophus_RxSO2.rst
 	class_Sophus_RxSO2Base.rst
 	class_Sophus_RxSO3.rst
@@ -33,9 +44,7 @@ namespace Sophus
 	class_Sophus_Sim2Base.rst
 	class_Sophus_Sim3.rst
 	class_Sophus_Sim3Base.rst
-	class_Sophus_Spline.rst
-	class_Sophus_SplineFn.rst
-	class_Sophus_SplineImpl.rst
+	class_Sophus_SplineBasisFunction.rst
 	class_Sophus_optional.rst
 
 Overview
@@ -52,6 +61,12 @@ Overview
 
 	// typedefs
 
+	using :target:`Cartesian2<doxid-namespace_sophus_1a94af1361bd6045b8e5941973101fd148>` = :ref:`Cartesian<doxid-class_sophus_1_1_cartesian>`<Scalar_, 2> ;
+	using :target:`Cartesian3<doxid-namespace_sophus_1af97c9ad1bd5ffd480826bcd722e149f7>` = :ref:`Cartesian<doxid-class_sophus_1_1_cartesian>`<Scalar_, 3> ;
+	using :target:`Cartesian2d<doxid-namespace_sophus_1a26056d5971d80903819739c89eb654a2>` = :ref:`Cartesian2<doxid-namespace_sophus_1a94af1361bd6045b8e5941973101fd148>`<double> ;
+	using :target:`Cartesian3d<doxid-namespace_sophus_1a2c48a96f9e52d7021053ff2cc6b5de68>` = :ref:`Cartesian3<doxid-namespace_sophus_1af97c9ad1bd5ffd480826bcd722e149f7>`<double> ;
+	using :target:`IsSpecialized<doxid-namespace_sophus_1a15afd097e630f8b17dc457e40743fc23>` = decltype(:ref:`complete<doxid-namespace_sophus_1aba2fe45c2dd479a51c6fbb80b4b1f9de>`(std::declval<T*>())) ;
+	using :ref:`IsMappable<doxid-namespace_sophus_1aff6ce902ed185145405434e7045bf6c0>` = :ref:`IsSpecialized<doxid-namespace_sophus_1a15afd097e630f8b17dc457e40743fc23>`<Eigen::internal::traits<std::decay_t<T>>> ;
 	using :target:`enable_if_t<doxid-namespace_sophus_1a4424dd9c3553f3bb3137e735d8c9d406>` = typename std::enable_if<B, T>::type ;
 	using :target:`RxSO2d<doxid-namespace_sophus_1ae4bf3c8ddc1dc4f6f5f0cf2ad42f4bd8>` = :ref:`RxSO2<doxid-class_sophus_1_1_rx_s_o2>`<double> ;
 	using :target:`RxSO2f<doxid-namespace_sophus_1a4d34b5159d3eecc374f623f9b41f6558>` = :ref:`RxSO2<doxid-class_sophus_1_1_rx_s_o2>`<float> ;
@@ -122,7 +137,14 @@ Overview
 	using :target:`Line2d<doxid-namespace_sophus_1adc9ec06d50ffb2518147a017b4f748f2>` = :ref:`Line2<doxid-namespace_sophus_1a8d4e600ccb6b9c105dfb2f156ad2b906>`<double> ;
 	using :target:`Line2f<doxid-namespace_sophus_1ae28ef27852fa968ec29bd8e07243f50f>` = :ref:`Line2<doxid-namespace_sophus_1a8d4e600ccb6b9c105dfb2f156ad2b906>`<float> ;
 
+	// enums
+
+	enum :ref:`SegmentCase<doxid-namespace_sophus_1aaf00ca63369e9c5c093117329a7ed728>`;
+
 	// structs
+
+	template <class LieGroup>
+	struct :ref:`BasisSplineSegment<doxid-struct_sophus_1_1_basis_spline_segment>`;
 
 	template <class Scalar>
 	struct :ref:`Constants<doxid-struct_sophus_1_1_constants>`;
@@ -135,6 +157,8 @@ Overview
 
 	template <class Scalar_, int M, int N>
 	struct :ref:`GetScalar<Matrix<Scalar_, M, N>><doxid-struct_sophus_1_1_get_scalar_3_01_matrix_3_01_scalar___00_01_m_00_01_n_01_4_01_4>`;
+
+	struct :ref:`IndexAndU<doxid-struct_sophus_1_1_index_and_u>`;
 
 	template <
 		typename Vector,
@@ -152,12 +176,36 @@ Overview
 	template <class G>
 	struct :ref:`IsUniformRandomBitGenerator<doxid-struct_sophus_1_1_is_uniform_random_bit_generator>`;
 
+	template <typename T, typename E = void>
+	struct :ref:`Mapper<doxid-struct_sophus_1_1_mapper>`;
+
+	template <typename T>
+	struct :ref:`Mapper<T, typename std::enable_if<IsMappableV<T>>::type><doxid-struct_sophus_1_1_mapper_3_01_t_00_01typename_01std_1_1enable__if_3_01_is_mappable_v_3_01_t_01_4_01_4_1_1type_01_4>`;
+
 	struct :ref:`nullopt_t<doxid-struct_sophus_1_1nullopt__t>`;
 
 	// classes
 
-	template <class Scalar>
-	class :ref:`BasisFunction<doxid-class_sophus_1_1_basis_function>`;
+	template <class LieGroup_>
+	class :ref:`BasisSpline<doxid-class_sophus_1_1_basis_spline>`;
+
+	template <class LieGroup_>
+	class :ref:`BasisSplineFn<doxid-class_sophus_1_1_basis_spline_fn>`;
+
+	template <class LieGroup_>
+	class :ref:`BasisSplineImpl<doxid-class_sophus_1_1_basis_spline_impl>`;
+
+	template <class Scalar_, int M, int Options>
+	class :ref:`Cartesian<doxid-class_sophus_1_1_cartesian>`;
+
+	template <class Derived, int M>
+	class :ref:`CartesianBase<doxid-class_sophus_1_1_cartesian_base>`;
+
+	template <template<typename, int=0> class LieGroup>
+	class :ref:`LocalParameterization<doxid-class_sophus_1_1_local_parameterization>`;
+
+	template <template<typename, int=0> class LieGroup>
+	class :ref:`Manifold<doxid-class_sophus_1_1_manifold>`;
 
 	template <class Scalar_, int Options>
 	class :ref:`RxSO2<doxid-class_sophus_1_1_rx_s_o2>`;
@@ -207,20 +255,15 @@ Overview
 	template <class Derived>
 	class :ref:`Sim3Base<doxid-class_sophus_1_1_sim3_base>`;
 
-	template <class LieGroup_>
-	class :ref:`Spline<doxid-class_sophus_1_1_spline>`;
-
-	template <class LieGroup_>
-	class :ref:`SplineFn<doxid-class_sophus_1_1_spline_fn>`;
-
-	template <class LieGroup_>
-	class :ref:`SplineImpl<doxid-class_sophus_1_1_spline_impl>`;
+	template <class Scalar>
+	class :ref:`SplineBasisFunction<doxid-class_sophus_1_1_spline_basis_function>`;
 
 	template <class T>
 	class :ref:`optional<doxid-class_sophus_1_1optional>`;
 
 	// global variables
 
+	constexpr bool :target:`IsMappableV<doxid-namespace_sophus_1a69cef81f4c788d4c9a16cc23aabeaaf0>` = :ref:`IsMappable<doxid-namespace_sophus_1aff6ce902ed185145405434e7045bf6c0>`<T>::value;
 	constexpr :ref:`nullopt_t<doxid-struct_sophus_1_1nullopt__t>` :target:`nullopt<doxid-namespace_sophus_1a51967df3b1702e291aac70303ce49089>` {};
 
 	// global functions
@@ -230,6 +273,13 @@ Overview
 		SequenceContainer const& foo_Ts_bar,
 		int max_num_iterations
 		);
+
+	template <
+		class SequenceContainer,
+		int Dim = SequenceContainer::value_type::DoF,
+		class Scalar = typename SequenceContainer::value_type::Scalar
+		>
+	:ref:`enable_if_t<doxid-namespace_sophus_1a4424dd9c3553f3bb3137e735d8c9d406>`<std::is_same<typename SequenceContainer::value_type, :ref:`Cartesian<doxid-class_sophus_1_1_cartesian>`<Scalar, Dim>>::value, :ref:`optional<doxid-class_sophus_1_1optional>`<typename SequenceContainer::value_type>> :target:`average<doxid-namespace_sophus_1aa8be7d7726366c4d8b21d9c9556e25ec>`(SequenceContainer const& foo_Ts_bar);
 
 	template <
 		class SequenceContainer,
@@ -290,6 +340,11 @@ Overview
 		SequenceContainer const& foo_Ts_bar,
 		int max_num_iterations = 20
 		);
+
+	template <class T, std::size_t = sizeof(T)>
+	constexpr std::true_type :target:`complete<doxid-namespace_sophus_1aba2fe45c2dd479a51c6fbb80b4b1f9de>`(T*);
+
+	constexpr std::false_type :target:`complete<doxid-namespace_sophus_1a0114f099c56b38340d28a28a0bc59c7d>`(...);
 
 	void :target:`ensureFailed<doxid-namespace_sophus_1aded83f70a4863a7918951da8ce53d841>`(
 		char const* function,
@@ -389,6 +444,26 @@ Detailed Documentation
 
 Typedefs
 --------
+
+.. index:: pair: typedef; IsMappable
+.. _doxid-namespace_sophus_1aff6ce902ed185145405434e7045bf6c0:
+
+.. ref-code-block:: cpp
+	:class: doxyrest-title-code-block
+
+	using IsMappable = :ref:`IsSpecialized<doxid-namespace_sophus_1a15afd097e630f8b17dc457e40743fc23>`<Eigen::internal::traits<std::decay_t<T>>> 
+
+Type trait used to distinguish mappable vector types from scalars.
+
+We use this class to distinguish :ref:`Sophus::Vector\<Scalar, N> <doxid-namespace_sophus_1abf9f6f1b37fa7bef4d2df65d63154cdf>` from Scalar types in LieGroup<T>::Tangent
+
+Primary use is mapping LieGroup::Tangent over raw data, with 2 options:
+
+* LieGroup::Tangent is "scalar" (for :ref:`SO2 <doxid-class_sophus_1_1_s_o2>`), then we just dereference pointer
+
+* LieGroup::Tangent is :ref:`Sophus::Vector\<...> <doxid-namespace_sophus_1abf9f6f1b37fa7bef4d2df65d63154cdf>`, then we need to use Eigen::Map
+
+Specialization of Eigen::internal::traits<T> for T is crucial for for constructing Eigen::Map<T>, thus we use that property for distinguishing between those two options. At this moment there seem to be no option to check this using only "external" API of :ref:`Eigen <doxid-namespace_eigen>`
 
 .. index:: pair: typedef; Plane3
 .. _doxid-namespace_sophus_1a107d7344523ab41ca14c9ff2086e24e9:
