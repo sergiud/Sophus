@@ -291,7 +291,7 @@ class SO3Base {
       // w=0 should never happen here!
       SOPHUS_ENSURE(abs(w) >= Constants<Scalar>::epsilon(),
                     "Quaternion ({}) should be normalized!",
-                    unit_quaternion().coeffs().transpose());
+                    SOPHUS_FMT_ARG(unit_quaternion().coeffs().transpose()));
       Scalar squared_w = w * w;
       two_atan_nbyw_by_n =
           Scalar(2) / w - Scalar(2.0 / 3.0) * (squared_n) / (w * squared_w);
@@ -325,9 +325,10 @@ class SO3Base {
   ///
   SOPHUS_FUNC void normalize() {
     Scalar length = unit_quaternion_nonconst().coeffs().hypotNorm();
-    SOPHUS_ENSURE(length >= Constants<Scalar>::epsilon(),
-                  "Quaternion ({}) should not be close to zero!",
-                  unit_quaternion_nonconst().coeffs().transpose());
+    SOPHUS_ENSURE(
+        length >= Constants<Scalar>::epsilon(),
+        "Quaternion ({}) should not be close to zero!",
+        SOPHUS_FMT_ARG(unit_quaternion_nonconst().coeffs().transpose()));
     unit_quaternion_nonconst().coeffs() /= length;
   }
 
@@ -512,9 +513,9 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC SO3(Transformation const& R) : unit_quaternion_(R) {
     SOPHUS_ENSURE(isOrthogonal(R), "R is not orthogonal:\n {}",
-                  R * R.transpose());
+                  SOPHUS_FMT_ARG(R * R.transpose()));
     SOPHUS_ENSURE(R.determinant() > Scalar(0), "det(R) is not positive: {}",
-                  R.determinant());
+                  SOPHUS_FMT_ARG(R.determinant()));
   }
 
   /// Constructor from quaternion
@@ -725,7 +726,8 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     SOPHUS_ENSURE(abs(q.unit_quaternion().squaredNorm() - Scalar(1)) <
                       Sophus::Constants<Scalar>::epsilon(),
                   "SO3::exp failed! omega: {}, real: {}, img: {}",
-                  omega.transpose(), real_factor, imag_factor);
+                  SOPHUS_FMT_ARG(omega.transpose()),
+                  SOPHUS_FMT_ARG(real_factor), SOPHUS_FMT_ARG(imag_factor));
     return q;
   }
 

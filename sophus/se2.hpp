@@ -342,9 +342,10 @@ class SE2Base {
   /// Precondition: ``R`` must be orthogonal and ``det(R)=1``.
   ///
   SOPHUS_FUNC void setRotationMatrix(Matrix<Scalar, 2, 2> const& R) {
-    SOPHUS_ENSURE(isOrthogonal(R), "R is not orthogonal:\n {}", R);
+    SOPHUS_ENSURE(isOrthogonal(R), "R is not orthogonal:\n {}",
+                  SOPHUS_FMT_ARG(R));
     SOPHUS_ENSURE(R.determinant() > Scalar(0), "det(R) is not positive: {}",
-                  R.determinant());
+                  SOPHUS_FMT_ARG(R.determinant()));
     typename SO2Type::ComplexTemporaryType const complex(
         Scalar(0.5) * (R(0, 0) + R(1, 1)), Scalar(0.5) * (R(1, 0) - R(0, 1)));
     so2().setComplex(complex);
@@ -756,7 +757,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   [[nodiscard]] SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
     SOPHUS_ENSURE(
         Omega.row(2).template lpNorm<1>() < Constants<Scalar>::epsilon(),
-        "Omega: \n{}", Omega);
+        "Omega: \n{}", SOPHUS_FMT_ARG(Omega));
     Tangent upsilon_omega;
     upsilon_omega << Omega.template rightCols<1>().template head<2>(),
         SO2<Scalar>::vee(Omega.template topLeftCorner<2, 2>());
