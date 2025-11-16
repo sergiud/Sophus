@@ -13,9 +13,9 @@ include (CMakePackageConfigHelpers)
 include (CTest)
 include (GNUInstallDirs)
 
-find_package (Ceres 2.1.0)
-find_package (Eigen3 3.3.0 REQUIRED)
-find_package (fmt 5.3.0 REQUIRED)
+find_package (Ceres 2.1.0 NO_MODULE)
+find_package (Eigen3 3.4.1...5 REQUIRED NO_MODULE)
+find_package (fmt 5.3.0 REQUIRED NO_MODULE)
 
 # Define interface library target
 add_library (sophus INTERFACE)
