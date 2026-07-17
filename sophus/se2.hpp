@@ -173,21 +173,26 @@ class SE2Base {
   /// of SE(2).
   ///
   [[nodiscard]] SOPHUS_FUNC Tangent log() const {
-    using std::abs;
+    using std::cos;
+    using std::fpclassify;
+    using std::sin;
 
     Tangent upsilon_theta;
     Scalar theta = so2().log();
     upsilon_theta[2] = theta;
-    Scalar halftheta = Scalar(0.5) * theta;
+    Scalar halftheta = theta / Scalar(2);
     Scalar halftheta_by_tan_of_halftheta;
 
-    Vector2<Scalar> z = so2().unit_complex();
-    Scalar real_minus_one = z.x() - Scalar(1.);
-    if (abs(real_minus_one) < Constants<Scalar>::epsilon()) {
-      halftheta_by_tan_of_halftheta =
-          Scalar(1.) - Scalar(1. / 12) * theta * theta;
+    if (fpclassify(theta) == FP_ZERO) {
+      halftheta_by_tan_of_halftheta = Scalar(1.);
     } else {
-      halftheta_by_tan_of_halftheta = -(halftheta * z.y()) / (real_minus_one);
+      // halftheta * cot(halftheta), computed directly from sin/cos(halftheta),
+      // is well-conditioned for any non-zero theta (unlike computing
+      // cos(theta) - 1, which is ~ -theta^2/2 and suffers catastrophic
+      // cancellation for small theta). Only the removable singularity at
+      // theta == 0 needs to be handled explicitly.
+      halftheta_by_tan_of_halftheta =
+          halftheta * cos(halftheta) / sin(halftheta);
     }
     Matrix<Scalar, 2, 2> V_inv;
     V_inv << halftheta_by_tan_of_halftheta, halftheta, -halftheta,
