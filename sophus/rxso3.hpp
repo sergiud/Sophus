@@ -780,7 +780,6 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///                | -b  a  d |
   ///
   [[nodiscard]] SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
-    using std::abs;
     return Tangent(Omega(2, 1), Omega(0, 2), Omega(1, 0), Omega(0, 0));
   }
 

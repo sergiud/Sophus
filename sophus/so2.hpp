@@ -556,7 +556,6 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   ///                |  a  0 |
   ///
   [[nodiscard]] SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
-    using std::abs;
     return Omega(1, 0);
   }
 
