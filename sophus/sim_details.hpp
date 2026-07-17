@@ -8,37 +8,59 @@ namespace details {
 template <class Scalar, int N>
 Matrix<Scalar, N, N> calcW(Matrix<Scalar, N, N> const &Omega,
                            Scalar const theta, Scalar const sigma) {
-  using std::abs;
   using std::cos;
   using std::exp;
+  using std::expm1;
+  using std::fpclassify;
   using std::sin;
   static Scalar const one(1);
   static Scalar const half(0.5);
   Matrix<Scalar, N, N> const Omega2 = Omega * Omega;
   Scalar const scale = exp(sigma);
-  Scalar A, B, C;
-  if (abs(sigma) < Constants<Scalar>::epsilon()) {
-    C = one;
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+  Scalar const theta_sq = theta * theta;
+  Scalar const sigma_sq = sigma * sigma;
+
+  // C = (exp(sigma) - 1) / sigma. Computing the numerator via expm1 avoids
+  // the cancellation that exp(sigma) - 1 would incur for small sigma, and
+  // expm1(sigma) / sigma is itself well-conditioned for any non-zero sigma
+  // (it tends to 1 continuously), so the only case that needs to be
+  // special-cased is the removable singularity at sigma == 0 itself.
+  Scalar const C =
+      (fpclassify(sigma) == FP_ZERO) ? one : expm1(sigma) / sigma;
+
+  Scalar A, B;
+  // The remaining small-angle/small-sigma branches are selected by
+  // comparing the squared quantities against epsilon (rather than the
+  // quantities themselves), since these coefficients have quadratic/
+  // cubic-order cancellation in theta and sigma respectively; this matches
+  // the threshold used in calcWInv() below. Unlike C above, no algebraic
+  // reformulation removes this cancellation entirely, so a small-angle
+  // Taylor branch remains necessary.
+  if (sigma_sq < Constants<Scalar>::epsilon()) {
+    // A = (1 - cos(theta)) / theta^2 == 2*sin(theta/2)^2 / theta^2 exactly;
+    // this half-angle form has no cancellation for any theta != 0, so,
+    // like C above, it only needs to handle the singularity at theta == 0.
+    if (fpclassify(theta) == FP_ZERO) {
       A = half;
+    } else {
+      Scalar const half_theta = theta / Scalar(2);
+      Scalar const sin_half_theta = sin(half_theta);
+      A = Scalar(2) * sin_half_theta * sin_half_theta / theta_sq;
+    }
+    if (theta_sq < Constants<Scalar>::epsilon()) {
       B = Scalar(1. / 6.);
     } else {
-      Scalar theta_sq = theta * theta;
-      A = (one - cos(theta)) / theta_sq;
       B = (theta - sin(theta)) / (theta_sq * theta);
     }
   } else {
-    C = (scale - one) / sigma;
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
-      Scalar sigma_sq = sigma * sigma;
+    if (theta_sq < Constants<Scalar>::epsilon()) {
       A = ((sigma - one) * scale + one) / sigma_sq;
       B = (scale * half * sigma_sq + scale - one - sigma * scale) /
           (sigma_sq * sigma);
     } else {
-      Scalar theta_sq = theta * theta;
       Scalar a = scale * sin(theta);
       Scalar b = scale * cos(theta);
-      Scalar c = theta_sq + sigma * sigma;
+      Scalar c = theta_sq + sigma_sq;
       A = (a * sigma + (one - b) * theta) / (theta * c);
       B = (C - ((b - one) * sigma + a * theta) / (c)) * one / (theta_sq);
     }
@@ -50,7 +72,6 @@ template <class Scalar>
 void calcW_derivatives(Scalar const theta, Scalar const sigma, Scalar &A,
                        Scalar &B, Scalar &C, Scalar &A_dsigma, Scalar &B_dsigma,
                        Scalar &C_dsigma, Scalar &A_dtheta, Scalar &B_dtheta) {
-  using std::abs;
   using std::cos;
   using std::exp;
   using std::sin;
@@ -68,10 +89,13 @@ void calcW_derivatives(Scalar const theta, Scalar const sigma, Scalar &A,
   Scalar const sigma_sq = sigma * sigma;
   Scalar const sigma_c = sigma * sigma_sq;
 
-  if (abs(sigma) < Constants<Scalar>::epsilon()) {
+  // See calcW() above for why the branches are selected by comparing the
+  // squared quantities against epsilon rather than the quantities
+  // themselves.
+  if (sigma_sq < Constants<Scalar>::epsilon()) {
     C = one;
     C_dsigma = half;
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+    if (theta_sq < Constants<Scalar>::epsilon()) {
       A = half;
       B = Scalar(1. / 6.);
       A_dtheta = A_dsigma = zero;
@@ -89,7 +113,7 @@ void calcW_derivatives(Scalar const theta, Scalar const sigma, Scalar &A,
   } else {
     C = (scale - one) / sigma;
     C_dsigma = (scale * (sigma - one) + one) / sigma_sq;
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
+    if (theta_sq < Constants<Scalar>::epsilon()) {
       A = ((sigma - one) * scale + one) / sigma_sq;
       B = (scale * half * sigma_sq + scale - one - sigma * scale) / sigma_c;
       A_dsigma = (scale * (sigma_sq - two * sigma + two) - two) / sigma_c;
@@ -141,8 +165,9 @@ template <class Scalar, int N>
 Matrix<Scalar, N, N> calcWInv(Matrix<Scalar, N, N> const &Omega,
                               Scalar const theta, Scalar const sigma,
                               Scalar const scale) {
-  using std::abs;
   using std::cos;
+  using std::expm1;
+  using std::fpclassify;
   using std::sin;
   static Scalar const half(0.5);
   static Scalar const one(1);
@@ -153,21 +178,44 @@ Matrix<Scalar, N, N> calcWInv(Matrix<Scalar, N, N> const &Omega,
   Scalar const sin_theta = sin(theta);
   Scalar const cos_theta = cos(theta);
 
-  Scalar a, b, c;
-  if (abs(sigma * sigma) < Constants<Scalar>::epsilon()) {
-    c = one - half * sigma;
+  // c = sigma / (scale - 1) = sigma / expm1(sigma). expm1(sigma) is
+  // well-conditioned even for small sigma (unlike scale - 1, which loses
+  // precision the same way exp(sigma) - 1 does), and sigma / expm1(sigma)
+  // is itself well-conditioned for any non-zero sigma (it tends to 1
+  // continuously), so, as with C in calcW() above, only the removable
+  // singularity at sigma == 0 needs to be handled explicitly.
+  Scalar const expm1_sigma = expm1(sigma);
+  Scalar const c =
+      (fpclassify(sigma) == FP_ZERO) ? one : sigma / expm1_sigma;
+
+  Scalar a, b;
+  if (sigma * sigma < Constants<Scalar>::epsilon()) {
     a = -half;
-    if (abs(theta_sq) < Constants<Scalar>::epsilon()) {
+    if (theta_sq < Constants<Scalar>::epsilon()) {
       b = Scalar(1. / 12.);
     } else {
-      b = (theta * sin_theta + two * cos_theta - two) /
-          (two * theta_sq * (cos_theta - one));
+      // Rewritten in terms of half-angle sin/cos. The direct formula
+      //   b = (theta*sin(theta) + 2*cos(theta) - 2)
+      //       / (2*theta^2*(cos(theta) - 1))
+      // has quartic-order cancellation in theta (both the numerator and,
+      // via cos(theta) - 1, the denominator vanish as theta^4 for small
+      // theta). This algebraically identical reformulation reduces the
+      // remaining cancellation to the same cubic order as the analogous
+      // B coefficient of W, safely covered by this branch's threshold.
+      Scalar const half_theta = theta / two;
+      Scalar const sin_half_theta = sin(half_theta);
+      Scalar const cos_half_theta = cos(half_theta);
+      b = (sin_half_theta - half_theta * cos_half_theta) /
+          (Scalar(4) * half_theta * half_theta * sin_half_theta);
     }
   } else {
     Scalar const scale_cu = scale_sq * scale;
-    c = sigma / (scale - one);
-    if (abs(theta_sq) < Constants<Scalar>::epsilon()) {
-      a = (-sigma * scale + scale - one) / ((scale - one) * (scale - one));
+    if (theta_sq < Constants<Scalar>::epsilon()) {
+      // Rewritten in terms of expm1(sigma) rather than scale - 1 directly,
+      // for the same reason c above uses expm1(sigma): it avoids the
+      // cancellation of scale - 1 for sigma close to (but, per the branch
+      // above, not exactly) zero.
+      a = (expm1_sigma - sigma * scale) / (expm1_sigma * expm1_sigma);
       b = (scale_sq * sigma - two * scale_sq + scale * sigma + two * scale) /
           (two * scale_cu - Scalar(6) * scale_sq + Scalar(6) * scale - two);
     } else {
