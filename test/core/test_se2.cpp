@@ -73,10 +73,31 @@ class Tests {
     passed &= testMutatingAccessors();
     passed &= testConstructors();
     passed &= testFit();
+    passed &= testSmallAngleLog();
     processTestResult(passed);
   }
 
  private:
+  // Regression test for a catastrophic-cancellation bug in SE2::log(): for
+  // theta in roughly [1e-5, 1e-3], the V_inv coefficient used to be computed
+  // as sin(theta) / (cos(theta) - 1), which cancels almost all significant
+  // digits (cos(theta) - 1 is ~ -theta^2/2), well outside the small-angle
+  // Taylor-series threshold that guarded against it. This is intentionally
+  // a standalone test, rather than an entry in se2_vec_ used by
+  // LieGroupTests, so that its precision (scaled to what is achievable for
+  // Scalar) is not diluted by unrelated pairwise interpolation/mean checks
+  // against the other, much larger-magnitude entries in that fixture.
+  bool testSmallAngleLog() {
+    bool passed = true;
+    Scalar const theta(0.0001);
+    Point const translation(Scalar(0.1), Scalar(-0.05));
+    SE2Type const T(SO2Type(theta), translation);
+    SE2Type const T2 = SE2Type::exp(T.log());
+    SOPHUS_TEST_APPROX(passed, T.matrix(), T2.matrix(),
+                       Constants<Scalar>::epsilon(),
+                       "SE2::log() small-angle cancellation, theta={}", theta);
+    return passed;
+  }
   bool testLieProperties() {
     LieGroupTests<SE2Type> tests(se2_vec_, tangent_vec_, point_vec_);
     return tests.doAllTestsPass();

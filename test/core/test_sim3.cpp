@@ -55,6 +55,15 @@ class Tests {
         RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.), Scalar(0.00001),
                                    Scalar(0.0000001))),
         Point(Scalar(1), Scalar(-1.00000001), Scalar(2.0000000001))));
+    // Regression test for a catastrophic-cancellation bug in calcWInv()
+    // (sim_details.hpp): for theta around 1e-4, the coefficient b used to
+    // be computed from a formula with quartic-order cancellation in theta,
+    // gated by a threshold calibrated for a much lower cancellation order,
+    // giving a completely wrong W_inv and hence a wrong log().
+    sim3_vec_.push_back(
+        Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.),
+                                            Scalar(0.0001), Scalar(0.))),
+                 Point(Scalar(1), Scalar(-0.5), Scalar(2))));
     sim3_vec_.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.),
                                             Scalar(0.00001), Scalar(0))),
