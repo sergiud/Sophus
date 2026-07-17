@@ -379,7 +379,7 @@ class Cartesian : public CartesianBase<Cartesian<Scalar_, M, Options>, M> {
   /// Precondition: ``i`` must be in [0, M-1].
   ///
   SOPHUS_FUNC static Transformation generator(int i) {
-    SOPHUS_ENSURE(i >= 0 && i <= M, "i should be in range [0,M-1].");
+    SOPHUS_ENSURE(i >= 0 && i < M, "i should be in range [0,M-1].");
     Tangent e;
     e.setZero();
     e[i] = Scalar(1);
