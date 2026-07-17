@@ -169,6 +169,7 @@ Matrix<Scalar, N, N> calcWInv(Matrix<Scalar, N, N> const &Omega,
   using std::expm1;
   using std::fpclassify;
   using std::sin;
+  using std::sinh;
   static Scalar const half(0.5);
   static Scalar const one(1);
   static Scalar const two(2);
@@ -219,15 +220,56 @@ Matrix<Scalar, N, N> calcWInv(Matrix<Scalar, N, N> const &Omega,
       b = (scale_sq * sigma - two * scale_sq + scale * sigma + two * scale) /
           (two * scale_cu - Scalar(6) * scale_sq + Scalar(6) * scale - two);
     } else {
-      Scalar const s_sin_theta = scale * sin_theta;
-      Scalar const s_cos_theta = scale * cos_theta;
-      a = (theta * s_cos_theta - theta - sigma * s_sin_theta) /
-          (theta * (scale_sq - two * s_cos_theta + one));
+      // Both theta and sigma are bounded away from zero, but the direct
+      // formulas
+      //
+      //   a = (theta*s_cos_theta - theta - sigma*s_sin_theta)
+      //       / (theta*(scale^2 - 2*s_cos_theta + 1))
+      //   b = -scale*(theta*s_sin_theta - theta*sin(theta)
+      //               + sigma*s_cos_theta - scale*sigma + sigma*cos(theta)
+      //               - sigma)
+      //       / (theta^2*(scale^3 - 2*scale*s_cos_theta - scale^2
+      //                   + 2*s_cos_theta + scale - 1))
+      //
+      // (with s_sin_theta = scale*sin(theta), s_cos_theta = scale*
+      // cos(theta)) still lose precision when theta and sigma are
+      // simultaneously close to (but, per the branches above,
+      // individually not within) this function's small-value threshold:
+      // both denominators reduce to
+      // theta^2*(scale - 1)*(scale^2 - 2*scale*cos(theta) + 1), and each
+      // factor of that, as well as the numerators above, is a
+      // near-cancelling difference of two order-1 quantities in that
+      // regime.
+      //
+      // scale^2 - 2*scale*cos(theta) + 1 ==
+      //     4*scale*(sinh(sigma/2)^2 + sin(theta/2)^2)
+      // exactly (verified in sympy/sophus/sim_details.py): a sum of two
+      // non-negative, individually well-conditioned squares, avoiding
+      // that cancellation entirely. The numerators below are likewise
+      // rewritten in terms of expm1(sigma) and half-angle sin/cos, which
+      // removes the dominant part of their cancellation; the residual
+      // cancellation that remains is scaled by Omega/Omega^2 (themselves
+      // ~theta, ~theta^2) in the returned matrix, making its contribution
+      // negligible.
+      Scalar const half_theta = theta / two;
+      Scalar const sin_half_theta = sin(half_theta);
+      Scalar const cos_half_theta = cos(half_theta);
+      Scalar const half_sigma = sigma / two;
+      Scalar const sinh_half_sigma = sinh(half_sigma);
+      Scalar const D =
+          Scalar(4) * scale *
+          (sinh_half_sigma * sinh_half_sigma +
+           sin_half_theta * sin_half_theta);  // == scale^2 -
+                                              // 2*scale*cos(theta) + 1
+
+      a = (two * half_theta * expm1_sigma * cos_theta -
+           Scalar(4) * half_theta * sin_half_theta * sin_half_theta -
+           Scalar(4) * half_sigma * scale * sin_half_theta * cos_half_theta) /
+          (theta * D);
       b = -scale *
-          (theta * s_sin_theta - theta * sin_theta + sigma * s_cos_theta -
-           scale * sigma + sigma * cos_theta - sigma) /
-          (theta_sq * (scale_cu - two * scale * s_cos_theta - scale_sq +
-                       two * s_cos_theta + scale - one));
+          (theta * sin_theta * expm1_sigma -
+           two * sigma * sin_half_theta * sin_half_theta * (scale + one)) /
+          (theta_sq * expm1_sigma * D);
     }
   }
   return a * Omega + b * Omega2 + c * Matrix<Scalar, N, N>::Identity();
