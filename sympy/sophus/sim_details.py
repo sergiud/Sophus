@@ -52,10 +52,84 @@ class SimDetails:
         cos_ht = sympy.cos(half_theta)
         return (sin_ht - half_theta * cos_ht) / (4 * half_theta**2 * sin_ht)
 
+    @staticmethod
+    def W_inv_denominator_direct(theta, sigma):
+        """ scale^2 - 2*scale*cos(theta) + 1, the (shared, up to a factor
+            of (scale - 1) for b) denominator of W^{-1}'s a and b
+            coefficients in the branch where neither theta nor sigma is
+            small on its own. """
+        scale = sympy.exp(sigma)
+        return scale**2 - 2 * scale * sympy.cos(theta) + 1
+
+    @staticmethod
+    def W_inv_denominator_half_angle(theta, sigma):
+        """ Half-angle reformulation of the shared denominator above: a sum
+            of two non-negative, individually well-conditioned squares
+            (scaled by scale), removing the cancellation that occurs when
+            theta and sigma are simultaneously close to zero (each
+            individually large enough to bypass the small-value branches,
+            but jointly small enough that the direct form above computes a
+            near-zero result from an O(1) difference). """
+        scale = sympy.exp(sigma)
+        half_theta = theta / 2
+        half_sigma = sigma / 2
+        return 4 * scale * (sympy.sinh(half_sigma)**2 +
+                            sympy.sin(half_theta)**2)
+
+    @staticmethod
+    def W_inv_a_generic_numerator_direct(theta, sigma):
+        """ Numerator of W^{-1}'s a coefficient, branch where neither theta
+            nor sigma is small, direct form. """
+        scale = sympy.exp(sigma)
+        s_sin_theta = scale * sympy.sin(theta)
+        s_cos_theta = scale * sympy.cos(theta)
+        return theta * s_cos_theta - theta - sigma * s_sin_theta
+
+    @staticmethod
+    def W_inv_a_generic_numerator_half_angle(theta, sigma):
+        """ Half-angle reformulation of the a-coefficient numerator above,
+            in terms of expm1(sigma) (represented here as scale - 1, sympy
+            has no symbolic expm1) and half-angle sin/cos of theta and
+            sigma. """
+        scale = sympy.exp(sigma)
+        half_theta = theta / 2
+        half_sigma = sigma / 2
+        sin_ht = sympy.sin(half_theta)
+        cos_ht = sympy.cos(half_theta)
+        expm1_sigma = scale - 1
+        return (2 * half_theta * expm1_sigma * sympy.cos(theta) -
+                4 * half_theta * sin_ht**2 -
+                4 * half_sigma * scale * sin_ht * cos_ht)
+
+    @staticmethod
+    def W_inv_b_generic_numerator_direct(theta, sigma):
+        """ Numerator of W^{-1}'s b coefficient (including the leading
+            -scale factor), branch where neither theta nor sigma is small,
+            direct form. """
+        scale = sympy.exp(sigma)
+        sin_theta = sympy.sin(theta)
+        s_sin_theta = scale * sin_theta
+        s_cos_theta = scale * sympy.cos(theta)
+        return -scale * (theta * s_sin_theta - theta * sin_theta +
+                         sigma * s_cos_theta - scale * sigma +
+                         sigma * sympy.cos(theta) - sigma)
+
+    @staticmethod
+    def W_inv_b_generic_numerator_half_angle(theta, sigma):
+        """ Half-angle reformulation of the b-coefficient numerator above,
+            in terms of expm1(sigma) and half-angle sin(theta / 2). """
+        scale = sympy.exp(sigma)
+        half_theta = theta / 2
+        sin_ht = sympy.sin(half_theta)
+        expm1_sigma = scale - 1
+        return -scale * (theta * sympy.sin(theta) * expm1_sigma -
+                         2 * sigma * sin_ht**2 * (scale + 1))
+
 
 class TestSimDetails(unittest.TestCase):
     def setUp(self):
         self.theta = sympy.symbols('theta', real=True)
+        self.sigma = sympy.symbols('sigma', real=True)
 
     def test_W_A_half_angle_matches_direct_form(self):
         theta = self.theta
@@ -76,6 +150,33 @@ class TestSimDetails(unittest.TestCase):
         series_half_angle = sympy.series(half_angle, theta, 0, 4).removeO()
         self.assertEqual(sympy.simplify(series_direct - series_half_angle), 0)
         self.assertEqual(sympy.limit(half_angle, theta, 0), sympy.Rational(1, 12))
+
+    @staticmethod
+    def assert_identical(test_case, lhs, rhs):
+        # sympy.simplify alone does not always collapse expressions mixing
+        # exp/sin/cos/sinh; rewriting in terms of exp first reliably does.
+        diff = sympy.simplify(sympy.expand((lhs - rhs).rewrite(sympy.exp)))
+        test_case.assertEqual(diff, 0)
+
+    def test_W_inv_denominator_half_angle_matches_direct_form(self):
+        theta, sigma = self.theta, self.sigma
+        direct = SimDetails.W_inv_denominator_direct(theta, sigma)
+        half_angle = SimDetails.W_inv_denominator_half_angle(theta, sigma)
+        self.assert_identical(self, direct, half_angle)
+
+    def test_W_inv_a_generic_half_angle_matches_direct_form(self):
+        theta, sigma = self.theta, self.sigma
+        direct = SimDetails.W_inv_a_generic_numerator_direct(theta, sigma)
+        half_angle = SimDetails.W_inv_a_generic_numerator_half_angle(
+            theta, sigma)
+        self.assert_identical(self, direct, half_angle)
+
+    def test_W_inv_b_generic_half_angle_matches_direct_form(self):
+        theta, sigma = self.theta, self.sigma
+        direct = SimDetails.W_inv_b_generic_numerator_direct(theta, sigma)
+        half_angle = SimDetails.W_inv_b_generic_numerator_half_angle(
+            theta, sigma)
+        self.assert_identical(self, direct, half_angle)
 
 
 if __name__ == '__main__':
