@@ -230,8 +230,8 @@ class RxSO2Base {
       result_complex.normalize();
       result_complex *= Constants<ResultT>::epsilonPlus();
     }
-    if (squared_scale > Scalar(1.) / (Constants<ResultT>::epsilon() *
-                                      Constants<ResultT>::epsilon())) {
+    if (squared_scale > ResultT(1.) / (Constants<ResultT>::epsilon() *
+                                       Constants<ResultT>::epsilon())) {
       /// Saturation to ensure class invariant.
       result_complex.normalize();
       result_complex /= Constants<ResultT>::epsilonPlus();
