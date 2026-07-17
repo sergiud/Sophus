@@ -250,7 +250,7 @@ class RxSO3Base {
         typename RxSO3Product<OtherDerived>::QuaternionType;
 
     QuaternionProductType result_quaternion(
-        Sophus::SO3<double>::QuaternionProduct<QuaternionProductType>(
+        Sophus::SO3<Scalar>::template QuaternionProduct<QuaternionProductType>(
             quaternion(), other.quaternion()));
 
     ResultT scale = result_quaternion.squaredNorm();
