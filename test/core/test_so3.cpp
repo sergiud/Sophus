@@ -193,6 +193,19 @@ class Tests {
     // transformed point ends up, and then (d) apply a standard "coin toss"
     // chi-square test
 
+    // Each of the 5 trials below contributes one chi-square(df=1) statistic;
+    // summed, they follow a chi-square(df=5) distribution under the null
+    // hypothesis (uniform/symmetric sampling). Comparing that sum against a
+    // single chi-square(df=5) critical value (rather than comparing each
+    // trial individually against the df=1 critical value) avoids inflating
+    // the test's overall false-failure rate via multiple comparisons: with 5
+    // independent per-trial checks each at p=0.01, the chance that at least
+    // one spuriously exceeds its threshold is ~5%, not ~1%, and that ~5%
+    // false-failure rate showed up in practice as a std::normal_distribution
+    // implementation difference between libstdc++ and libc++ producing a
+    // different (but equally valid, for an unspecified seed) sample sequence
+    // for the same fixed seed.
+    double chi_square_sum = 0;
     for (size_t trial = 0; trial < 5; trial++) {
       std::normal_distribution<Scalar> normal(0, 10);
 
@@ -218,13 +231,14 @@ class Tests {
           negative_count++;
       }
 
-      // Chi-square computation, compare against critical value (p=0.01)
       double expected_count = static_cast<double>(samples) / 2.0;
-      double chi_square =
+      chi_square_sum +=
           pow(positive_count - expected_count, 2.0) / expected_count +
           pow(negative_count - expected_count, 2.0) / expected_count;
-      SOPHUS_TEST(passed, chi_square < 6.635, "");
     }
+
+    // Critical value for chi-square(df=5), p=0.01.
+    SOPHUS_TEST(passed, chi_square_sum < 15.086, "");
 
     return passed;
   }
