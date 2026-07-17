@@ -179,11 +179,17 @@ class RxSO3Base {
   /// As above, but also returns ``theta = |omega|``.
   ///
   [[nodiscard]] SOPHUS_FUNC TangentAndTheta logAndTheta() const {
-    using std::log;
+    using std::log1p;
 
     Scalar scale = quaternion().squaredNorm();
     TangentAndTheta result;
-    result.tangent[3] = log(scale);
+    // log(scale) via log1p(scale - 1) rather than log(scale) directly:
+    // scale - 1 is computed exactly (Sterbenz's lemma, scale typically
+    // being within a factor of two of 1), and log1p is accurate for
+    // arguments close to zero, which log() is not guaranteed to be for
+    // arguments close to 1 (i.e. scale close to unity, the no-scaling
+    // case).
+    result.tangent[3] = log1p(scale - Scalar(1));
     auto omega_and_theta = SO3<Scalar>(quaternion()).logAndTheta();
     result.tangent.template head<3>() = omega_and_theta.tangent;
     result.theta = omega_and_theta.theta;

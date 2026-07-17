@@ -177,8 +177,16 @@ class RxSO2Base {
   /// of RxSO2.
   ///
   [[nodiscard]] SOPHUS_FUNC Tangent log() const {
-    using std::log;
-    return (Tangent{} << SO2<Scalar>(complex()).log(), log(scale())).finished();
+    using std::log1p;
+    // log(scale()) via log1p(scale() - 1) rather than log(scale()) directly:
+    // scale() - 1 is computed exactly (Sterbenz's lemma, scale() typically
+    // being within a factor of two of 1), and log1p is accurate for
+    // arguments close to zero, which log() is not guaranteed to be for
+    // arguments close to 1 (i.e. scale close to unity, the no-scaling
+    // case).
+    return (Tangent{} << SO2<Scalar>(complex()).log(),
+            log1p(scale() - Scalar(1)))
+        .finished();
   }
 
   /// Returns 2x2 matrix representation of the instance.
