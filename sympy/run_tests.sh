@@ -9,5 +9,6 @@ python3 -m sophus.so2 || EXIT=$?
 python3 -m sophus.se2 || EXIT=$?
 python3 -m sophus.so3 || EXIT=$?
 python3 -m sophus.se3 || EXIT=$?
+python3 -m sophus.sim_details || EXIT=$?
 
 exit $EXIT
