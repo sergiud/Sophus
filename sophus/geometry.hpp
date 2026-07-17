@@ -59,12 +59,12 @@ Matrix3<T> rotationFromNormal(Vector3<T> const& normal_foo,
                                                                    T(0)),
                               Vector3<T> yDirHint_foo = Vector3<T>(T(0), T(1),
                                                                    T(0))) {
-  SOPHUS_ENSURE(xDirHint_foo.dot(yDirHint_foo) < Constants<T>::epsilon(),
+  using std::abs;
+  using std::sqrt;
+  SOPHUS_ENSURE(abs(xDirHint_foo.dot(yDirHint_foo)) < Constants<T>::epsilon(),
                 "xDirHint ({}) and yDirHint ({}) must be perpendicular.",
                 SOPHUS_FMT_ARG(xDirHint_foo.transpose()),
                 SOPHUS_FMT_ARG(yDirHint_foo.transpose()));
-  using std::abs;
-  using std::sqrt;
   T const xDirHint_foo_sqr_length = xDirHint_foo.squaredNorm();
   T const yDirHint_foo_sqr_length = yDirHint_foo.squaredNorm();
   T const normal_foo_sqr_length = normal_foo.squaredNorm();
