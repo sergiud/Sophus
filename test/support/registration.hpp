@@ -24,6 +24,14 @@ class FunctionTest : public ::testing::Test {
   std::function<void()> body_;
 };
 
+/// Returns the factory `registerTest` passes to Google Test, which creates a
+/// test that runs `body`.
+inline auto makeFunctionTestFactory(std::function<void()> body) {
+  return [body = std::move(body)]() -> FunctionTest* {
+    return new FunctionTest(body);
+  };
+}
+
 }  // namespace details
 
 /// Names and locates a test registered with `registerTest`.
@@ -43,9 +51,7 @@ inline void registerTest(TestId const& id, std::function<void()> body) {
       id.suite.c_str(), id.name.c_str(),
       id.type_param.empty() ? nullptr : id.type_param.c_str(),
       id.value_param.empty() ? nullptr : id.value_param.c_str(), id.file,
-      id.line, [body = std::move(body)]() -> details::FunctionTest* {
-        return new details::FunctionTest(body);
-      });
+      id.line, details::makeFunctionTestFactory(std::move(body)));
 }
 
 }  // namespace Sophus

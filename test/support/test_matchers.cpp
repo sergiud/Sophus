@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -244,6 +245,14 @@ TEST(RegisterTest, FunctionTestRunsItsBodyOnce) {
   int runs = 0;
   details::FunctionTest test([&runs] { ++runs; });
   test.TestBody();
+  EXPECT_EQ(runs, 1);
+}
+
+TEST(RegisterTest, FactoryCreatesTestsThatRunTheBody) {
+  int runs = 0;
+  auto const factory = details::makeFunctionTestFactory([&runs] { ++runs; });
+  std::unique_ptr<details::FunctionTest> const test(factory());
+  test->TestBody();
   EXPECT_EQ(runs, 1);
 }
 
