@@ -182,7 +182,7 @@ configure_package_config_file (SophusConfig.cmake.in
   NO_SET_AND_CHECK_MACRO
 )
 write_basic_package_version_file (${PROJECT_BINARY_DIR}/SophusConfigVersion.cmake
-  COMPATIBILITY AnyNewerVersion
+  COMPATIBILITY SameMajorVersion
   ARCH_INDEPENDENT
 )
 
