@@ -275,9 +275,14 @@ TYPED_TEST(Sim2FloatingPointTest, DxExpXMatchesReference) {
 }
 
 TEST(Sim2DeathTest, RejectsMatricesWithoutHomogeneousLastRow) {
-  Matrix3<double> T = Matrix3<double>::Identity();
-  T(3 - 1, 0) = 5;
-  EXPECT_DEATH(std::ignore = Sim2<double>{T}, "Last row");
+  constexpr Eigen::Index kLastRow = 3 - 1;
+  constexpr double kPerturbation = 5;
+  for (Eigen::Index col = 0; col <= kLastRow; ++col) {
+    SCOPED_TRACE(::testing::Message() << "column " << col);
+    Matrix3<double> T = Matrix3<double>::Identity();
+    T(kLastRow, col) += kPerturbation;
+    EXPECT_DEATH(std::ignore = Sim2<double>{T}, "Last row");
+  }
 }
 
 TYPED_TEST(Sim2FloatingPointTest, SetsRotationFromTemporaryMatrix) {
