@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <cstdlib>
+
 #include "types.hpp"
 
 namespace Sophus {
@@ -222,7 +224,10 @@ struct BasisSplineSegment {
                 (world_pose_foo_1().inverse() * world_pose_foo_1()).log()),
             u);
     }
-    SOPHUS_ENSURE(false, "logic error");
+    SOPHUS_ENSURE(false, "invalid segment case {}", int(segment_case_));
+    // Disabled ensures and ensure handlers return, so the function must not
+    // fall off its end.
+    std::abort();
   }
 
   Transformation Dt_parent_T_spline(double u, double delta_t) {
@@ -252,7 +257,10 @@ struct BasisSplineSegment {
                 (world_pose_foo_1().inverse() * world_pose_foo_1()).log()),
             u, delta_t);
     }
-    SOPHUS_ENSURE(false, "logic error");
+    SOPHUS_ENSURE(false, "invalid segment case {}", int(segment_case_));
+    // Disabled ensures and ensure handlers return, so the function must not
+    // fall off its end.
+    std::abort();
   }
 
   Transformation Dt2_parent_T_spline(double u, double delta_t) {
@@ -282,7 +290,10 @@ struct BasisSplineSegment {
                 (world_pose_foo_1().inverse() * world_pose_foo_1()).log()),
             u, delta_t);
     }
-    SOPHUS_ENSURE(false, "logic error");
+    SOPHUS_ENSURE(false, "invalid segment case {}", int(segment_case_));
+    // Disabled ensures and ensure handlers return, so the function must not
+    // fall off its end.
+    std::abort();
   }
 
  private:
