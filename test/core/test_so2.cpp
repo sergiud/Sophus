@@ -188,6 +188,20 @@ TYPED_TEST(SO2FloatingPointTest, FitToSO2IsIdempotent) {
                             IsNear(Constants<Scalar>::epsilon()), fitted));
 }
 
+TYPED_TEST(SO2FloatingPointTest, FitToSO2RecoversScaledRotations) {
+  using Scalar = TypeParam;
+  using SO2Type = SO2<Scalar>;
+  Scalar const kScale(2.5);
+
+  StdVector<SO2Type> const elements =
+      LieGroupTestData<SO2Type>::groupElements();
+  auto const fitted = mapped(elements, [kScale](SO2Type const& g) {
+    return SO2Type::fitToSO2(kScale * g.matrix());
+  });
+  EXPECT_THAT(fitted, ::testing::Pointwise(IsNear(Constants<Scalar>::epsilon()),
+                                           elements));
+}
+
 TYPED_TEST(SO2FloatingPointTest, ExpMatchesReference) {
   reference::expectAccurateExp<SO2<TypeParam>>(reference::kSO2Exp);
 }

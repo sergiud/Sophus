@@ -356,6 +356,20 @@ TYPED_TEST(SO3FloatingPointTest, FitToSO3IsIdempotent) {
                             IsNear(Constants<Scalar>::epsilon()), fitted));
 }
 
+TYPED_TEST(SO3FloatingPointTest, FitToSO3RecoversScaledRotations) {
+  using Scalar = TypeParam;
+  using SO3Type = SO3<Scalar>;
+  Scalar const kScale(2.5);
+
+  StdVector<SO3Type> const elements =
+      LieGroupTestData<SO3Type>::groupElements();
+  auto const fitted = mapped(elements, [kScale](SO3Type const& g) {
+    return SO3Type::fitToSO3(kScale * g.matrix());
+  });
+  EXPECT_THAT(fitted, ::testing::Pointwise(IsNear(Constants<Scalar>::epsilon()),
+                                           elements));
+}
+
 TYPED_TEST(SO3FloatingPointTest, AnglesOfElementaryRotations) {
   using Scalar = TypeParam;
   using SO3Type = SO3<Scalar>;
