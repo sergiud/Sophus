@@ -313,5 +313,23 @@ TYPED_TEST(RxSO2FloatingPointTest, LogMatchesReference) {
   reference::expectAccurateLog<RxSO2<TypeParam>>(reference::kRxSO2Log);
 }
 
+TYPED_TEST(RxSO2FloatingPointTest, DxExpXFollowsTheScaleSaturation) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+  using Tangent = typename RxSO2Type::Tangent;
+  // exp saturates the scale beyond these log scales, where its derivative
+  // with respect to the log scale vanishes.
+  for (double const sigma : {-30.0, 30.0}) {
+    Tangent const x(Scalar(0.3), Scalar(sigma));
+    Matrix<Scalar, RxSO2Type::num_parameters, RxSO2Type::DoF> const J_num =
+        vectorFieldNumDiff<Scalar, RxSO2Type::num_parameters, RxSO2Type::DoF>(
+            [](Tangent const& t) { return RxSO2Type::exp(t).params(); }, x);
+    EXPECT_THAT(RxSO2Type::Dx_exp_x(x),
+                IsNear(J_num, relativeTolerance(
+                                  Constants<Scalar>::epsilonSqrt(), J_num)))
+        << "sigma = " << sigma;
+  }
+}
+
 }  // namespace
 }  // namespace Sophus

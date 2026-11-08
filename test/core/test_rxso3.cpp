@@ -354,5 +354,23 @@ TEST(RxSO3DeathTest, SetQuaternionRejectsScalesBelowEpsilon) {
   EXPECT_DEATH(T.setQuaternion(tiny), "Scale factor");
 }
 
+TYPED_TEST(RxSO3FloatingPointTest, DxExpXFollowsTheScaleSaturation) {
+  using Scalar = TypeParam;
+  using RxSO3Type = RxSO3<Scalar>;
+  using Tangent = typename RxSO3Type::Tangent;
+  // exp saturates the scale beyond these log scales, where its derivative
+  // with respect to the log scale vanishes.
+  for (double const sigma : {-30.0, 30.0}) {
+    Tangent const x(Scalar(0.3), Scalar(-0.2), Scalar(0.1), Scalar(sigma));
+    Matrix<Scalar, RxSO3Type::num_parameters, RxSO3Type::DoF> const J_num =
+        vectorFieldNumDiff<Scalar, RxSO3Type::num_parameters, RxSO3Type::DoF>(
+            [](Tangent const& t) { return RxSO3Type::exp(t).params(); }, x);
+    EXPECT_THAT(RxSO3Type::Dx_exp_x(x),
+                IsNear(J_num, relativeTolerance(
+                                  Constants<Scalar>::epsilonSqrt(), J_num)))
+        << "sigma = " << sigma;
+  }
+}
+
 }  // namespace
 }  // namespace Sophus

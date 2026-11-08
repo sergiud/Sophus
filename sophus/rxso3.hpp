@@ -625,12 +625,15 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
     Vector3<Scalar> const omega = a.template head<3>();
     Scalar const sigma = a[3];
     Eigen::Quaternion<Scalar> quat = SO3<Scalar>::exp(omega).unit_quaternion();
-    Scalar const scale = sqrt(exp(sigma));
-    Scalar const scale_half = scale / Scalar(2);
+    // The quaternion is scaled by the square root of the saturated scale s,
+    // whose derivative with respect to sigma is s' / (2 sqrt(s)).
+    Scalar const sqrt_scale = sqrt(details::saturatedScale(sigma));
+    Scalar const dsqrt_scale =
+        details::saturatedScaleDerivative(sigma) / (Scalar(2) * sqrt_scale);
 
     // clang-format off
-    J << SO3<Scalar>::Dx_exp_x(omega) * scale,
-         quat.coeffs() * scale_half;
+    J << SO3<Scalar>::Dx_exp_x(omega) * sqrt_scale,
+         quat.coeffs() * dsqrt_scale;
     // clang-format on
     return J;
   }
@@ -678,11 +681,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
 
     Vector3<Scalar> const omega = a.template head<3>();
     Scalar sigma = a[3];
-    Scalar scale = exp(sigma);
-    // Ensure that scale-factor contraint is always valid
-    scale = max(scale, Constants<Scalar>::epsilonPlus());
-    scale = min(scale, Scalar(1.) / Constants<Scalar>::epsilonPlus());
-    Scalar sqrt_scale = sqrt(scale);
+    Scalar sqrt_scale = sqrt(details::saturatedScale(sigma));
     Eigen::Quaternion<Scalar> quat =
         SO3<Scalar>::expAndTheta(omega, theta).unit_quaternion();
     quat.coeffs() *= sqrt_scale;

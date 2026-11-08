@@ -528,7 +528,11 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
     Scalar const theta = a[0];
     Scalar const sigma = a[1];
 
-    return SO2<Scalar>::exp(theta).matrix().rowwise().reverse() * exp(sigma);
+    Sophus::Matrix<Scalar, num_parameters, DoF> J =
+        SO2<Scalar>::exp(theta).matrix().rowwise().reverse();
+    J.col(0) *= details::saturatedScale(sigma);
+    J.col(1) *= details::saturatedScaleDerivative(sigma);
+    return J;
   }
 
   /// Returns derivative of exp(x) wrt. x_i at x=0.
@@ -572,12 +576,8 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
 
     Scalar const theta = a[0];
     Scalar const sigma = a[1];
-    Scalar s = exp(sigma);
-    // Ensuring proper scale
-    s = max(s, Constants<Scalar>::epsilonPlus());
-    s = min(s, Scalar(1.) / Constants<Scalar>::epsilonPlus());
     Vector2<Scalar> z = SO2<Scalar>::exp(theta).unit_complex();
-    z *= s;
+    z *= details::saturatedScale(sigma);
     return RxSO2<Scalar>(z);
   }
 

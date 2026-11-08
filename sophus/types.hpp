@@ -199,6 +199,27 @@ SOPHUS_FUNC typename Derived::Scalar squaredNormMinusOne(
   Scalar const m = abs(v[largest]);
   return (m - Scalar(1)) * (m + Scalar(1)) + rest;
 }
+
+/// Returns the scale @f$e^\sigma@f$ of a log scale, saturated to the range
+/// that the class invariants of RxSO2 and RxSO3 allow.
+template <class Scalar>
+SOPHUS_FUNC Scalar saturatedScale(Scalar const& sigma) {
+  using std::exp;
+  using std::max;
+  using std::min;
+  Scalar const scale =
+      max(Scalar(exp(sigma)), Constants<Scalar>::epsilonPlus());
+  return min(scale, Scalar(1.) / Constants<Scalar>::epsilonPlus());
+}
+
+/// Returns the derivative of saturatedScale, which vanishes where the scale
+/// saturates.
+template <class Scalar>
+SOPHUS_FUNC Scalar saturatedScaleDerivative(Scalar const& sigma) {
+  using std::exp;
+  Scalar const scale = saturatedScale(sigma);
+  return scale == exp(sigma) ? scale : Scalar(0);
+}
 }  // namespace details
 
 /// Returns maximum metric between two points ``p0`` and ``p1``, with ``p0, p1``
