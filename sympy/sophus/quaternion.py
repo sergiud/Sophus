@@ -24,7 +24,7 @@ class Quaternion:
                           self.vec.cross(right.vec))
 
     def __add__(self, right):
-        """ quaternion multiplication """
+        """ quaternion addition """
         return Quaternion(self[3] + right[3], self.vec + right.vec)
 
     def __neg__(self):

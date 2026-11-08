@@ -73,7 +73,7 @@ class Se2:
         assert False, f"unsupported type: {type(right)}"
 
     def __getitem__(self, key):
-        """ We use the following convention [q0, q1, q2, q3, t0, t1, t2] """
+        """ We use the following convention [c0, c1, t0, t1] """
         assert (key >= 0 and key < 4)
         if key < 2:
             return self.so2[key]
