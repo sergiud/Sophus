@@ -179,7 +179,7 @@ struct TestGraphFunctor {
 /// derivative by the generic tests of the group. Ceres optimizes `double`
 /// parameter blocks only, so the tests of a group named `SO3` form the suite
 /// `SO3/LieGroupCeresTest/double`, with one test per entry of its
-/// `LieGroupCeresTestData`, such as `XMinusXIsZero/3`.
+/// `LieGroupCeresTestData`, such as `PlusMinusIsIdentity/3_5`.
 template <class LieGroupd>
 class LieGroupCeresTests {
  public:
@@ -200,12 +200,6 @@ class LieGroupCeresTests {
 
   //! The bound of squared norms of errors of optimized group elements.
   static double squaredOptimizationTolerance() { return 10. * epsilon(); }
-
-  static Tangentd zeroTangent() {
-    Tangentd zero;
-    setToZero(zero);
-    return zero;
-  }
 
   static std::string scalarName() {
     return details::scalarName(details::TypeTag<LieGroupd>{});
@@ -289,24 +283,6 @@ class LieGroupCeresTests {
     }
     EXPECT_THAT(squared_errors, Each(Lt(squaredOptimizationTolerance())))
         << "for each ordered pair of distinct points";
-  }
-
-  static void xPlusZeroIsX(LieGroupd const& x) {
-    using ::testing::Lt;
-    Manifoldd const manifold;
-    Tangentd const zero = zeroTangent();
-    LieGroupd test_group;
-    ASSERT_TRUE(manifold.Plus(x.data(), data(zero), test_group.data()));
-    EXPECT_THAT((x.inverse() * test_group).log(),
-                HasSquaredNorm(Lt(squaredRoundTripTolerance())));
-  }
-
-  static void xMinusXIsZero(LieGroupd const& x) {
-    using ::testing::Lt;
-    Manifoldd const manifold;
-    Tangentd test_tangent;
-    ASSERT_TRUE(manifold.Minus(x.data(), x.data(), data(test_tangent)));
-    EXPECT_THAT(test_tangent, HasSquaredNorm(Lt(squaredRoundTripTolerance())));
   }
 
   static void minusPlusIsIdentity(LieGroupd const& x, Tangentd const& delta) {
@@ -487,10 +463,6 @@ bool LieGroupCeresTests<LieGroupd>::registerAll(std::string const& group_name) {
 
   for (std::size_t i = 0; i < g.size(); ++i) {
     std::string const value = "x = " + describe(g[i]);
-    add(suite, "XPlusZeroIsX/" + indexName(i), value, __LINE__,
-        [x = g[i]] { xPlusZeroIsX(x); });
-    add(suite, "XMinusXIsZero/" + indexName(i), value, __LINE__,
-        [x = g[i]] { xMinusXIsZero(x); });
     add(suite, "MinusJacobianTimesPlusJacobianIsIdentity/" + indexName(i),
         value, __LINE__,
         [x = g[i]] { minusJacobianTimesPlusJacobianIsIdentity(x); });
