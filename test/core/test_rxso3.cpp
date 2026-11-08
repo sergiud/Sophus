@@ -1,6 +1,9 @@
 // Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <cmath>
 #include <limits>
+#include <optional>
+#include <random>
 #include <tuple>
 
 #include <sophus/rxso3.hpp>
@@ -97,6 +100,16 @@ namespace {
 #endif
                           >("RxSO3");
 
+/**
+ * Returns the tolerance of a saturated scale `expected`. Saturated scales
+ * differ by a factor of 1 + epsilon from the bounds of the class invariant,
+ * which half of this margin still tells apart.
+ */
+template <class Scalar>
+Scalar saturationTolerance(Scalar const& expected) {
+  return expected * Constants<Scalar>::epsilon() / Scalar(2);
+}
+
 template <class Scalar>
 class RxSO3Test : public ::testing::Test {};
 
@@ -118,7 +131,9 @@ TYPED_TEST(RxSO3Test, ProductOfSmallElementsSaturatesTheScale) {
       kEpsilon, SO3<Scalar>::exp(Vector3<Scalar>(Constants<Scalar>::pi(),
                                                  Scalar(0), Scalar(0))));
   RxSO3Type const saturated_product = small1 * small2;
-  EXPECT_THAT(saturated_product.scale(), IsNear(kEpsilon, kEpsilon));
+  Scalar const kEpsilonPlus = Constants<Scalar>::epsilonPlus();
+  EXPECT_THAT(saturated_product.scale(),
+              IsNear(kEpsilonPlus, saturationTolerance(kEpsilonPlus)));
   EXPECT_THAT(saturated_product.so3(),
               IsNear(small1.so3() * small2.so3(), kEpsilon));
 }
@@ -144,25 +159,36 @@ TYPED_TEST(RxSO3Test, ExpSaturatesTheScaleDespiteRoundingOfTheRotation) {
   using SO3Type = SO3<Scalar>;
   using Tangent = typename RxSO3Type::Tangent;
   using std::log;
+  using std::sqrt;
   Scalar const kEpsilon = Constants<Scalar>::epsilon();
+  Scalar const kEpsilonPlus = Constants<Scalar>::epsilonPlus();
+  int constexpr kMaxSamples = 1000;
 
-  // Looks for a rotation whose unit quaternion has a squared norm below 1
-  // after rounding. Random() does not support ceres::Jet, so the tangent is
-  // sampled in double and converted to Scalar.
-  Tangent small_log;
-  while (true) {
-    typename SO3Type::Tangent const so3_tangent =
-        Eigen::Vector3d::Random().cast<Scalar>();
-    SO3Type const so3_exp = SO3Type::exp(so3_tangent);
-    if (so3_exp.unit_quaternion().squaredNorm() >= Scalar(1.)) {
-      continue;
+  // Looks for a rotation whose unit quaternion, scaled by the square root of
+  // epsilon, rounds to a scale below epsilon, such that saturating the scale
+  // at epsilon itself would violate the class invariant. The tangent is
+  // sampled in double and converted to Scalar for compatibility with
+  // ceres::Jet.
+  std::mt19937 rng;
+  std::uniform_real_distribution<double> uniform(-1., 1.);
+  std::optional<typename SO3Type::Tangent> rounding_tangent;
+  for (int i = 0; i < kMaxSamples && !rounding_tangent; ++i) {
+    typename SO3Type::Tangent const so3_tangent(
+        Scalar(uniform(rng)), Scalar(uniform(rng)), Scalar(uniform(rng)));
+    Vector4<Scalar> const scaled =
+        SO3Type::exp(so3_tangent).unit_quaternion().coeffs() * sqrt(kEpsilon);
+    if (scaled.squaredNorm() < kEpsilon) {
+      rounding_tangent = so3_tangent;
     }
-    small_log << so3_tangent, log(kEpsilon / Scalar(2.));
-    break;
   }
+  ASSERT_TRUE(rounding_tangent.has_value())
+      << "no rounding rotation among " << kMaxSamples << " samples";
 
+  Tangent small_log;
+  small_log << *rounding_tangent, log(kEpsilon / Scalar(2.));
   RxSO3Type const small_exp = RxSO3Type::exp(small_log);
-  EXPECT_THAT(small_exp.quaternion().squaredNorm(), IsNear(kEpsilon, kEpsilon));
+  EXPECT_THAT(small_exp.scale(),
+              IsNear(kEpsilonPlus, saturationTolerance(kEpsilonPlus)));
 }
 
 TYPED_TEST(RxSO3Test, MapsAccessTheUnderlyingData) {

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <random>
 
 #include <sophus/rxso2.hpp>
@@ -79,6 +80,16 @@ namespace {
 #endif
                           >("RxSO2");
 
+/**
+ * Returns the tolerance of a saturated scale `expected`. Saturated scales
+ * differ by a factor of 1 + epsilon from the bounds of the class invariant,
+ * which half of this margin still tells apart.
+ */
+template <class Scalar>
+Scalar saturationTolerance(Scalar const& expected) {
+  return expected * Constants<Scalar>::epsilon() / Scalar(2);
+}
+
 template <class Scalar>
 class RxSO2Test : public ::testing::Test {};
 
@@ -99,7 +110,9 @@ TYPED_TEST(RxSO2Test, ProductOfSmallElementsSaturatesTheScale) {
   RxSO2Type const small2(Scalar(1.1) * kEpsilon,
                          SO2<Scalar>::exp(Constants<Scalar>::pi()));
   RxSO2Type const saturated_product = small1 * small2;
-  EXPECT_THAT(saturated_product.scale(), IsNear(kEpsilon, kEpsilon));
+  Scalar const kEpsilonPlus = Constants<Scalar>::epsilonPlus();
+  EXPECT_THAT(saturated_product.scale(),
+              IsNear(kEpsilonPlus, saturationTolerance(kEpsilonPlus)));
   EXPECT_THAT(saturated_product.so2(),
               IsNear(small1.so2() * small2.so2(), kEpsilon));
 }
@@ -122,30 +135,33 @@ TYPED_TEST(RxSO2Test, ExpSaturatesTheScaleDespiteRoundingOfTheRotation) {
   using Scalar = TypeParam;
   using RxSO2Type = RxSO2<Scalar>;
   using Tangent = typename RxSO2Type::Tangent;
-  using std::cos;
   using std::log;
-  using std::sin;
   Scalar const kEpsilon = Constants<Scalar>::epsilon();
+  Scalar const kEpsilonPlus = Constants<Scalar>::epsilonPlus();
+  int constexpr kMaxSamples = 1000;
 
-  // Looks for an angle whose cosine and sine have a squared norm below 1
-  // after rounding. The angle is sampled in double and converted to Scalar
-  // for compatibility with ceres::Jet.
+  // Looks for an angle whose unit complex number, scaled by epsilon, rounds
+  // to a scale below epsilon, such that saturating the scale at epsilon
+  // itself would violate the class invariant. The angle is sampled in double
+  // and converted to Scalar for compatibility with ceres::Jet.
   std::mt19937 rng;
   std::uniform_real_distribution<double> uniform(0., Constants<double>::pi());
-  Tangent small_log;
-  while (true) {
-    Scalar const phi = Scalar(uniform(rng));
-    Scalar const c = cos(phi);
-    Scalar const s = sin(phi);
-    if (c * c + s * s < Scalar(1.)) {
-      small_log[0] = phi;
-      break;
+  std::optional<Scalar> rounding_angle;
+  for (int i = 0; i < kMaxSamples && !rounding_angle; ++i) {
+    Scalar const angle(uniform(rng));
+    Vector2<Scalar> const scaled =
+        SO2<Scalar>::exp(angle).unit_complex() * kEpsilon;
+    if (scaled.squaredNorm() < kEpsilon * kEpsilon) {
+      rounding_angle = angle;
     }
   }
-  small_log[1] = log(kEpsilon / Scalar(2.));
+  ASSERT_TRUE(rounding_angle.has_value())
+      << "no rounding angle among " << kMaxSamples << " samples";
 
+  Tangent const small_log(*rounding_angle, log(kEpsilon / Scalar(2.)));
   RxSO2Type const small_exp = RxSO2Type::exp(small_log);
-  EXPECT_THAT(small_exp.scale(), IsNear(kEpsilon, kEpsilon));
+  EXPECT_THAT(small_exp.scale(),
+              IsNear(kEpsilonPlus, saturationTolerance(kEpsilonPlus)));
 }
 
 TYPED_TEST(RxSO2Test, MapsAccessTheUnderlyingData) {
