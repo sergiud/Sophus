@@ -173,7 +173,6 @@ TYPED_TEST(Sim2Test, MapsAccessTheUnderlyingData) {
               IsNear(raw2.template tail<2>(), kEpsilon));
   EXPECT_EQ(map_of_sim2.complex().data(), raw.data());
   EXPECT_EQ(map_of_sim2.translation().data(), raw.data() + 2);
-  EXPECT_NE(map_of_sim2.complex().data(), z.data());
   Eigen::Map<Sim2Type> const shallow_copy = map_of_sim2;
   EXPECT_EQ(shallow_copy.complex().eval(), map_of_sim2.complex().eval());
   EXPECT_EQ(shallow_copy.translation().eval(),

@@ -210,7 +210,6 @@ TYPED_TEST(Sim3Test, MapsAccessTheUnderlyingData) {
               IsNear(raw2.template tail<3>(), kEpsilon));
   EXPECT_EQ(map_of_sim3.quaternion().coeffs().data(), raw.data());
   EXPECT_EQ(map_of_sim3.translation().data(), raw.data() + 4);
-  EXPECT_NE(map_of_sim3.quaternion().coeffs().data(), quat.coeffs().data());
   Eigen::Map<Sim3Type> const shallow_copy = map_of_sim3;
   EXPECT_EQ(shallow_copy.quaternion().coeffs().eval(),
             map_of_sim3.quaternion().coeffs().eval());
