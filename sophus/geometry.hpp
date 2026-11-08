@@ -63,10 +63,6 @@ Matrix3<T> rotationFromNormal(Vector3<T> const& normal_foo,
                                                                    T(0))) {
   using std::abs;
   using std::sqrt;
-  SOPHUS_ENSURE(abs(xDirHint_foo.dot(yDirHint_foo)) < Constants<T>::epsilon(),
-                "xDirHint ({}) and yDirHint ({}) must be perpendicular.",
-                SOPHUS_FMT_ARG(xDirHint_foo.transpose()),
-                SOPHUS_FMT_ARG(yDirHint_foo.transpose()));
   T const xDirHint_foo_sqr_length = xDirHint_foo.squaredNorm();
   T const yDirHint_foo_sqr_length = yDirHint_foo.squaredNorm();
   T const normal_foo_sqr_length = normal_foo.squaredNorm();
@@ -76,6 +72,16 @@ Matrix3<T> rotationFromNormal(Vector3<T> const& normal_foo,
                 SOPHUS_FMT_ARG(yDirHint_foo.transpose()));
   SOPHUS_ENSURE(normal_foo_sqr_length > Constants<T>::epsilon(), "{}",
                 SOPHUS_FMT_ARG(normal_foo.transpose()));
+  // The cosine of the angle between the hints, independent of their lengths.
+  T const cos_hints = xDirHint_foo.dot(yDirHint_foo) /
+                      sqrt(xDirHint_foo_sqr_length * yDirHint_foo_sqr_length);
+  SOPHUS_ENSURE(abs(cos_hints) < Constants<T>::epsilon(),
+                "xDirHint ({}) and yDirHint ({}) must be perpendicular, but "
+                "the cosine of their angle is {}, not below {}.",
+                SOPHUS_FMT_ARG(xDirHint_foo.transpose()),
+                SOPHUS_FMT_ARG(yDirHint_foo.transpose()),
+                SOPHUS_FMT_ARG(cos_hints),
+                SOPHUS_FMT_ARG(Constants<T>::epsilon()));
 
   Matrix3<T> basis_foo;
   basis_foo.col(2) = normal_foo;

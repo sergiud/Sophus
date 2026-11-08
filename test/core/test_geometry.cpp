@@ -1,5 +1,8 @@
 // Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <cstdlib>
+#include <tuple>
+
 #include <sophus/geometry.hpp>
 
 #include "tests.hpp"
@@ -165,6 +168,23 @@ TYPED_TEST(GeometryTest, FrameOfLineWithNonUnitNormalLiesOnTheLine) {
   EXPECT_THAT(T_foo_line.translation(),
               IsNear(Vector2<Scalar>(Scalar(0), Scalar(1)),
                      Constants<Scalar>::epsilon()));
+}
+
+TEST(GeometryDeathTest, PerpendicularityOfHintsIgnoresTheirLength) {
+  Vector3<double> const normal(0, 0, 1);
+  // Long hints whose angle differs from 90 degrees by about 1e-12.
+  EXPECT_EXIT(
+      {
+        std::ignore = rotationFromNormal(normal, Vector3<double>(1e6, 0, 0),
+                                         Vector3<double>(1e-6, 1e6, 0));
+        std::exit(0);
+      },
+      ::testing::ExitedWithCode(0), "");
+  // Short hints at an angle of about 66 degrees.
+  EXPECT_DEATH(
+      std::ignore = rotationFromNormal(normal, Vector3<double>(1e-3, 0, 0),
+                                       Vector3<double>(4e-4, 1e-3, 0)),
+      "perpendicular");
 }
 
 }  // namespace
