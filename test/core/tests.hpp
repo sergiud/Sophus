@@ -4,10 +4,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <random>
 #include <string>
@@ -125,6 +127,32 @@ class LieGroupTests {
  private:
   static Scalar smallEps() { return Constants<Scalar>::epsilon(); }
   static Scalar smallEpsSqrt() { return Constants<Scalar>::epsilonSqrt(); }
+
+  /// The rounding error of an identity between products of a few matrices,
+  /// in units of the machine epsilon.
+  static constexpr int kIdentityEpsilons = 64;
+  /// The rounding error of interpolation, which composes logarithms,
+  /// exponentials and products of elements with large translations, in
+  /// units of the machine epsilon.
+  static constexpr int kInterpolationEpsilons = 4096;
+  /// The error of a central difference of a derivative in units of the
+  /// square root of the machine epsilon.
+  static constexpr int kNumDiffEpsilonSqrts = 10;
+
+  static Scalar machineEps() { return std::numeric_limits<Scalar>::epsilon(); }
+  static Scalar machineEpsSqrt() {
+    using std::sqrt;
+    return sqrt(machineEps());
+  }
+  static Scalar identityTolerance() {
+    return Scalar(kIdentityEpsilons) * machineEps();
+  }
+  static Scalar interpolationTolerance() {
+    return Scalar(kInterpolationEpsilons) * machineEps();
+  }
+  static Scalar numDiffTolerance() {
+    return Scalar(kNumDiffEpsilonSqrts) * machineEpsSqrt();
+  }
 
   static StdVector<LieGroup> elements() {
     return LieGroupTestData<LieGroup>::groupElements();
@@ -369,14 +397,14 @@ class LieGroupTests {
               return (T * LieGroup::exp(x)).params();
             },
             o);
-    EXPECT_THAT(J, IsNear(J_num, smallEpsSqrt()));
+    EXPECT_THAT(J, IsNear(J_num, numDiffTolerance()));
   }
 
   static void dxLogThisInvByXAtThisInvertsDxThisMulExpXAt0(LieGroup const& T) {
     Eigen::Matrix<Scalar, kDoF, kDoF> const J =
         T.Dx_log_this_inv_by_x_at_this() * T.Dx_this_mul_exp_x_at_0();
     EXPECT_THAT(J, IsNear(Eigen::Matrix<Scalar, kDoF, kDoF>::Identity(),
-                          smallEpsSqrt()));
+                          identityTolerance()));
   }
 
   static void dxLogThisInvByXAtThisMatchesNumericalDerivative(
@@ -395,7 +423,7 @@ class LieGroupTests {
             },
             T.params());
     EXPECT_THAT(T.Dx_log_this_inv_by_x_at_this(),
-                IsNear(J_num, smallEpsSqrt()));
+                IsNear(J_num, numDiffTolerance()));
   }
 
   static void dxiExpXMatrixAt0MatchesNumericalDerivative(int i) {
@@ -429,23 +457,19 @@ class LieGroupTests {
                 IsNear(expmap_hat_x, Scalar(10) * smallEps()));
   }
 
-  // TODO: Improve accuracy of ``interpolate`` (and hence ``exp`` and ``log``)
-  //       so that the interpolation tests can use more accurate bounds, i.e.
-  //       ``smallEps()`` instead of ``smallEpsSqrt()``.
-
   static void interpolateHitsTheEndpoints(LieGroup const& foo_T_bar) {
     StdVector<LieGroup> const others = elements();
     EXPECT_THAT(mapped(others,
                        [&foo_T_bar](LieGroup const& foo_T_baz) {
                          return interpolate(foo_T_bar, foo_T_baz, Scalar(0));
                        }),
-                ::testing::Each(IsNear(foo_T_bar, smallEpsSqrt())))
+                ::testing::Each(IsNear(foo_T_bar, interpolationTolerance())))
         << "at alpha = 0 for each second element";
     EXPECT_THAT(mapped(others,
                        [&foo_T_bar](LieGroup const& foo_T_baz) {
                          return interpolate(foo_T_bar, foo_T_baz, Scalar(1));
                        }),
-                ::testing::Pointwise(IsNear(smallEpsSqrt()), others))
+                ::testing::Pointwise(IsNear(interpolationTolerance()), others))
         << "at alpha = 1 for each second element";
   }
 
@@ -464,7 +488,8 @@ class LieGroupTests {
         mapped(dashes, [&foo_T_quiz](LieGroup const& dash_T_foo) {
           return LieGroup(dash_T_foo * foo_T_quiz);
         });
-    EXPECT_THAT(actual, ::testing::Pointwise(IsNear(smallEpsSqrt()), expected))
+    EXPECT_THAT(actual, ::testing::Pointwise(IsNear(interpolationTolerance()),
+                                             expected))
         << "for each element dash_T_foo";
   }
 
@@ -476,7 +501,8 @@ class LieGroupTests {
     LieGroup const foo_T_quiz = interpolate(foo_T_bar, foo_T_baz, alpha);
     LieGroup const quiz_T_foo =
         interpolate(foo_T_bar.inverse(), foo_T_baz.inverse(), alpha);
-    EXPECT_THAT(quiz_T_foo.inverse(), IsNear(foo_T_quiz, smallEpsSqrt()));
+    EXPECT_THAT(quiz_T_foo.inverse(),
+                IsNear(foo_T_quiz, interpolationTolerance()));
   }
 
   // interp(bar_T_foo, baz_T_foo) * foo_T_dash
@@ -494,7 +520,8 @@ class LieGroupTests {
         mapped(dashes, [&quiz_T_foo](LieGroup const& foo_T_dash) {
           return LieGroup(quiz_T_foo * foo_T_dash);
         });
-    EXPECT_THAT(actual, ::testing::Pointwise(IsNear(smallEpsSqrt()), expected))
+    EXPECT_THAT(actual, ::testing::Pointwise(IsNear(interpolationTolerance()),
+                                             expected))
         << "for each element foo_T_dash";
   }
 
@@ -596,14 +623,13 @@ class LieGroupTests {
               return (LieGroup::exp(x_plus_delta) * inv_exp_x).log();
             },
             x);
-    EXPECT_THAT(LieGroup::leftJacobian(x),
-                IsNear(J_num, Scalar(100) * smallEpsSqrt()));
+    EXPECT_THAT(LieGroup::leftJacobian(x), IsNear(J_num, numDiffTolerance()));
   }
 
   static void leftJacobianInverseIsItsInverse(Tangent const& x) {
     Matrix<Scalar, kDoF, kDoF> const J_inv = LieGroup::leftJacobianInverse(x);
     EXPECT_THAT(LieGroup::leftJacobian(x),
-                IsNear(J_inv.inverse(), Scalar(100) * smallEpsSqrt()));
+                IsNear(J_inv.inverse(), identityTolerance()));
   }
 };
 
