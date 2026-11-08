@@ -510,53 +510,47 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x(Tangent const& upsilon_theta) {
-    using std::abs;
     using std::cos;
-    using std::pow;
     using std::sin;
-    Sophus::Matrix<Scalar, num_parameters, DoF> J;
-    Sophus::Vector<Scalar, 2> upsilon = upsilon_theta.template head<2>();
-    Scalar theta = upsilon_theta[2];
+    Vector2<Scalar> const upsilon = upsilon_theta.template head<2>();
+    Scalar const theta = upsilon_theta[2];
+    Scalar const theta_sq = theta * theta;
+    Scalar const sin_theta = sin(theta);
+    Scalar const cos_theta = cos(theta);
 
-    if (abs(theta) < Constants<Scalar>::epsilon()) {
-      Scalar const o(0);
-      Scalar const i(1);
-
-      // clang-format off
-      J << o, o, o,
-           o, o, i,
-           i, o, -Scalar(0.5) * upsilon[1],
-           o, i,  Scalar(0.5) * upsilon[0];
-      // clang-format on
-      return J;
+    // The translation is V upsilon with V = [a -b; b a], a = sin(theta) /
+    // theta and b = (1 - cos(theta)) / theta. The closed forms of a, b and
+    // of their derivatives cancel for small angles, where their Taylor
+    // series replace them.
+    Scalar a;
+    Scalar b;
+    Scalar da;
+    Scalar db;
+    if (theta_sq < Scalar(details::kSeriesThetaSqBound)) {
+      a = details::alternatingSeries(theta_sq, 1, [](int) { return 1; });
+      b = theta *
+          details::alternatingSeries(theta_sq, 2, [](int) { return 1; });
+      da = -theta * details::alternatingSeries(theta_sq, 3,
+                                               [](int k) { return 2 * k + 2; });
+      db = details::alternatingSeries(theta_sq, 2,
+                                      [](int k) { return 2 * k + 1; });
+    } else {
+      a = sin_theta / theta;
+      b = (Scalar(1) - cos_theta) / theta;
+      da = (theta * cos_theta - sin_theta) / theta_sq;
+      db = (theta * sin_theta - Scalar(1) + cos_theta) / theta_sq;
     }
 
-    Scalar const c0 = sin(theta);
-    Scalar const c1 = cos(theta);
-    Scalar const c2 = 1.0 / theta;
-    Scalar const c3 = c0 * c2;
-    Scalar const c4 = -c1 + Scalar(1);
-    Scalar const c5 = c2 * c4;
-    Scalar const c6 = c1 * c2;
-    Scalar const c7 = pow(theta, -2);
-    Scalar const c8 = c0 * c7;
-    Scalar const c9 = c4 * c7;
-
-    Scalar const o = Scalar(0);
-    J(0, 0) = o;
-    J(0, 1) = o;
-    J(0, 2) = -c0;
-    J(1, 0) = o;
-    J(1, 1) = o;
-    J(1, 2) = c1;
-    J(2, 0) = c3;
-    J(2, 1) = -c5;
-    J(2, 2) =
-        -c3 * upsilon[1] + c6 * upsilon[0] - c8 * upsilon[0] + c9 * upsilon[1];
-    J(3, 0) = c5;
-    J(3, 1) = c3;
-    J(3, 2) =
-        c3 * upsilon[0] + c6 * upsilon[1] - c8 * upsilon[1] - c9 * upsilon[0];
+    Sophus::Matrix<Scalar, num_parameters, DoF> J;
+    J.template topLeftCorner<2, 2>().setZero();
+    J(0, 2) = -sin_theta;
+    J(1, 2) = cos_theta;
+    // clang-format off
+    J.template bottomLeftCorner<2, 2>() << a, -b,
+                                           b,  a;
+    // clang-format on
+    J(2, 2) = da * upsilon[0] - db * upsilon[1];
+    J(3, 2) = db * upsilon[0] + da * upsilon[1];
     return J;
   }
 

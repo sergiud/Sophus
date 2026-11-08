@@ -264,5 +264,9 @@ TYPED_TEST(SE2FloatingPointTest, ExpMatchesReference) {
   reference::expectAccurateExp<SE2<TypeParam>>(reference::kSE2Exp);
 }
 
+TYPED_TEST(SE2FloatingPointTest, DxExpXMatchesReference) {
+  reference::expectAccurateDxExpX<SE2<TypeParam>>(reference::kSE2DxExpX);
+}
+
 }  // namespace
 }  // namespace Sophus
