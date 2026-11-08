@@ -134,6 +134,31 @@ if (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
     )
   endforeach (test_name)
 
+  # Installs the package into the build tree and builds a project against
+  # it, so that the installed package configuration is tested as consumers
+  # use it.
+  set (SOPHUS_PACKAGE_TEST_DIR ${PROJECT_BINARY_DIR}/package-test)
+  add_test (NAME package_install
+    COMMAND ${CMAKE_COMMAND} --install ${PROJECT_BINARY_DIR}
+            --prefix ${SOPHUS_PACKAGE_TEST_DIR}/install --config $<CONFIG>
+  )
+  add_test (NAME package_consumer
+    COMMAND ${CMAKE_CTEST_COMMAND}
+            --build-and-test ${PROJECT_SOURCE_DIR}/test/package
+                             ${SOPHUS_PACKAGE_TEST_DIR}/build
+            --build-generator ${CMAKE_GENERATOR}
+            --build-config $<CONFIG>
+            --build-options
+              -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+              -DCMAKE_FIND_USE_PACKAGE_REGISTRY=OFF
+              -DCMAKE_PREFIX_PATH=${SOPHUS_PACKAGE_TEST_DIR}/install
+              -DEigen3_DIR=${Eigen3_DIR}
+              -Dfmt_DIR=${fmt_DIR}
+            --test-command consumer
+  )
+  set_tests_properties (package_install PROPERTIES FIXTURES_SETUP package)
+  set_tests_properties (package_consumer PROPERTIES FIXTURES_REQUIRED package)
+
   if (Ceres_FOUND)
     foreach (test_name IN ITEMS
       test_ceres_rxso2
