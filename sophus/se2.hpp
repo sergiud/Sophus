@@ -355,7 +355,7 @@ class SE2Base {
     SOPHUS_ENSURE(R.determinant() > Scalar(0), "det(R) is not positive: {}",
                   SOPHUS_FMT_ARG(R.determinant()));
     typename SO2Type::ComplexTemporaryType const complex(
-        Scalar(0.5) * (R(0, 0) + R(1, 1)), Scalar(0.5) * (R(1, 0) - R(0, 1)));
+        (R(0, 0) + R(1, 1)) / Scalar(2), (R(1, 0) - R(0, 1)) / Scalar(2));
     so2().setComplex(complex);
   }
 
@@ -608,9 +608,9 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
 
     if (abs(theta) < Constants<Scalar>::epsilon()) {
       Scalar theta_sq = theta * theta;
-      sin_theta_by_theta = Scalar(1.) - Scalar(1. / 6.) * theta_sq;
+      sin_theta_by_theta = Scalar(1.) - theta_sq / Scalar(6);
       one_minus_cos_theta_by_theta =
-          Scalar(0.5) * theta - Scalar(1. / 24.) * theta * theta_sq;
+          theta / Scalar(2) - theta * theta_sq / Scalar(24);
     } else {
       sin_theta_by_theta = so2.unit_complex().y() / theta;
       one_minus_cos_theta_by_theta =

@@ -47,7 +47,6 @@ Matrix<Scalar, N, N> calcW(Matrix<Scalar, N, N> const &Omega,
   using std::fpclassify;
   using std::sin;
   static Scalar const one(1);
-  static Scalar const half(0.5);
   Scalar const theta_sq = theta * theta;
   Scalar const sigma_sq = sigma * sigma;
   if (theta_sq + sigma_sq < Scalar(kWSeriesBound)) {
@@ -70,7 +69,7 @@ Matrix<Scalar, N, N> calcW(Matrix<Scalar, N, N> const &Omega,
   Scalar B;
   if (theta_sq < Constants<Scalar>::epsilon()) {
     A = ((sigma - one) * scale + one) / sigma_sq;
-    B = (scale * half * sigma_sq + scale - one - sigma * scale) /
+    B = (scale * sigma_sq / Scalar(2) + scale - one - sigma * scale) /
         (sigma_sq * sigma);
   } else {
     Scalar const a = scale * sin(theta);

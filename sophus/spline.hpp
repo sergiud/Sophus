@@ -15,39 +15,50 @@ template <class Scalar>
 class SplineBasisFunction {
  public:
   static SOPHUS_FUNC Eigen::Matrix<Scalar, 3, 4> C() {
-    Eigen::Matrix<Scalar, 3, 4> C;
-    Scalar const o(0);
-
-    // clang-format off
-    C << Scalar(5./6),  Scalar(3./6), -Scalar(3./6),  Scalar(1./6),
-         Scalar(1./6),  Scalar(3./6),  Scalar(3./6), -Scalar(2./6),
-                    o,             o,             o,  Scalar(1./6);
-    // clang-format on
-    return C;
+    return sixfoldC() / Scalar(kCDenominator);
   }
 
   static SOPHUS_FUNC Vector3<Scalar> B(Scalar const& u) {
     // SOPHUS_ENSURE(u >= Scalar(0), "but %", u);
     // SOPHUS_ENSURE(u < Scalar(1), "but %", u);
     Scalar u_square(u * u);
-    return C() * Vector4<Scalar>(Scalar(1), u, u_square, u * u_square);
+    return sixfoldC() * Vector4<Scalar>(Scalar(1), u, u_square, u * u_square) /
+           Scalar(kCDenominator);
   }
 
   static SOPHUS_FUNC Vector3<Scalar> Dt_B(Scalar const& u,
                                           Scalar const& delta_t) {
     // SOPHUS_ENSURE(u >= Scalar(0), "but %", u);
     // SOPHUS_ENSURE(u < Scalar(1), "but %", u);
-    return (Scalar(1) / delta_t) * C() *
+    return sixfoldC() *
            Vector4<Scalar>(Scalar(0), Scalar(1), Scalar(2) * u,
-                           Scalar(3) * u * u);
+                           Scalar(3) * u * u) /
+           (Scalar(kCDenominator) * delta_t);
   }
 
   static SOPHUS_FUNC Vector3<Scalar> Dt2_B(Scalar const& u,
                                            Scalar const& delta_t) {
     // SOPHUS_ENSURE(u >= Scalar(0), "but %", u);
     // SOPHUS_ENSURE(u < Scalar(1), "but %", u);
-    return (Scalar(1) / (delta_t * delta_t)) * C() *
-           Vector4<Scalar>(Scalar(0), Scalar(0), Scalar(2), Scalar(6) * u);
+    return sixfoldC() *
+           Vector4<Scalar>(Scalar(0), Scalar(0), Scalar(2), Scalar(6) * u) /
+           (Scalar(kCDenominator) * delta_t * delta_t);
+  }
+
+ private:
+  /// The common denominator of the entries of C().
+  static constexpr int kCDenominator = 6;
+
+  /// Returns C() times kCDenominator, whose entries are integers and thus
+  /// exact, unlike the entries of C().
+  static SOPHUS_FUNC Eigen::Matrix<Scalar, 3, 4> sixfoldC() {
+    Eigen::Matrix<Scalar, 3, 4> C;
+    // clang-format off
+    C << Scalar(5), Scalar(3), Scalar(-3), Scalar(1),
+         Scalar(1), Scalar(3), Scalar(3),  Scalar(-2),
+         Scalar(0), Scalar(0), Scalar(0),  Scalar(1);
+    // clang-format on
+    return C;
   }
 };
 

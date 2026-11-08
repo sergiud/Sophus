@@ -332,9 +332,8 @@ class RxSO2Base {
   SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
       const {
     Matrix<Scalar, DoF, num_parameters> J;
-    const Scalar norm_sq_inv = Scalar(1.) / complex().squaredNorm();
     J << -complex().y(), complex().x(), complex().x(), complex().y();
-    return J * norm_sq_inv;
+    return J / complex().squaredNorm();
   }
 
   /// Returns internal parameters of RxSO(2).

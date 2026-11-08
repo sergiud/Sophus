@@ -141,11 +141,11 @@ class SE3Base {
   Dx_this_mul_exp_x_at_0() const {
     Matrix<Scalar, num_parameters, DoF> J;
     Eigen::Quaternion<Scalar> const q = unit_quaternion();
-    Scalar const c0 = Scalar(0.5) * q.w();
-    Scalar const c1 = Scalar(0.5) * q.z();
+    Scalar const c0 = q.w() / Scalar(2);
+    Scalar const c1 = q.z() / Scalar(2);
     Scalar const c2 = -c1;
-    Scalar const c3 = Scalar(0.5) * q.y();
-    Scalar const c4 = Scalar(0.5) * q.x();
+    Scalar const c3 = q.y() / Scalar(2);
+    Scalar const c4 = q.x() / Scalar(2);
     Scalar const c5 = -c4;
     Scalar const c6 = -c3;
     Scalar const c7 = q.w() * q.w();
@@ -559,8 +559,6 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
     using std::hypot;
     using std::sin;
 
-    Scalar const k1By2(0.5);
-
     Scalar const theta_sq = omega.squaredNorm();
     Matrix3<Scalar> const Upsilon = SO3<Scalar>::hat(upsilon);
 
@@ -583,15 +581,15 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
       Scalar const st = sin(theta);
       Scalar const ct = cos(theta);
       c1 = (theta - st) / (theta_sq * theta);
-      c2 = (k1By2 * theta_sq + ct - Scalar(1)) / theta_po4;
-      c3 =
-          (theta + k1By2 * theta * ct - Scalar(1.5) * st) / (theta_po4 * theta);
+      c2 = (theta_sq / Scalar(2) + ct - Scalar(1)) / theta_po4;
+      c3 = (theta + theta * ct / Scalar(2) - Scalar(1.5) * st) /
+           (theta_po4 * theta);
     }
 
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
     Matrix3<Scalar> const OmegaUpsilon = Omega * Upsilon;
     Matrix3<Scalar> const OmegaUpsilonOmega = OmegaUpsilon * Omega;
-    return k1By2 * Upsilon +
+    return Upsilon / Scalar(2) +
            c1 * (OmegaUpsilon + Upsilon * Omega + OmegaUpsilonOmega) -
            c2 * (theta_sq * Upsilon + Scalar(2) * OmegaUpsilonOmega) +
            c3 * (OmegaUpsilonOmega * Omega + Omega * OmegaUpsilonOmega);

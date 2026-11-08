@@ -420,7 +420,7 @@ class RxSO3Base {
   ///
   SOPHUS_FUNC void setScaledRotationMatrix(Transformation const& sR) {
     Transformation squared_sR = sR * sR.transpose();
-    Scalar squared_scale = Scalar(1. / 3.) * squared_sR.diagonal().sum();
+    Scalar squared_scale = squared_sR.diagonal().sum() / Scalar(3);
     SOPHUS_ENSURE(squared_scale >= Constants<Scalar>::epsilon() *
                                        Constants<Scalar>::epsilon(),
                   "Scale factor must be greater-equal epsilon.");
@@ -451,12 +451,12 @@ class RxSO3Base {
   Dx_this_mul_exp_x_at_0() const {
     Matrix<Scalar, num_parameters, DoF> J;
     Eigen::Quaternion<Scalar> const q = quaternion();
-    J.col(3) = q.coeffs() * Scalar(0.5);
-    Scalar const c0 = Scalar(0.5) * q.w();
-    Scalar const c1 = Scalar(0.5) * q.z();
+    J.col(3) = q.coeffs() / Scalar(2);
+    Scalar const c0 = q.w() / Scalar(2);
+    Scalar const c1 = q.z() / Scalar(2);
     Scalar const c2 = -c1;
-    Scalar const c3 = Scalar(0.5) * q.y();
-    Scalar const c4 = Scalar(0.5) * q.x();
+    Scalar const c3 = q.y() / Scalar(2);
+    Scalar const c4 = q.x() / Scalar(2);
     Scalar const c5 = -c4;
     Scalar const c6 = -c3;
     J(0, 0) = c0;
@@ -607,8 +607,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x_at_0() {
-    static Scalar const h(0.5);
-    return h * Sophus::Matrix<Scalar, num_parameters, DoF>::Identity();
+    return Sophus::Matrix<Scalar, num_parameters, DoF>::Identity() / Scalar(2);
   }
 
   /// Returns derivative of exp(x) wrt. x.
@@ -622,7 +621,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
     Scalar const sigma = a[3];
     Eigen::Quaternion<Scalar> quat = SO3<Scalar>::exp(omega).unit_quaternion();
     Scalar const scale = sqrt(exp(sigma));
-    Scalar const scale_half = scale * Scalar(0.5);
+    Scalar const scale_half = scale / Scalar(2);
 
     // clang-format off
     J << SO3<Scalar>::Dx_exp_x(omega) * scale,

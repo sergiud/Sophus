@@ -203,11 +203,11 @@ class SO3Base {
   Dx_this_mul_exp_x_at_0() const {
     Matrix<Scalar, num_parameters, DoF> J;
     Eigen::Quaternion<Scalar> const q = unit_quaternion();
-    Scalar const c0 = Scalar(0.5) * q.w();
-    Scalar const c1 = Scalar(0.5) * q.z();
+    Scalar const c0 = q.w() / Scalar(2);
+    Scalar const c1 = q.z() / Scalar(2);
     Scalar const c2 = -c1;
-    Scalar const c3 = Scalar(0.5) * q.y();
-    Scalar const c4 = Scalar(0.5) * q.x();
+    Scalar const c3 = q.y() / Scalar(2);
+    Scalar const c4 = q.x() / Scalar(2);
     Scalar const c5 = -c4;
     Scalar const c6 = -c3;
     J(0, 0) = c0;
@@ -299,7 +299,7 @@ class SO3Base {
                     SOPHUS_FMT_ARG(unit_quaternion().coeffs().transpose()));
       Scalar squared_w = w * w;
       two_atan_nbyw_by_n =
-          Scalar(2) / w - Scalar(2.0 / 3.0) * (squared_n) / (w * squared_w);
+          Scalar(2) / w - Scalar(2) * squared_n / (Scalar(3) * w * squared_w);
       // The square root has no finite derivative at zero, which an automatic
       // differentiation scalar would propagate.
       Scalar const n =
@@ -576,7 +576,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
 
     if (theta_sq <
         Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
-      V = Matrix3<Scalar>::Identity() + Scalar(0.5) * Omega;
+      V = Matrix3<Scalar>::Identity() + Omega / Scalar(2);
     } else {
       Scalar theta =
           theta_o ? *theta_o : hypot(omega.x(), omega.y(), omega.z());
@@ -603,17 +603,16 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     Matrix3<Scalar> V_inv;
     if (theta_sq <
         Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
-      V_inv = Matrix3<Scalar>::Identity() - Scalar(0.5) * Omega +
-              Scalar(1. / 12.) * (Omega * Omega);
+      V_inv = Matrix3<Scalar>::Identity() - Omega / Scalar(2) +
+              (Omega * Omega) / Scalar(12);
 
     } else {
       Scalar const theta =
           theta_o ? *theta_o : hypot(omega.x(), omega.y(), omega.z());
-      Scalar const half_theta = Scalar(0.5) * theta;
+      Scalar const half_theta = theta / Scalar(2);
 
-      V_inv = Matrix3<Scalar>::Identity() - Scalar(0.5) * Omega +
-              (Scalar(1) -
-               Scalar(0.5) * theta * cos(half_theta) / sin(half_theta)) /
+      V_inv = Matrix3<Scalar>::Identity() - Omega / Scalar(2) +
+              (Scalar(1) - half_theta * cos(half_theta) / sin(half_theta)) /
                   (theta * theta) * (Omega * Omega);
     }
     return V_inv;
@@ -718,13 +717,12 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
       // differentiation scalar would propagate.
       *theta = theta_sq > Scalar(0) ? Scalar(sqrt(theta_sq)) : Scalar(0);
       Scalar theta_po4 = theta_sq * theta_sq;
-      imag_factor = Scalar(0.5) - Scalar(1.0 / 48.0) * theta_sq +
-                    Scalar(1.0 / 3840.0) * theta_po4;
-      real_factor = Scalar(1) - Scalar(1.0 / 8.0) * theta_sq +
-                    Scalar(1.0 / 384.0) * theta_po4;
+      imag_factor =
+          Scalar(0.5) - theta_sq / Scalar(48) + theta_po4 / Scalar(3840);
+      real_factor = Scalar(1) - theta_sq / Scalar(8) + theta_po4 / Scalar(384);
     } else {
       *theta = hypot(omega.x(), omega.y(), omega.z());
-      Scalar half_theta = Scalar(0.5) * (*theta);
+      Scalar half_theta = (*theta) / Scalar(2);
       Scalar sin_half_theta = sin(half_theta);
       imag_factor = sin_half_theta / (*theta);
       real_factor = cos(half_theta);

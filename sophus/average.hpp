@@ -39,13 +39,13 @@ std::optional<typename SequenceContainer::value_type> iterativeMean(
   // This implements the algorithm in the beginning of Sec. 4.2 in
   // ftp://ftp-sop.inria.fr/epidaure/Publications/Arsigny/arsigny_rr_biinvariant_average.pdf.
   Group foo_T_average = foo_Ts_bar.front();
-  Scalar w = Scalar(1. / N);
   for (int i = 0; i < max_num_iterations; ++i) {
     Tangent average;
     setToZero<Tangent>(average);
     for (Group const& foo_T_bar : foo_Ts_bar) {
-      average += w * (foo_T_average.inverse() * foo_T_bar).log();
+      average += (foo_T_average.inverse() * foo_T_bar).log();
     }
+    average /= Scalar(N);
     Group foo_T_newaverage = foo_T_average * Group::exp(average);
     if (squaredNorm<Tangent>(
             (foo_T_newaverage.inverse() * foo_T_average).log()) <
@@ -97,12 +97,11 @@ average(SequenceContainer const& foo_Ts_bar) {
   size_t N = std::distance(std::begin(foo_Ts_bar), std::end(foo_Ts_bar));
   SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
   SO2<Scalar> foo_T_average = foo_Ts_bar.front();
-  Scalar w = Scalar(1. / N);
-
   Scalar average(0);
   for (SO2<Scalar> const& foo_T_bar : foo_Ts_bar) {
-    average += w * (foo_T_average.inverse() * foo_T_bar).log();
+    average += (foo_T_average.inverse() * foo_T_bar).log();
   }
+  average /= Scalar(N);
   return foo_T_average * SO2<Scalar>::exp(average);
 }
 
@@ -116,12 +115,11 @@ average(SequenceContainer const& foo_Ts_bar) {
   size_t N = std::distance(std::begin(foo_Ts_bar), std::end(foo_Ts_bar));
   SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
   RxSO2<Scalar> foo_T_average = foo_Ts_bar.front();
-  Scalar w = Scalar(1. / N);
-
   Vector2<Scalar> average(Scalar(0), Scalar(0));
   for (RxSO2<Scalar> const& foo_T_bar : foo_Ts_bar) {
-    average += w * (foo_T_average.inverse() * foo_T_bar).log();
+    average += (foo_T_average.inverse() * foo_T_bar).log();
   }
+  average /= Scalar(N);
   return foo_T_average * RxSO2<Scalar>::exp(average);
 }
 
@@ -152,8 +150,8 @@ Eigen::Quaternion<Scalar> averageUnitQuaternion(
     Q.col(i) = details::getUnitQuaternion(foo_T_bar).coeffs();
     ++i;
   }
-  Scalar const w = Scalar(1. / N);
-  Q *= w;
+  // The eigenvectors of Q Q^T do not depend on the scale of Q, so the
+  // quaternions need no weights.
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix<Scalar, 4, 4> > es(Q *
                                                                  Q.transpose());
   // The eigenvalues are sorted in increasing order
