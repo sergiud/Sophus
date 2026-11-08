@@ -19,7 +19,7 @@ class Complex:
         return Complex(self.real + right.real, self.imag + right.imag)
 
     def __neg__(self):
-        return Complex(-self.real, -self.image)
+        return Complex(-self.real, -self.imag)
 
     def __truediv__(self, scalar):
         """ scalar division """
@@ -94,6 +94,9 @@ class TestComplex(unittest.TestCase):
         product = self.a.inv() * self.a
         self.assertEqual(product.simplify(),
                          Complex.identity())
+
+    def test_negation(self):
+        self.assertEqual(-self.a, Complex(-self.a.real, -self.a.imag))
 
     def test_derivatives(self):
         d = sympy.Matrix(2, 2, lambda r, c: sympy.diff(
