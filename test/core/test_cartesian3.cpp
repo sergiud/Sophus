@@ -1,5 +1,7 @@
 // Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <tuple>
+
 #include <sophus/cartesian.hpp>
 
 #include "tests.hpp"
@@ -65,6 +67,12 @@ namespace {
                           Cartesian<ceres::Jet<double, 3>, 3>
 #endif
                           >("Cartesian3");
+
+TEST(Cartesian3DeathTest, RejectsMatricesOfOtherShapes) {
+  Eigen::MatrixXd const m = Eigen::MatrixXd::Zero(2, 5);
+  EXPECT_DEATH(std::ignore = Cartesian3d(m),
+               "Matrix is 2x5, but must be 3x1 or 4x4");
+}
 
 }  // namespace
 }  // namespace Sophus

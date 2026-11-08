@@ -299,14 +299,23 @@ class Cartesian : public CartesianBase<Cartesian<Scalar_, M, Options>, M> {
   template <class D>
   explicit SOPHUS_FUNC Cartesian(Eigen::MatrixBase<D> const& m) {
     static_assert(std::is_same_v<typename Eigen::MatrixBase<D>::Scalar, Scalar>,
-                  "");
+                  "The matrix must have the Scalar type of Cartesian. Cast it "
+                  "with cast<Scalar>() first.");
+    static_assert(
+        D::RowsAtCompileTime == Eigen::Dynamic ||
+            D::ColsAtCompileTime == Eigen::Dynamic ||
+            (D::RowsAtCompileTime == M && D::ColsAtCompileTime == 1) ||
+            (D::RowsAtCompileTime == N && D::ColsAtCompileTime == N),
+        "The matrix must be an M-vector or an (M+1)x(M+1) matrix, since "
+        "Cartesian takes its translation from either.");
     if (m.rows() == DoF && m.cols() == 1) {
       // trick so this compiles
       params_ = m.template block<M, 1>(0, 0);
     } else if (m.rows() == N && m.cols() == N) {
       params_ = m.template block<M, 1>(0, M);
     } else {
-      SOPHUS_ENSURE(false, "{} {}", m.rows(), m.cols());
+      SOPHUS_ENSURE(false, "Matrix is {}x{}, but must be {}x1 or {}x{}.",
+                    m.rows(), m.cols(), M, N, N);
     }
   }
 
