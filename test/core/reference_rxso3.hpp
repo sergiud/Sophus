@@ -12,6 +12,7 @@
 namespace Sophus {
 namespace reference {
 
+// clang-format off
 inline std::vector<Case> const kRxSO3Exp = {
     {{0x0.0p+0L, 0x0.0p+0L, 0x0.0p+0L, 0x0.0p+0L},
      {0.0L, 0.0L, 0.0L, 1.0L}},
@@ -320,6 +321,7 @@ inline std::vector<Case> const kRxSO3Log = {
     {{0x1.29600a0000000p-2L, -0x1.73b80c0000000p-2L, 0x1.8c800c0000000p-2L, 0x1.5f78d20000000p-5L},
      {1.440000024155216905778175L, -1.799999993249682596599374L, 1.919999933688719779375315L, -1.000000039514812129317795L}},
 };
+// clang-format on
 
 }  // namespace reference
 }  // namespace Sophus

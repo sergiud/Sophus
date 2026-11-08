@@ -12,6 +12,7 @@
 namespace Sophus {
 namespace reference {
 
+// clang-format off
 inline std::vector<Case> const kSO2Exp = {
     {{0x0.0p+0L},
      {1.0L, 0.0L}},
@@ -80,6 +81,7 @@ inline std::vector<Case> const kSO2Log = {
     {{-0x1.fae04c0000000p-1L, 0x1.2103860000000p-3L},
      {3.000000006710488224596744L}},
 };
+// clang-format on
 
 }  // namespace reference
 }  // namespace Sophus

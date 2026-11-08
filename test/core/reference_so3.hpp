@@ -12,6 +12,7 @@
 namespace Sophus {
 namespace reference {
 
+// clang-format off
 inline std::vector<Case> const kSO3Exp = {
     {{0x0.0p+0L, 0x0.0p+0L, 0x0.0p+0L},
      {0.0L, 0.0L, 0.0L, 1.0L}},
@@ -126,6 +127,7 @@ inline std::vector<Case> const kSO3LeftJacobianInverse = {
     {{0x1.70a3d80000000p+0L, -0x1.cccccc0000000p+0L, 0x1.eb851e0000000p+0L},
      {0.3122641323690230456399694L, 0.7026351888820381038689433L, 1.174522419598757649875733L, -1.217364768202617657849807L, 0.4280782527747310706120989L, 0.376846997035587922634216L, -0.6254775327175265298117667L, -1.063153060184871061740784L, 0.4724021888664731820306335L}},
 };
+// clang-format on
 
 }  // namespace reference
 }  // namespace Sophus
