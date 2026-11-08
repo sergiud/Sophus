@@ -84,22 +84,25 @@ TYPED_TEST(CommonTest, OneMinusCosOverThetaSqMatchesReference) {
 TYPED_TEST(CommonTest, NumericalDerivativesScaleTheStepWithTheArgument) {
   using Scalar = TypeParam;
   // An absolute step is below the spacing of the floating-point numbers
-  // around this argument, so that t + h rounds to t.
+  // around this argument, so that t + h rounds to t. The central difference
+  // of a cubic is exact only up to the square of the step, so a step that is
+  // scaled with the wrong coordinate or too large shows as well.
   Scalar const t = Scalar(1) / Constants<Scalar>::epsilon();
   Scalar const kTolerance = Constants<Scalar>::epsilonSqrt();
-  auto const square = [](Scalar x) { return x * x; };
+  auto const cube = [](Scalar x) { return x * x * x; };
+  auto const cube_derivative = [](Scalar x) { return Scalar(3) * x * x; };
 
-  Scalar const derivative = curveNumDiff(square, t);
-  EXPECT_THAT(derivative / (Scalar(2) * t), IsNear(Scalar(1), kTolerance));
+  Scalar const derivative = curveNumDiff(cube, t);
+  EXPECT_THAT(derivative / cube_derivative(t), IsNear(Scalar(1), kTolerance));
 
   Vector2<Scalar> const a(t, Scalar(1));
   Matrix2<Scalar> const J = vectorFieldNumDiff<Scalar, 2, 2>(
-      [square](Vector2<Scalar> const& x) {
-        return Vector2<Scalar>(square(x[0]), square(x[1]));
+      [cube](Vector2<Scalar> const& x) {
+        return Vector2<Scalar>(cube(x[0]), cube(x[1]));
       },
       a);
-  EXPECT_THAT(J(0, 0) / (Scalar(2) * t), IsNear(Scalar(1), kTolerance));
-  EXPECT_THAT(J(1, 1) / Scalar(2), IsNear(Scalar(1), kTolerance));
+  EXPECT_THAT(J(0, 0) / cube_derivative(a[0]), IsNear(Scalar(1), kTolerance));
+  EXPECT_THAT(J(1, 1) / cube_derivative(a[1]), IsNear(Scalar(1), kTolerance));
 }
 
 /// The time steps and spline parameters the derivatives of the spline basis
