@@ -48,7 +48,6 @@ target_sources (sophus INTERFACE
   FILES
     sophus/average.hpp
     sophus/cartesian.hpp
-    sophus/ceres_local_parameterization.hpp
     sophus/ceres_manifold.hpp
     sophus/ceres_typetraits.hpp
     sophus/common.hpp
