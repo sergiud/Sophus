@@ -152,7 +152,10 @@ TYPED_TEST(SO2Test, AssignsBetweenMapsAndElements) {
   map2 = map1;
   EXPECT_EQ(map2.matrix(), map1.matrix()) << "map -> map assignment";
 
-  SO2Type copy;
+  // The element starts away from the identity, which the map holds, so that
+  // the assignment has to change it.
+  Scalar const kInitialAngle(0.2);
+  SO2Type copy(kInitialAngle);
   copy = map1;
   EXPECT_EQ(copy.matrix(), map1.matrix()) << "map -> type assignment";
 
