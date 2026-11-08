@@ -1,5 +1,6 @@
 // Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <cmath>
 #include <cstdlib>
 #include <tuple>
 
@@ -189,10 +190,21 @@ TEST(GeometryDeathTest, PerpendicularityOfHintsIgnoresTheirLength) {
         std::exit(0);
       },
       ::testing::ExitedWithCode(0), "");
-  // Short hints at an angle of about 66 degrees.
+  // Short hints at an angle of about 66 and 114 degrees, whose dot products
+  // are below the tolerance on the cosine of their angle.
+  double constexpr kShortLength = 1.2e-5;
+  double constexpr kCosine = 0.4;
+  double const sine = std::sqrt(1 - kCosine * kCosine);
+  Vector3<double> const short_x(kShortLength, 0, 0);
   EXPECT_DEATH(
-      std::ignore = rotationFromNormal(normal, Vector3<double>(1e-3, 0, 0),
-                                       Vector3<double>(4e-4, 1e-3, 0)),
+      std::ignore = rotationFromNormal(
+          normal, short_x,
+          Vector3<double>(kShortLength * kCosine, kShortLength * sine, 0)),
+      "perpendicular");
+  EXPECT_DEATH(
+      std::ignore = rotationFromNormal(
+          normal, short_x,
+          Vector3<double>(-kShortLength * kCosine, kShortLength * sine, 0)),
       "perpendicular");
 }
 
