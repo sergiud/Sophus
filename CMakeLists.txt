@@ -91,6 +91,11 @@ if (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
       GTest::gmock_main
       Sophus::Sophus
     )
+    # The typed tests of a Debug build exceed the default section limit of
+    # MSVC object files.
+    target_compile_options (${name} PRIVATE
+      $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
+    )
 
     if (Ceres_FOUND)
       target_compile_definitions (${name} PRIVATE SOPHUS_CERES)
