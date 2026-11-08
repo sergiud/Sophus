@@ -150,8 +150,12 @@ if (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
 
   # Installs the package into the build tree and builds a project against
   # it, so that the installed package configuration is tested as consumers
-  # use it.
+  # use it. The previous installation is removed first, since its files
+  # would otherwise hide files missing from the new one.
   set (SOPHUS_PACKAGE_TEST_DIR ${PROJECT_BINARY_DIR}/package-test)
+  add_test (NAME package_clean
+    COMMAND ${CMAKE_COMMAND} -E rm -rf ${SOPHUS_PACKAGE_TEST_DIR}
+  )
   add_test (NAME package_install
     COMMAND ${CMAKE_COMMAND} --install ${PROJECT_BINARY_DIR}
             --prefix ${SOPHUS_PACKAGE_TEST_DIR}/install --config $<CONFIG>
@@ -168,9 +172,14 @@ if (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
               -DCMAKE_PREFIX_PATH=${SOPHUS_PACKAGE_TEST_DIR}/install
               -DEigen3_DIR=${Eigen3_DIR}
               -Dfmt_DIR=${fmt_DIR}
+              -DSOPHUS_SOURCE_DIR=${PROJECT_SOURCE_DIR}
             --test-command consumer
   )
-  set_tests_properties (package_install PROPERTIES FIXTURES_SETUP package)
+  set_tests_properties (package_clean PROPERTIES FIXTURES_SETUP package_clean)
+  set_tests_properties (package_install PROPERTIES
+    FIXTURES_REQUIRED package_clean
+    FIXTURES_SETUP package
+  )
   set_tests_properties (package_consumer PROPERTIES FIXTURES_REQUIRED package)
 
   if (Ceres_FOUND)
