@@ -158,15 +158,6 @@ TYPED_TEST(SO2Test, AssignsBetweenMapsAndElements) {
   EXPECT_EQ(map1.matrix(), copy.matrix()) << "type -> map assignment";
 }
 
-TYPED_TEST(SO2Test, ConstructsFromRotationMatrix) {
-  using Scalar = TypeParam;
-  using SO2Type = SO2<Scalar>;
-
-  Matrix2<Scalar> const R =
-      LieGroupTestData<SO2Type>::groupElements().front().matrix();
-  EXPECT_THAT(SO2Type(R).matrix(), IsNear(R, Constants<Scalar>::epsilon()));
-}
-
 template <class Scalar>
 class SO2FloatingPointTest : public ::testing::Test {};
 

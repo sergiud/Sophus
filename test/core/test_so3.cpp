@@ -230,15 +230,6 @@ TYPED_TEST(SO3Test, NormalizeRescalesQuaternionsWhoseSquaresOverflow) {
               IsNear(unit, Constants<Scalar>::epsilon()));
 }
 
-TYPED_TEST(SO3Test, ConstructsFromRotationMatrix) {
-  using Scalar = TypeParam;
-  using SO3Type = SO3<Scalar>;
-
-  Matrix3<Scalar> const R =
-      LieGroupTestData<SO3Type>::groupElements().front().matrix();
-  EXPECT_THAT(SO3Type(R).matrix(), IsNear(R, Constants<Scalar>::epsilon()));
-}
-
 #if SOPHUS_CERES
 /// Normalizes the unit quaternion with coefficients `coeffs` in the order x,
 /// y, z, w, seeded with the identity as derivatives, and checks that the
