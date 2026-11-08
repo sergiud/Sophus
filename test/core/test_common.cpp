@@ -69,6 +69,10 @@ TYPED_TEST(CommonTest, OneMinusCosOverThetaSqMatchesReference) {
       {{0x1.0c6f7ap-20L}, {0.4999999999999583333335437L}},
       {{0x1.92a738p-19L}, {0.499999999999624999973472L}},
       {{0x1.0624dep-10L}, {0.4999999583333307641014252L}},
+      // Single precision cancels in 1 - cos(theta) at these angles, since
+      // they lie above the series branch of float.
+      {{0x1.0624dep-8L}, {0.4999993333336255589182757L}},
+      {{0x1.99999ap-4L}, {0.4995834721850140322290405L}},
       {{0x1p+0L}, {0.4596976941318602825990634L}},
       {{0x1.8p+1L}, {0.221110277400049495252397L}},
   };
