@@ -70,19 +70,19 @@ class BasisSplineFn {
 
   static LieGroup parent_T_spline(
       const LieGroup& parent_Ts_control_point,
-      std::tuple<Tangent, Tangent, Tangent> const& control_tagent_vectors,
+      std::tuple<Tangent, Tangent, Tangent> const& control_tangent_vectors,
       double u) {
-    auto AA = A(control_tagent_vectors, u);
+    auto AA = A(control_tangent_vectors, u);
     return parent_Ts_control_point * std::get<0>(AA) * std::get<1>(AA) *
            std::get<2>(AA);
   }
 
   static Transformation Dt_parent_T_spline(
       const LieGroup& parent_Ts_control_point,
-      std::tuple<Tangent, Tangent, Tangent> const& control_tagent_vectors,
+      std::tuple<Tangent, Tangent, Tangent> const& control_tangent_vectors,
       double u, double delta_t) {
-    auto AA = A(control_tagent_vectors, u);
-    auto Dt_AA = Dt_A(AA, control_tagent_vectors, u, delta_t);
+    auto AA = A(control_tangent_vectors, u);
+    auto Dt_AA = Dt_A(AA, control_tangent_vectors, u, delta_t);
     return parent_Ts_control_point.matrix() *
            ((std::get<0>(Dt_AA) * std::get<1>(AA).matrix() *
              std::get<2>(AA).matrix()) +
@@ -94,12 +94,12 @@ class BasisSplineFn {
 
   static Transformation Dt2_parent_T_spline(
       const LieGroup& parent_Ts_control_point,
-      std::tuple<Tangent, Tangent, Tangent> const& control_tagent_vectors,
+      std::tuple<Tangent, Tangent, Tangent> const& control_tangent_vectors,
       double u, double delta_t) {
     using Scalar = typename LieGroup::Scalar;
-    auto AA = A(control_tagent_vectors, u);
-    auto Dt_AA = Dt_A(AA, control_tagent_vectors, u, delta_t);
-    auto Dt2_AA = Dt2_A(AA, Dt_AA, control_tagent_vectors, u, delta_t);
+    auto AA = A(control_tangent_vectors, u);
+    auto Dt_AA = Dt_A(AA, control_tangent_vectors, u, delta_t);
+    auto Dt2_AA = Dt2_A(AA, Dt_AA, control_tangent_vectors, u, delta_t);
 
     return parent_Ts_control_point.matrix() *
            ((std::get<0>(Dt2_AA) * std::get<1>(AA).matrix() *
@@ -118,33 +118,33 @@ class BasisSplineFn {
 
  private:
   static std::tuple<LieGroup, LieGroup, LieGroup> A(
-      std::tuple<Tangent, Tangent, Tangent> const& control_tagent_vectors,
+      std::tuple<Tangent, Tangent, Tangent> const& control_tangent_vectors,
       double u) {
     Vector3<Scalar> const B = SplineBasisFunction<double>::B(u).cast<Scalar>();
     return std::make_tuple(
-        LieGroup::exp(B[0] * std::get<0>(control_tagent_vectors)),
-        LieGroup::exp(B[1] * std::get<1>(control_tagent_vectors)),
-        LieGroup::exp(B[2] * std::get<2>(control_tagent_vectors)));
+        LieGroup::exp(B[0] * std::get<0>(control_tangent_vectors)),
+        LieGroup::exp(B[1] * std::get<1>(control_tangent_vectors)),
+        LieGroup::exp(B[2] * std::get<2>(control_tangent_vectors)));
   }
 
   static std::tuple<Transformation, Transformation, Transformation> Dt_A(
       std::tuple<LieGroup, LieGroup, LieGroup> const& AA,
-      const std::tuple<Tangent, Tangent, Tangent>& control_tagent_vectors,
+      const std::tuple<Tangent, Tangent, Tangent>& control_tangent_vectors,
       double u, double delta_t) {
     Eigen::Vector3d Dt_B = SplineBasisFunction<double>::Dt_B(u, delta_t);
     return std::make_tuple(
         Dt_B[0] * std::get<0>(AA).matrix() *
-            LieGroup::hat(std::get<0>(control_tagent_vectors)),
+            LieGroup::hat(std::get<0>(control_tangent_vectors)),
         Dt_B[1] * std::get<1>(AA).matrix() *
-            LieGroup::hat(std::get<1>(control_tagent_vectors)),
+            LieGroup::hat(std::get<1>(control_tangent_vectors)),
         Dt_B[2] * std::get<2>(AA).matrix() *
-            LieGroup::hat(std::get<2>(control_tagent_vectors)));
+            LieGroup::hat(std::get<2>(control_tangent_vectors)));
   }
 
   static std::tuple<Transformation, Transformation, Transformation> Dt2_A(
       std::tuple<LieGroup, LieGroup, LieGroup> const& AA,
       std::tuple<Transformation, Transformation, Transformation> const& Dt_AA,
-      std::tuple<Tangent, Tangent, Tangent> const& control_tagent_vectors,
+      std::tuple<Tangent, Tangent, Tangent> const& control_tangent_vectors,
       double u, double delta_t) {
     Eigen::Vector3d Dt_B = SplineBasisFunction<double>::Dt_B(u, delta_t);
     Eigen::Vector3d Dt2_B = SplineBasisFunction<double>::Dt2_B(u, delta_t);
@@ -152,13 +152,13 @@ class BasisSplineFn {
     return std::make_tuple(
         (Dt_B[0] * std::get<0>(Dt_AA).matrix() +
          Dt2_B[0] * std::get<0>(AA).matrix()) *
-            LieGroup::hat(std::get<0>(control_tagent_vectors)),
+            LieGroup::hat(std::get<0>(control_tangent_vectors)),
         (Dt_B[1] * std::get<1>(Dt_AA).matrix() +
          Dt2_B[1] * std::get<1>(AA).matrix()) *
-            LieGroup::hat(std::get<1>(control_tagent_vectors)),
+            LieGroup::hat(std::get<1>(control_tangent_vectors)),
         (Dt_B[2] * std::get<2>(Dt_AA).matrix() +
          Dt2_B[2] * std::get<2>(AA).matrix()) *
-            LieGroup::hat(std::get<2>(control_tagent_vectors)));
+            LieGroup::hat(std::get<2>(control_tangent_vectors)));
   }
 };
 

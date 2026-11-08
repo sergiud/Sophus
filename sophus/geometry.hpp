@@ -144,8 +144,8 @@ template <class T>
 SE2<T> SE2FromLine(Line2<T> const& line_foo) {
   T const d = line_foo.offset();
   Vector2<T> const n = line_foo.normal();
-  SO2<T> const R_foo_plane = SO2FromNormal(n);
-  return SE2<T>(R_foo_plane, -d * n / n.squaredNorm());
+  SO2<T> const R_foo_line = SO2FromNormal(n);
+  return SE2<T>(R_foo_line, -d * n / n.squaredNorm());
 }
 
 /// Returns a plane (wrt. to frame ``foo``), given a pose of the ``plane`` in
