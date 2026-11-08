@@ -22,6 +22,6 @@ assignees: ''
 
 **Sophus version: commit hash**
 
-[Commit hash on main branch which has the bug. Please test on HEAD of main first before submitting a bug.]
+[Commit hash on master branch which has the bug. Please test on HEAD of master first before submitting a bug.]
 
 **Additional context**
