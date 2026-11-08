@@ -72,7 +72,7 @@ std::optional<typename SequenceContainer::value_type> iterativeMean(
   // LCOV_EXCL_STOP
 }
 
-#ifdef DOXYGEN_SHOULD_SKIP_THIS
+#ifdef SOPHUS_DOXYGEN
 /// Mean implementation for any Lie group.
 template <class SequenceContainer, class Scalar>
 std::optional<typename SequenceContainer::value_type> average(
@@ -242,7 +242,7 @@ average(SequenceContainer const& foo_Ts_bar, int max_num_iterations = 20) {
   return iterativeMean(foo_Ts_bar, max_num_iterations);
 }
 
-#endif  // DOXYGEN_SHOULD_SKIP_THIS
+#endif  // SOPHUS_DOXYGEN
 
 }  // namespace Sophus
 
