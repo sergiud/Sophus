@@ -130,6 +130,7 @@ Line2<T> lineFromSE2(SE2<T> const& T_foo_line) {
 }
 
 /// Returns the pose ``T_foo_line``, given a line in reference frame ``foo``.
+/// The normal of the line need not have unit length.
 ///
 /// Note: The line is defined by X-axis of the frame ``line``.
 ///
@@ -138,7 +139,7 @@ SE2<T> SE2FromLine(Line2<T> const& line_foo) {
   T const d = line_foo.offset();
   Vector2<T> const n = line_foo.normal();
   SO2<T> const R_foo_plane = SO2FromNormal(n);
-  return SE2<T>(R_foo_plane, -d * n);
+  return SE2<T>(R_foo_plane, -d * n / n.squaredNorm());
 }
 
 /// Returns a plane (wrt. to frame ``foo``), given a pose of the ``plane`` in
@@ -152,6 +153,7 @@ Plane3<T> planeFromSE3(SE3<T> const& T_foo_plane) {
 }
 
 /// Returns the pose ``T_foo_plane``, given a plane in reference frame ``foo``.
+/// The normal of the plane need not have unit length.
 ///
 /// Note: The plane is defined by XY-plane of the frame ``plane``.
 ///
@@ -160,7 +162,7 @@ SE3<T> SE3FromPlane(Plane3<T> const& plane_foo) {
   T const d = plane_foo.offset();
   Vector3<T> const n = plane_foo.normal();
   SO3<T> const R_foo_plane = SO3FromNormal(n);
-  return SE3<T>(R_foo_plane, -d * n);
+  return SE3<T>(R_foo_plane, -d * n / n.squaredNorm());
 }
 
 /// Takes in a hyperplane and returns unique representation by ensuring that the

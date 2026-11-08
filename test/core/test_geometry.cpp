@@ -145,5 +145,27 @@ TYPED_TEST(GeometryTest, SE3RoundtripsThroughPlane) {
                         normalsAndOffsets(planes)));
 }
 
+TYPED_TEST(GeometryTest, FrameOfPlaneWithNonUnitNormalLiesOnThePlane) {
+  using Scalar = TypeParam;
+  // The plane 2z - 2 = 0, that is z = 1.
+  Plane3<Scalar> const plane_foo(
+      Vector3<Scalar>(Scalar(0), Scalar(0), Scalar(2)), Scalar(-2));
+  SE3<Scalar> const T_foo_plane = SE3FromPlane(plane_foo);
+  EXPECT_THAT(T_foo_plane.translation(),
+              IsNear(Vector3<Scalar>(Scalar(0), Scalar(0), Scalar(1)),
+                     Constants<Scalar>::epsilon()));
+}
+
+TYPED_TEST(GeometryTest, FrameOfLineWithNonUnitNormalLiesOnTheLine) {
+  using Scalar = TypeParam;
+  // The line 3y - 3 = 0, that is y = 1.
+  Line2<Scalar> const line_foo(Vector2<Scalar>(Scalar(0), Scalar(3)),
+                               Scalar(-3));
+  SE2<Scalar> const T_foo_line = SE2FromLine(line_foo);
+  EXPECT_THAT(T_foo_line.translation(),
+              IsNear(Vector2<Scalar>(Scalar(0), Scalar(1)),
+                     Constants<Scalar>::epsilon()));
+}
+
 }  // namespace
 }  // namespace Sophus
