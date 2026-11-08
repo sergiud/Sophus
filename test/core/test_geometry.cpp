@@ -87,15 +87,31 @@ TYPED_TEST(GeometryTest, RotationFromNormalHasTheNormalAsThirdColumn) {
 
   EXPECT_THAT(rotationFromNormal(normal_foo).col(2),
               IsNear(normal_foo, kEpsilon));
-  // The normal and the hint directions are normalized.
+  // The normal is normalized.
   EXPECT_THAT(rotationFromNormal((Scalar(0.9) * normal_foo).eval()).col(2),
               IsNear(normal_foo, kEpsilon));
+}
+
+TYPED_TEST(GeometryTest, RotationFromNormalIgnoresTheLengthOfHints) {
+  using Scalar = TypeParam;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+  Scalar const kLong(10);
+  Scalar const kShort(0.1);
+  // The normal is closer to the y-hint than to the x-hint. A longer x-hint
+  // or a shorter y-hint would reverse that unless the hints are normalized,
+  // and the frame would be built from the other hint.
+  Vector3<Scalar> const normal_foo(Scalar(0.6), Scalar(0.8), Scalar(0));
+  Vector3<Scalar> const unit_x(Scalar(1), Scalar(0), Scalar(0));
+  Vector3<Scalar> const unit_y(Scalar(0), Scalar(1), Scalar(0));
+  Matrix3<Scalar> const expected =
+      rotationFromNormal(normal_foo, unit_x, unit_y);
+
   EXPECT_THAT(
-      rotationFromNormal(normal_foo,
-                         Vector3<Scalar>(Scalar(0.9), Scalar(0), Scalar(0)),
-                         Vector3<Scalar>(Scalar(0), Scalar(1.1), Scalar(0)))
-          .col(2),
-      IsNear(normal_foo, kEpsilon));
+      rotationFromNormal(normal_foo, Vector3<Scalar>(kLong * unit_x), unit_y),
+      IsNear(expected, kEpsilon));
+  EXPECT_THAT(
+      rotationFromNormal(normal_foo, unit_x, Vector3<Scalar>(kShort * unit_y)),
+      IsNear(expected, kEpsilon));
 }
 
 TYPED_TEST(GeometryTest, RotationFromAxisNormalFollowsTheHints) {
