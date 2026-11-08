@@ -82,20 +82,23 @@ using SO2Scalars = ::testing::Types<double, float
                                     >;
 TYPED_TEST_SUITE(SO2Test, SO2Scalars, ScalarNameGenerator);
 
-TYPED_TEST(SO2Test, RepeatedProductsKeepUnitMagnitude) {
+TYPED_TEST(SO2Test, ProductsRestoreUnitMagnitude) {
   using Scalar = TypeParam;
   using SO2Type = SO2<Scalar>;
-  int constexpr kNumRepetitions = 1000;
+  // Renormalizing leaves an error of about half the square of the drift,
+  // which stays well below the tolerance while the drift itself exceeds it.
+  Scalar const kDrift = Constants<Scalar>::epsilonSqrt() / Scalar(2);
+  Scalar const kAngle(0.3);
 
-  StdVector<SO2Type> const so2_vec = LieGroupTestData<SO2Type>::groupElements();
-  SO2Type current_q;
-  for (int i = 0; i < kNumRepetitions; ++i) {
-    for (SO2Type const& q : so2_vec) {
-      current_q *= q;
-    }
+  SO2Type drifted = SO2Type::exp(kAngle);
+  Eigen::Map<Vector2<Scalar>> params(drifted.data());
+  params *= Scalar(1) + kDrift;
+
+  for (SO2Type const& g : LieGroupTestData<SO2Type>::groupElements()) {
+    EXPECT_THAT((drifted * g).unit_complex().norm(),
+                IsNear(Scalar(1), Constants<Scalar>::epsilon()))
+        << "for the element " << g.params().transpose();
   }
-  EXPECT_THAT(current_q.unit_complex().norm(),
-              IsNear(Scalar(1), Constants<Scalar>::epsilon()));
 }
 
 TYPED_TEST(SO2Test, MapsAccessTheUnderlyingData) {
