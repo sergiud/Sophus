@@ -2,6 +2,7 @@
 
 #include <sophus/se3.hpp>
 
+#include "reference_se3.hpp"
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -273,6 +274,10 @@ TYPED_TEST(SE3FloatingPointTest, AnglesOfElementaryRotations) {
       mapped(angles,
              [](Scalar angle) { return SE3Type::rotZ(angle).angleZ(); }),
       Pointwise(IsNear(kEpsilon), angles));
+}
+
+TYPED_TEST(SE3FloatingPointTest, LogMatchesReference) {
+  reference::expectAccurateLog<SE3<TypeParam>>(reference::kSE3Log);
 }
 
 }  // namespace

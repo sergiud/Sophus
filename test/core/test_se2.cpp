@@ -2,6 +2,7 @@
 
 #include <sophus/se2.hpp>
 
+#include "reference_se2.hpp"
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -253,6 +254,10 @@ TYPED_TEST(SE2FloatingPointTest, FitToSE2IsIdempotent) {
       fitted, [](SE2Type const& g) { return SE2Type::fitToSE2(g.matrix()); });
   EXPECT_THAT(refitted, ::testing::Pointwise(
                             IsNear(Constants<Scalar>::epsilon()), fitted));
+}
+
+TYPED_TEST(SE2FloatingPointTest, LogMatchesReference) {
+  reference::expectAccurateLog<SE2<TypeParam>>(reference::kSE2Log);
 }
 
 }  // namespace

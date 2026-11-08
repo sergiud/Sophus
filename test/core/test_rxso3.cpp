@@ -4,6 +4,7 @@
 
 #include <sophus/rxso3.hpp>
 
+#include "reference_rxso3.hpp"
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -323,6 +324,10 @@ TYPED_TEST(RxSO3FloatingPointTest, ScaledRotationsAreScaledOrthogonal) {
 
   EXPECT_THAT(scaled_rotations, Each(IsScaledOrthogonalAndPositive()));
   EXPECT_THAT(reflections, Each(Not(IsScaledOrthogonalAndPositive())));
+}
+
+TYPED_TEST(RxSO3FloatingPointTest, ExpMatchesReference) {
+  reference::expectAccurateExp<RxSO3<TypeParam>>(reference::kRxSO3Exp);
 }
 
 }  // namespace

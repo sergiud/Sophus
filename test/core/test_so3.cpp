@@ -8,6 +8,7 @@
 #include <sophus/interpolate.hpp>
 #include <sophus/so3.hpp>
 
+#include "reference_so3.hpp"
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -371,6 +372,23 @@ TYPED_TEST(SO3FloatingPointTest, AnglesOfElementaryRotations) {
       mapped(angles,
              [](Scalar angle) { return SO3Type::rotZ(angle).angleZ(); }),
       Pointwise(IsNear(kEpsilon), angles));
+}
+
+TYPED_TEST(SO3FloatingPointTest, ExpMatchesReference) {
+  reference::expectAccurateExp<SO3<TypeParam>>(reference::kSO3Exp);
+}
+
+TYPED_TEST(SO3FloatingPointTest, LogMatchesReference) {
+  reference::expectAccurateLog<SO3<TypeParam>>(reference::kSO3Log);
+}
+
+TYPED_TEST(SO3FloatingPointTest, LeftJacobianInverseMatchesReference) {
+  using SO3Type = SO3<TypeParam>;
+  reference::expectAccurate<TypeParam>(
+      reference::kSO3LeftJacobianInverse, [](reference::Case const& c) {
+        return SO3Type::leftJacobianInverse(
+            reference::input<typename SO3Type::Tangent>(c));
+      });
 }
 
 }  // namespace

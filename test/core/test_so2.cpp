@@ -2,6 +2,7 @@
 
 #include <sophus/so2.hpp>
 
+#include "reference_so2.hpp"
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -185,6 +186,18 @@ TYPED_TEST(SO2FloatingPointTest, FitToSO2IsIdempotent) {
   });
   EXPECT_THAT(refitted, ::testing::Pointwise(
                             IsNear(Constants<Scalar>::epsilon()), fitted));
+}
+
+TYPED_TEST(SO2FloatingPointTest, ExpMatchesReference) {
+  reference::expectAccurateExp<SO2<TypeParam>>(reference::kSO2Exp);
+}
+
+TYPED_TEST(SO2FloatingPointTest, DxExpXMatchesReference) {
+  reference::expectAccurateDxExpX<SO2<TypeParam>>(reference::kSO2DxExpX);
+}
+
+TYPED_TEST(SO2FloatingPointTest, LogMatchesReference) {
+  reference::expectAccurateLog<SO2<TypeParam>>(reference::kSO2Log);
 }
 
 }  // namespace
