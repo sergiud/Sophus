@@ -2,6 +2,7 @@
 
 #include <sophus/sim3.hpp>
 
+#include "reference_sim3.hpp"
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -308,6 +309,20 @@ TYPED_TEST(Sim3Test, ConstructorsAndSetters) {
   EXPECT_THAT(sim3.rxso3().quaternion().coeffs(),
               IsNear(sim3_vec[1].rxso3().quaternion().coeffs(), kEpsilon))
       << "setQuaternion";
+}
+
+template <class Scalar>
+class Sim3FloatingPointTest : public ::testing::Test {};
+
+TYPED_TEST_SUITE(Sim3FloatingPointTest, FloatingPointScalars,
+                 ScalarNameGenerator);
+
+TYPED_TEST(Sim3FloatingPointTest, ExpMatchesReference) {
+  reference::expectAccurateExp<Sim3<TypeParam>>(reference::kSim3Exp);
+}
+
+TYPED_TEST(Sim3FloatingPointTest, LogMatchesReference) {
+  reference::expectAccurateLog<Sim3<TypeParam>>(reference::kSim3Log);
 }
 
 }  // namespace

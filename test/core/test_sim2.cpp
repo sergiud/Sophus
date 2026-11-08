@@ -2,6 +2,7 @@
 
 #include <sophus/sim2.hpp>
 
+#include "reference_sim2.hpp"
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -252,6 +253,20 @@ TYPED_TEST(Sim2Test, ConstructorsAndSetters) {
   EXPECT_THAT(sim2.rxso2().complex(),
               IsNear(sim2_vec[1].rxso2().complex(), kEpsilon))
       << "setComplex";
+}
+
+template <class Scalar>
+class Sim2FloatingPointTest : public ::testing::Test {};
+
+TYPED_TEST_SUITE(Sim2FloatingPointTest, FloatingPointScalars,
+                 ScalarNameGenerator);
+
+TYPED_TEST(Sim2FloatingPointTest, ExpMatchesReference) {
+  reference::expectAccurateExp<Sim2<TypeParam>>(reference::kSim2Exp);
+}
+
+TYPED_TEST(Sim2FloatingPointTest, LogMatchesReference) {
+  reference::expectAccurateLog<Sim2<TypeParam>>(reference::kSim2Log);
 }
 
 }  // namespace
