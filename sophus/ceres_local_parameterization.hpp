@@ -1,3 +1,5 @@
+// Copyright 2022 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 #pragma once
 
 #include <ceres/local_parameterization.h>

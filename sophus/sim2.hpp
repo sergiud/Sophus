@@ -1,3 +1,5 @@
+// Copyright 2021-2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 /// @file
 /// Similarity group Sim(2) - scaling, rotation and translation in 2d.
 

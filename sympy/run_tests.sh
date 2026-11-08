@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
 EXIT=0
 

@@ -1,3 +1,5 @@
+// Copyright 2021-2022 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 /// @file
 /// Special Euclidean group SE(3) - rotation and translation in 3d.
 

@@ -1,3 +1,5 @@
+// Copyright 2022 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 /// @file
 /// Common functionality.
 

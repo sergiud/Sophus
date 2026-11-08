@@ -1,3 +1,5 @@
+// Copyright 2021-2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 /// @file
 /// Special Euclidean group SE(2) - rotation and translation in 2d.
 

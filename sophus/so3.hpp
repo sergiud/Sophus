@@ -1,3 +1,5 @@
+// Copyright 2021-2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 /// @file
 /// Special orthogonal group SO(3) - rotation in 3d.
 

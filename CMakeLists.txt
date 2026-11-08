@@ -1,3 +1,12 @@
+# Copyright 2017-2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+#
+# The CMake package configuration of Sophus, which exports the Sophus::Sophus
+# target for find_package, is based on the CMake files of Sergiu Deitsch. They
+# were adapted and merged upstream in
+# https://github.com/strasdat/Sophus/pull/120, and
+# https://github.com/strasdat/Sophus/pull/125 states that the change borrows
+# extensively from his fork.
+
 cmake_minimum_required (VERSION 3.14)
 project (Sophus
   VERSION 2.0.0

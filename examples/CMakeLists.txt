@@ -1,3 +1,5 @@
+# Copyright 2021 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 # Tests to run
 SET( EXAMPLE_SOURCES HelloSO3)
 

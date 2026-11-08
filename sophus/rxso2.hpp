@@ -1,3 +1,5 @@
+// Copyright 2021-2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 /// @file
 /// Direct product R X SO(2) - rotation and scaling in 2d.
 

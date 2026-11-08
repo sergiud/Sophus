@@ -1,3 +1,5 @@
+// Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 /// @file
 /// Cartesian - Euclidean vector space as Lie group
 
