@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <random>
 
 #include <sophus/interpolate.hpp>
@@ -90,6 +91,19 @@ namespace {
                           >("SO3") &&
     LieGroupTests<SO3<double>>::registerLeftJacobian("SO3") &&
     LieGroupTests<SO3<float>>::registerLeftJacobian("SO3");
+
+/// The floating-point type of a scalar, such as double for ceres::Jet<double>.
+template <class Scalar>
+struct RealOf {
+  using type = Scalar;
+};
+
+#if SOPHUS_CERES
+template <class T, int N>
+struct RealOf<ceres::Jet<T, N>> {
+  using type = T;
+};
+#endif
 
 template <class Scalar>
 class SO3Test : public ::testing::Test {};
@@ -196,6 +210,23 @@ TYPED_TEST(SO3Test, AssignsBetweenMapsAndElements) {
   EXPECT_EQ(map1.matrix(), copy.matrix()) << "type -> map assignment";
 }
 
+TYPED_TEST(SO3Test, NormalizeRescalesQuaternionsWhoseSquaresOverflow) {
+  using Scalar = TypeParam;
+  using SO3Type = SO3<Scalar>;
+  using Real = typename RealOf<Scalar>::type;
+  // The squared norm of coefficients this large exceeds the largest finite
+  // value, so normalizing must avoid computing it.
+  Real const kScale = Real(2) * std::sqrt(std::numeric_limits<Real>::max());
+  Vector4<Scalar> const unit(Scalar(0.2), Scalar(0.4), Scalar(0.4),
+                             Scalar(0.8));
+
+  SO3Type so3;
+  Eigen::Map<Vector4<Scalar>>(so3.data()) = unit * Scalar(kScale);
+  so3.normalize();
+  EXPECT_THAT(so3.unit_quaternion().coeffs(),
+              IsNear(unit, Constants<Scalar>::epsilon()));
+}
+
 TYPED_TEST(SO3Test, ConstructsFromRotationMatrix) {
   using Scalar = TypeParam;
   using SO3Type = SO3<Scalar>;
@@ -204,6 +235,37 @@ TYPED_TEST(SO3Test, ConstructsFromRotationMatrix) {
       LieGroupTestData<SO3Type>::groupElements().front().matrix();
   EXPECT_THAT(SO3Type(R).matrix(), IsNear(R, Constants<Scalar>::epsilon()));
 }
+
+#if SOPHUS_CERES
+/// Normalizes the unit quaternion with coefficients `coeffs` in the order x,
+/// y, z, w, seeded with the identity as derivatives, and checks that the
+/// derivatives of the result are those of q / |q|, that is I - q q^T.
+void expectNormalizeDifferentiates(Vector4d const& coeffs) {
+  using Jet = ceres::Jet<double, 4>;
+  SO3<Jet> so3;
+  Eigen::Map<Vector4<Jet>> raw(so3.data());
+  for (int i = 0; i < 4; ++i) {
+    raw[i] = Jet(coeffs[i], i);
+  }
+  so3.normalize();
+
+  Matrix4d const expected = Matrix4d::Identity() - coeffs * coeffs.transpose();
+  Matrix4d actual;
+  for (int i = 0; i < 4; ++i) {
+    actual.row(i) = raw[i].v.transpose();
+  }
+  EXPECT_THAT(actual, IsNear(expected, Constants<double>::epsilon()))
+      << "for the quaternion " << coeffs.transpose();
+}
+
+TEST(SO3JetTest, NormalizeDifferentiatesAtTheIdentity) {
+  expectNormalizeDifferentiates(Vector4d(0, 0, 0, 1));
+}
+
+TEST(SO3JetTest, NormalizeDifferentiatesAwayFromTheIdentity) {
+  expectNormalizeDifferentiates(Vector4d(0.2, 0.4, 0.4, 0.8));
+}
+#endif
 
 template <class Scalar>
 class SO3FloatingPointTest : public ::testing::Test {};

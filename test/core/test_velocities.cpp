@@ -68,7 +68,9 @@ TYPED_TEST(VelocitiesTest, TransformsRotationalVelocitiesBetweenFrames) {
   SE3<Scalar> const foo_T_bar = fooTBar<Scalar>();
   // Not too tight, because of the finite difference approximation.
   Scalar const kTolerance = sqrt(Constants<Scalar>::epsilon());
-  Scalar const kH = Constants<Scalar>::epsilon();
+  // The step of the central differences. With a step of epsilon, the rounding
+  // error of float exceeds the tolerance, since it grows with 1 / kH.
+  Scalar const kH = Constants<Scalar>::epsilonSqrt();
   // The velocities in frames foo and bar differ by more than this.
   Scalar const kMinFrameDifference(1e-3);
   std::vector<Scalar> const ts = {Scalar(0), Scalar(0.3), Scalar(1)};

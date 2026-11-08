@@ -324,7 +324,16 @@ class SO3Base {
   /// this function directly.
   ///
   SOPHUS_FUNC void normalize() {
-    Scalar length = unit_quaternion_nonconst().coeffs().hypotNorm();
+    // Dividing by the largest magnitude before squaring prevents the squared
+    // norm from overflowing or underflowing. Neither Eigen's hypotNorm nor
+    // hypot serve here: hypotNorm needs NumTraits<Scalar>::infinity(), which
+    // automatic differentiation types such as ceres::Jet lack, and the hypot
+    // of ceres::Jet has no derivative where all of its arguments vanish, such
+    // as the vector part of the identity.
+    auto const& coeffs = unit_quaternion_nonconst().coeffs();
+    Scalar const scale = coeffs.cwiseAbs().maxCoeff();
+    Scalar const length =
+        scale > Scalar(0) ? Scalar(scale * (coeffs / scale).norm()) : scale;
     SOPHUS_ENSURE(
         length >= Constants<Scalar>::epsilon(),
         "Quaternion ({}) should not be close to zero!",
