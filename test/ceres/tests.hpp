@@ -415,6 +415,10 @@ class LieGroupCeresTests {
       final_error += squaredNorm((V[i].inverse() * V_estimate[i]).log());
     }
 
+    // A manifold whose Plus disagrees with its PlusJacobian still reduces the
+    // errors but exhausts the iterations without converging.
+    EXPECT_EQ(summary.termination_type, ceres::CONVERGENCE)
+        << summary.BriefReport();
     EXPECT_THAT(summary.final_cost,
                 Lt(kRequiredReduction * summary.initial_cost));
     EXPECT_THAT(final_error, Lt(kRequiredReduction * initial_error));
