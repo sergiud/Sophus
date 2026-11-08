@@ -1,470 +1,484 @@
+// Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 #pragma once
 
+#include <cmath>
+#include <cstddef>
+#include <functional>
+#include <random>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <ceres/ceres.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <Eigen/StdVector>
 
 #include <sophus/ceres_manifold.hpp>
-#include <sophus/test_macros.hpp>
+#include <sophus/types.hpp>
 
+#include "matchers.hpp"
+#include "registration.hpp"
+#include "type_names.hpp"
+
+/// The norm of the rotational part of a tangent vector. Each test of a Lie
+/// group specializes it, since the layout of the tangent differs per group.
 template <typename LieGroup>
 struct RotationalPart;
 
 namespace Sophus {
 
-template <int N>
-double dot(const Vector<double, N>& v1, const Vector<double, N>& v2) {
-  return v1.dot(v2);
-}
+template <class T>
+using StdVector = std::vector<T, Eigen::aligned_allocator<T>>;
 
-double dot(const double& a, const double& b) { return a * b; }
+/// The group elements and points the Ceres tests of a Lie group run on. Each
+/// test of a Lie group specializes it with the static member functions
+/// `groupElements` and `points`.
+template <class LieGroup>
+struct LieGroupCeresTestData;
 
-template <int N>
-double squaredNorm(const Vector<double, N>& vec) {
-  return vec.squaredNorm();
-}
+/// Recovers the class template of a Lie group, such as `SO3` from `SO3d`, which
+/// `Sophus::Manifold` and the cost functors instantiate for other scalars.
+template <class LieGroup>
+struct GroupTemplate;
 
-double squaredNorm(const double& scalar) { return scalar * scalar; }
+template <template <typename, int> class LieGroup, class Scalar, int Options>
+struct GroupTemplate<LieGroup<Scalar, Options>> {
+  template <typename T, int Options_ = 0>
+  using Type = LieGroup<T, Options_>;
+};
 
-template <typename T>
-T Zero() {
-  return T::Zero();
-}
+/// The Lie group `LieGroupd` with its scalar replaced by `T`.
+template <class LieGroupd, class T>
+using Rebind = typename GroupTemplate<LieGroupd>::template Type<T>;
 
-template <>
-double Zero<double>() {
-  return 0.;
-}
+/// The Ceres manifold of the Lie group `LieGroupd`.
+template <class LieGroupd>
+using ManifoldOf = Manifold<GroupTemplate<LieGroupd>::template Type>;
 
 template <typename T>
 typename T::Scalar* data(T& t) {
   return t.data();
 }
 
-double* data(double& d) { return &d; }
+inline double* data(double& d) { return &d; }
 
 template <typename T>
 const typename T::Scalar* data(const T& t) {
   return t.data();
 }
 
-const double* data(const double& d) { return &d; }
+inline const double* data(const double& d) { return &d; }
 
 template <typename T>
 struct Random {
   template <typename R>
-  T static sample(R& rng) {
+  static T sample(R& rng) {
     std::normal_distribution<double> rnorm;
     static_assert(T::RowsAtCompileTime >= 0,
                   "Matrix should have known size at compile-time");
     static_assert(T::ColsAtCompileTime >= 0,
                   "Matrix should have known size at compile-time");
     T res;
-    for (Eigen::Index i = 0; i < res.size(); ++i) res.data()[i] = rnorm(rng);
+    for (Eigen::Index i = 0; i < res.size(); ++i) {
+      res.data()[i] = rnorm(rng);
+    }
     return res;
   }
 };
 
 template <>
 struct Random<double> {
-  using T = double;
-
   template <typename R>
-  T static sample(R& rng) {
+  static double sample(R& rng) {
     std::normal_distribution<double> rnorm;
     return rnorm(rng);
   }
 };
 
-template <template <typename, int = 0> class LieGroup_>
-struct LieGroupCeresTests {
+template <class LieGroupd>
+struct TestLieGroupCostFunctor {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  explicit TestLieGroupCostFunctor(const LieGroupd& T_aw) : T_aw(T_aw) {}
+
+  template <class T>
+  bool operator()(T const* const sT_wa, T* sResiduals) const {
+    using LieGroupT = Rebind<LieGroupd, T>;
+    Eigen::Map<LieGroupT const> const T_wa(sT_wa);
+    // The Mapper class makes the functor work both for groups whose tangent
+    // is a scalar, such as SO2, and for groups whose tangent is a vector.
+    using Mapper = Mapper<typename LieGroupT::Tangent>;
+    typename Mapper::Map residuals = Mapper::map(sResiduals);
+
+    // Sophus types mix with doubles and Jet types without a cast to T.
+    residuals = (T_aw * T_wa).log();
+    // The reverse order of multiplication verifies that both (Jet, double)
+    // and (double, Jet) multiplications compile and work.
+    residuals = (T_wa * T_aw).log();
+    // Finally, Jet-to-Jet multiplication.
+    residuals = (T_wa * T_aw.template cast<T>()).log();
+    return true;
+  }
+
+  LieGroupd T_aw;
+};
+
+template <class LieGroupd>
+struct TestPointCostFunctor {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  using Pointd = typename LieGroupd::Point;
+
+  TestPointCostFunctor(const LieGroupd& T_aw, const Pointd& point_a)
+      : T_aw(T_aw), point_a(point_a) {}
+
+  template <class T>
+  bool operator()(T const* const sT_wa, T const* const spoint_b,
+                  T* sResiduals) const {
+    using LieGroupT = Rebind<LieGroupd, T>;
+    using PointT = typename LieGroupT::Point;
+    Eigen::Map<LieGroupT const> const T_wa(sT_wa);
+    Eigen::Map<PointT const> point_b(spoint_b);
+    Eigen::Map<PointT> residuals(sResiduals);
+
+    // Multiply the double group by a Jet point.
+    PointT point_b_prime = T_aw * point_b;
+    // Multiply the Jet group by a Jet point.
+    point_b_prime = T_aw.template cast<T>() * point_b;
+
+    // Multiply the Jet group by a double point.
+    PointT point_a_prime = T_wa * point_a;
+    // Multiply the Jet group by a Jet point.
+    point_a_prime = T_wa * point_a.template cast<T>();
+
+    residuals = point_b_prime - point_a_prime;
+    return true;
+  }
+
+  LieGroupd T_aw;
+  Pointd point_a;
+};
+
+template <class LieGroupd>
+struct TestGraphFunctor {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  explicit TestGraphFunctor(const LieGroupd& diff) : diff(diff) {}
+
   template <typename T>
-  using LieGroup = LieGroup_<T>;
-  using LieGroupd = LieGroup<double>;
+  bool operator()(const T* a, const T* b, T* residuals) const {
+    using LieGroupT = Rebind<LieGroupd, T>;
+    Eigen::Map<const LieGroupT> A(a);
+    Eigen::Map<const LieGroupT> B(b);
+    using Mapper = Mapper<typename LieGroupT::Tangent>;
+    typename Mapper::Map diff_log = Mapper::map(residuals);
+
+    // Jet group multiplied by the double group.
+    diff_log = (diff * (B.inverse() * A)).log();
+    return true;
+  }
+
+  const LieGroupd diff;
+};
+
+/// Registers the tests of optimization with Ceres over the parameters of a
+/// Lie group, and of the invariants of its Ceres manifold, which
+/// `ceres/manifold_test_utils.h` checks as well. Ceres optimizes `double`
+/// parameter blocks only, so the tests of a group named `SO3` form the suite
+/// `SO3/LieGroupCeresTest/double`, with one test per entry of its
+/// `LieGroupCeresTestData`, such as `XMinusXIsZero/3`.
+template <class LieGroupd>
+class LieGroupCeresTests {
+ public:
   using Pointd = typename LieGroupd::Point;
   using Tangentd = typename LieGroupd::Tangent;
-  template <typename T>
-  using StdVector = std::vector<T, Eigen::aligned_allocator<T>>;
-  static int constexpr N = LieGroupd::N;
-  static int constexpr num_parameters = LieGroupd::num_parameters;
-  static int constexpr DoF = LieGroupd::DoF;
+  using Manifoldd = ManifoldOf<LieGroupd>;
+  static int constexpr kNumParameters = LieGroupd::num_parameters;
+  static int constexpr kDoF = LieGroupd::DoF;
 
-  struct TestLieGroupCostFunctor {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  static bool registerAll(std::string const& group_name);
 
-    TestLieGroupCostFunctor(const LieGroupd& T_aw) : T_aw(T_aw) {}
+ private:
+  static double epsilon() { return Constants<double>::epsilon(); }
 
-    template <class T>
-    bool operator()(T const* const sT_wa, T* sResiduals) const {
-      Eigen::Map<LieGroup<T> const> const T_wa(sT_wa);
-      // Mapper class is only used to facciliate difference between
-      // SO2 (which uses Scalar as tangent vector type) and other groups
-      // (which use Vector<...> as tangent vector type).
-      //
-      // Feel free to use direct dereferencing or Eigen::Map depending
-      // on ypur use-case for concrete application
-      //
-      // We only use Mapper class in order to make tests universally
-      // compatible with LieGroup::Tangent being Scalar or Vector
-      using Mapper = Mapper<typename LieGroup<T>::Tangent>;
-      typename Mapper::Map residuals = Mapper::map(sResiduals);
+  static Tangentd zeroTangent() {
+    Tangentd zero;
+    setToZero(zero);
+    return zero;
+  }
 
-      // We are able to mix Sophus types with doubles and Jet types withou
-      // needing to cast to T.
-      residuals = (T_aw * T_wa).log();
-      // Reverse order of multiplication. This forces the compiler to verify
-      // that (Jet, double) and (double, Jet) LieGroup multiplication work
-      // correctly.
-      residuals = (T_wa * T_aw).log();
-      // Finally, ensure that Jet-to-Jet multiplication works.
-      residuals = (T_wa * T_aw.template cast<T>()).log();
-      return true;
-    }
+  static std::string scalarName() {
+    return details::scalarName(details::TypeTag<LieGroupd>{});
+  }
 
-    LieGroupd T_aw;
-  };
-  struct TestPointCostFunctor {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  static std::string describe(LieGroupd const& g) {
+    return ::testing::PrintToString(g.params());
+  }
 
-    TestPointCostFunctor(const LieGroupd& T_aw, const Pointd& point_a)
-        : T_aw(T_aw), point_a(point_a) {}
+  /// Joins indices of test data to the name of a test, such as `3_5`.
+  template <class... Indices>
+  static std::string indexName(Indices... indices) {
+    std::string name;
+    ((name += (name.empty() ? "" : "_") + std::to_string(indices)), ...);
+    return name;
+  }
 
-    template <class T>
-    bool operator()(T const* const sT_wa, T const* const spoint_b,
-                    T* sResiduals) const {
-      using LieGroupT = LieGroup<T>;
-      using PointT = typename LieGroupT::Point;
-      Eigen::Map<LieGroupT const> const T_wa(sT_wa);
-      Eigen::Map<PointT const> point_b(spoint_b);
-      Eigen::Map<PointT> residuals(sResiduals);
+  static void add(std::string const& suite, std::string const& name,
+                  std::string const& value_param, int line,
+                  std::function<void()> body) {
+    registerTest({suite, name, scalarName(), value_param, __FILE__, line},
+                 std::move(body));
+  }
 
-      // Multiply LieGroupd by Jet Vector3.
-      PointT point_b_prime = T_aw * point_b;
-      // Ensure Jet LieGroup multiplication with Jet Vector3.
-      point_b_prime = T_aw.template cast<T>() * point_b;
+  /// Optimizes a group element initialized with `T_w_init` towards
+  /// `T_w_targ` and returns the result.
+  static LieGroupd optimizePose(LieGroupd const& T_w_targ,
+                                LieGroupd const& T_w_init,
+                                Pointd const& point_a_init,
+                                Pointd const& point_b) {
+    int constexpr kNumPointParameters = Pointd::RowsAtCompileTime;
+    double constexpr kToleranceFactor = 0.01;
+    int constexpr kMaxNumIterations = 100;
 
-      // Multiply Jet LieGroup with Vector3d.
-      PointT point_a_prime = T_wa * point_a;
-      // Ensure Jet LieGroup multiplication with Jet Vector3.
-      point_a_prime = T_wa * point_a.template cast<T>();
+    LieGroupd T_wr = T_w_init;
+    Pointd point_a = point_a_init;
 
-      residuals = point_b_prime - point_a_prime;
-      return true;
-    }
+    ceres::Problem problem;
+    problem.AddParameterBlock(T_wr.data(), kNumParameters, new Manifoldd);
 
-    LieGroupd T_aw;
-    Pointd point_a;
-  };
+    // Derivatives are evaluated by automatic differentiation.
+    ceres::CostFunction* cost_function1 =
+        new ceres::AutoDiffCostFunction<TestLieGroupCostFunctor<LieGroupd>,
+                                        kDoF, kNumParameters>(
+            new TestLieGroupCostFunctor<LieGroupd>(T_w_targ.inverse()));
+    problem.AddResidualBlock(cost_function1, nullptr, T_wr.data());
+    ceres::CostFunction* cost_function2 =
+        new ceres::AutoDiffCostFunction<TestPointCostFunctor<LieGroupd>,
+                                        kNumPointParameters, kNumParameters,
+                                        kNumPointParameters>(
+            new TestPointCostFunctor<LieGroupd>(T_w_targ.inverse(), point_b));
+    problem.AddResidualBlock(cost_function2, nullptr, T_wr.data(),
+                             point_a.data());
 
-  struct TestGraphFunctor {
-    template <typename T>
-    bool operator()(const T* a, const T* b, T* residuals) const {
-      using LieGroupT = LieGroup<T>;
-      Eigen::Map<const LieGroupT> A(a);
-      Eigen::Map<const LieGroupT> B(b);
-      using Mapper = Mapper<typename LieGroupT::Tangent>;
-      typename Mapper::Map diff_log = Mapper::map(residuals);
+    ceres::Solver::Options options;
+    options.gradient_tolerance = kToleranceFactor * epsilon();
+    options.function_tolerance = kToleranceFactor * epsilon();
+    options.linear_solver_type = ceres::DENSE_QR;
+    options.max_num_iterations = kMaxNumIterations;
 
-      // Jet LieGroup multiplication with LieGroupd
-      diff_log = (diff * (B.inverse() * A)).log();
-      return true;
-    }
+    ceres::Solver::Summary summary;
+    Solve(options, &problem, &summary);
+    return T_wr;
+  }
 
-    TestGraphFunctor(const LieGroupd& diff) : diff(diff) {}
-    const LieGroupd diff;
-  };
-
-  bool testAll() {
-    bool passed = true;
-    for (size_t i = 0; i < group_vec.size(); ++i) {
-      for (size_t j = 0; j < group_vec.size(); ++j) {
-        if (i == j) continue;
-        for (size_t k = 0; k < point_vec.size(); ++k) {
-          for (size_t l = 0; l < point_vec.size(); ++l) {
-            if (k == l) continue;
-            std::cerr << "Simple test #" << i << ", " << j << ", " << k << ", "
-                      << l;
-            passed &=
-                test(group_vec[i], group_vec[j], point_vec[k], point_vec[l]);
-            processTestResult(passed);
-          }
+  static void poseOptimizationConvergesToTarget(
+      LieGroupd const& T_w_targ, LieGroupd const& T_w_init,
+      StdVector<Pointd> const& points) {
+    using ::testing::Each;
+    using ::testing::Lt;
+    std::vector<double> squared_errors;
+    for (std::size_t k = 0; k < points.size(); ++k) {
+      for (std::size_t l = 0; l < points.size(); ++l) {
+        if (k != l) {
+          LieGroupd const T_wr =
+              optimizePose(T_w_targ, T_w_init, points[k], points[l]);
+          squared_errors.push_back(
+              squaredNorm((T_w_targ.inverse() * T_wr).log()));
         }
       }
     }
-    for (size_t i = 0; i < group_vec.size(); ++i) {
-      for (size_t j = 0; j < group_vec.size(); ++j) {
-        passed &= testManifold(group_vec[i], group_vec[j]);
-        processTestResult(passed);
-      }
-    }
-    int Ns[] = {20, 40, 80, 160};
-    for (auto N : Ns) {
-      std::cerr << "Averaging test: N = " << N;
-      passed &= testAveraging(N, .5, .1);
-      processTestResult(passed);
-    }
-    return passed;
+    EXPECT_THAT(squared_errors, Each(Lt(10. * epsilon())))
+        << "for each ordered pair of distinct points";
   }
 
-  bool testAveraging(const size_t num_vertices, const double sigma_init,
-                     const double sigma_observation) {
-    if (!num_vertices) return true;
-    const double sigma_init_elementwise = sigma_init / std::sqrt(DoF);
-    const double sigma_observation_elementwise =
-        sigma_observation / std::sqrt(DoF);
-    // Running Lie group averaging on a K_n graph with a random initialization
-    // noise and random noise in observations
-    ceres::Problem problem;
+  static void xPlusZeroIsX(LieGroupd const& x) {
+    using ::testing::Lt;
+    Manifoldd const manifold;
+    Tangentd const zero = zeroTangent();
+    LieGroupd test_group;
+    ASSERT_TRUE(manifold.Plus(x.data(), data(zero), test_group.data()));
+    EXPECT_THAT((x.inverse() * test_group).log(),
+                HasSquaredNorm(Lt(epsilon())));
+  }
 
-    // "Random" initialization in order to keep tests repeatable
-    std::mt19937 rng(2021);
-    StdVector<LieGroupd> V(num_vertices), V_estimate;
+  static void xMinusXIsZero(LieGroupd const& x) {
+    using ::testing::Lt;
+    Manifoldd const manifold;
+    Tangentd test_tangent;
+    ASSERT_TRUE(manifold.Minus(x.data(), x.data(), data(test_tangent)));
+    EXPECT_THAT(test_tangent, HasSquaredNorm(Lt(epsilon())));
+  }
+
+  static void minusPlusIsIdentity(LieGroupd const& x, Tangentd const& delta) {
+    using ::testing::Lt;
+    Manifoldd const manifold;
+    LieGroupd test_group;
+    Tangentd test_tangent;
+    ASSERT_TRUE(manifold.Plus(x.data(), data(delta), test_group.data()));
+    ASSERT_TRUE(
+        manifold.Minus(test_group.data(), x.data(), data(test_tangent)));
+    Tangentd const diff = test_tangent - delta;
+    EXPECT_THAT(diff, HasSquaredNorm(Lt(epsilon())));
+  }
+
+  static void plusMinusIsIdentity(LieGroupd const& x, LieGroupd const& y) {
+    using ::testing::Lt;
+    Manifoldd const manifold;
+    LieGroupd test_group;
+    Tangentd test_tangent;
+    ASSERT_TRUE(manifold.Minus(y.data(), x.data(), data(test_tangent)));
+    ASSERT_TRUE(manifold.Plus(x.data(), data(test_tangent), test_group.data()));
+    EXPECT_THAT((y.inverse() * test_group).log(),
+                HasSquaredNorm(Lt(epsilon())));
+  }
+
+  static void minusJacobianTimesPlusJacobianIsIdentity(LieGroupd const& x) {
+    Manifoldd const manifold;
+    Eigen::Matrix<double, kNumParameters, kDoF,
+                  kDoF == 1 ? Eigen::ColMajor : Eigen::RowMajor>
+        Jplus;
+    Eigen::Matrix<double, kDoF, kNumParameters, Eigen::RowMajor> Jminus;
+    ASSERT_TRUE(manifold.PlusJacobian(x.data(), Jplus.data()));
+    ASSERT_TRUE(manifold.MinusJacobian(x.data(), Jminus.data()));
+
+    // Sophus::squaredNorm accepts vectors only, so the difference is
+    // flattened to bound its squared Frobenius norm.
+    Eigen::Matrix<double, kDoF, kDoF> const product = Jminus * Jplus;
+    EXPECT_THAT(
+        (product - Eigen::Matrix<double, kDoF, kDoF>::Identity()).reshaped(),
+        HasSquaredNorm(::testing::Lt(epsilon())));
+  }
+
+  static void averagingOnCompleteGraphReducesErrors(std::size_t num_vertices) {
+    using ::testing::Lt;
+    double constexpr kSigmaInit = 0.5;
+    double constexpr kSigmaObservation = 0.1;
+    double constexpr kToleranceFactor = 1e-2;
+    double constexpr kRequiredReduction = 0.25;
+    // A fixed seed keeps the test repeatable.
+    unsigned constexpr kSeed = 2021;
+
+    // The noise is scaled per element such that the expected squared norm is
+    // the same for all groups.
+    double const sigma_init_elementwise = kSigmaInit / std::sqrt(kDoF);
+    double const sigma_observation_elementwise =
+        kSigmaObservation / std::sqrt(kDoF);
+
+    // Lie group averaging on a complete graph with random initialization
+    // noise and random noise in the observations.
+    ceres::Problem problem;
+    std::mt19937 rng(kSeed);
+    StdVector<LieGroupd> V(num_vertices);
+    StdVector<LieGroupd> V_estimate;
     V_estimate.reserve(num_vertices);
     double initial_error = 0.;
-    auto parametrization = new Sophus::Manifold<LieGroup_>;
+    auto* const manifold = new Manifoldd;
 
-    // All vertices are initialized with an i.i.d noise with normal
-    // distribution; Scaling is adjusted in order to maintain the same
-    // expectation of squared norm for all groups
-    for (size_t i = 0; i < num_vertices; ++i) {
+    // All vertices are initialized with i.i.d. normally distributed noise.
+    for (std::size_t i = 0; i < num_vertices; ++i) {
       auto& v = V[i];
       v = LieGroupd::sampleUniform(rng);
-      const Tangentd delta_log =
+      Tangentd const delta_log =
           Random<Tangentd>::sample(rng) * sigma_init_elementwise;
-      const LieGroupd delta = LieGroupd::exp(delta_log);
+      LieGroupd const delta = LieGroupd::exp(delta_log);
       V_estimate.emplace_back(v * delta);
       initial_error += squaredNorm(delta_log);
-      problem.AddParameterBlock(V_estimate.back().data(),
-                                LieGroupd::num_parameters, parametrization);
+      problem.AddParameterBlock(V_estimate.back().data(), kNumParameters,
+                                manifold);
     }
 
-    // For simplicity of graph generation, we use a complete (undirected) graph.
-    // Each edge (observation) has i.i.d noise with multivariate normal
-    // distribution; Scaling is adjusted in order to maintain the same
-    // expectation of squared norm for all groups
-    for (size_t i = 0; i < num_vertices; ++i)
-      for (size_t j = i + 1; j < num_vertices; ++j) {
-        LieGroupd diff = V[i].inverse() * V[j];
-        const auto delta_log =
-            Random<typename LieGroupd::Tangent>::sample(rng) *
-            sigma_observation_elementwise;
-        const auto delta = LieGroupd::exp(delta_log);
+    // Each edge, an observation of the complete undirected graph, has i.i.d.
+    // multivariate normally distributed noise.
+    for (std::size_t i = 0; i < num_vertices; ++i) {
+      for (std::size_t j = i + 1; j < num_vertices; ++j) {
+        LieGroupd const diff = V[i].inverse() * V[j];
+        Tangentd const delta_log =
+            Random<Tangentd>::sample(rng) * sigma_observation_elementwise;
+        LieGroupd const delta = LieGroupd::exp(delta_log);
         ceres::CostFunction* cost =
-            new ceres::AutoDiffCostFunction<TestGraphFunctor, LieGroupd::DoF,
-                                            LieGroupd::num_parameters,
-                                            LieGroupd::num_parameters>(
-                new TestGraphFunctor(diff * delta));
-        // For real-world problems you should consider using robust
-        // loss-function
+            new ceres::AutoDiffCostFunction<TestGraphFunctor<LieGroupd>, kDoF,
+                                            kNumParameters, kNumParameters>(
+                new TestGraphFunctor<LieGroupd>(diff * delta));
         problem.AddResidualBlock(cost, nullptr, V_estimate[i].data(),
                                  V_estimate[j].data());
       }
+    }
 
     ceres::Solver::Options options;
-    options.gradient_tolerance = 1e-2 * Sophus::Constants<double>::epsilon();
-    options.function_tolerance = 1e-2 * Sophus::Constants<double>::epsilon();
-    options.parameter_tolerance = 1e-2 * Sophus::Constants<double>::epsilon();
+    options.gradient_tolerance = kToleranceFactor * epsilon();
+    options.function_tolerance = kToleranceFactor * epsilon();
+    options.parameter_tolerance = kToleranceFactor * epsilon();
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
 
     ceres::Solver::Summary summary;
     Solve(options, &problem, &summary);
 
-    // Computing final error in the estimates
     double final_error = 0.;
-    for (size_t i = 0; i < num_vertices; ++i) {
+    for (std::size_t i = 0; i < num_vertices; ++i) {
       final_error += squaredNorm((V[i].inverse() * V_estimate[i]).log());
     }
 
-    // Expecting reasonable decrease of both estimates' errors and residuals
-    return summary.final_cost < .25 * summary.initial_cost &&
-           final_error < .25 * initial_error;
+    EXPECT_THAT(summary.final_cost,
+                Lt(kRequiredReduction * summary.initial_cost));
+    EXPECT_THAT(final_error, Lt(kRequiredReduction * initial_error));
   }
-
-  bool test(LieGroupd const& T_w_targ, LieGroupd const& T_w_init,
-            Pointd const& point_a_init, Pointd const& point_b) {
-    static constexpr int kNumPointParameters = Pointd::RowsAtCompileTime;
-
-    // Optimization parameters.
-    LieGroupd T_wr = T_w_init;
-    Pointd point_a = point_a_init;
-
-    // Build the problem.
-    ceres::Problem problem;
-
-    // Specify local update rule for our parameter
-
-    auto parameterization = new Sophus::Manifold<LieGroup_>;
-    problem.AddParameterBlock(T_wr.data(), num_parameters, parameterization);
-
-    // Create and add cost functions. Derivatives will be evaluated via
-    // automatic differentiation
-    ceres::CostFunction* cost_function1 =
-        new ceres::AutoDiffCostFunction<TestLieGroupCostFunctor, LieGroupd::DoF,
-                                        LieGroupd::num_parameters>(
-            new TestLieGroupCostFunctor(T_w_targ.inverse()));
-    problem.AddResidualBlock(cost_function1, nullptr, T_wr.data());
-    ceres::CostFunction* cost_function2 =
-        new ceres::AutoDiffCostFunction<TestPointCostFunctor,
-                                        kNumPointParameters, num_parameters,
-                                        kNumPointParameters>(
-            new TestPointCostFunctor(T_w_targ.inverse(), point_b));
-    problem.AddResidualBlock(cost_function2, nullptr, T_wr.data(),
-                             point_a.data());
-
-    // Set solver options (precision / method)
-    ceres::Solver::Options options;
-    options.gradient_tolerance = 0.01 * Sophus::Constants<double>::epsilon();
-    options.function_tolerance = 0.01 * Sophus::Constants<double>::epsilon();
-    options.linear_solver_type = ceres::DENSE_QR;
-    options.max_num_iterations = 100;
-
-    // Solve
-    ceres::Solver::Summary summary;
-    Solve(options, &problem, &summary);
-
-    // Difference between target and parameter
-    double const mse = squaredNorm((T_w_targ.inverse() * T_wr).log());
-    bool const passed = mse < 10. * Sophus::Constants<double>::epsilon();
-    return passed;
-  }
-
-  bool testManifold(const LieGroupd& x, const LieGroupd& y) {
-    // ceres/manifold_test_utils.h is google-test based; here we check all the
-    // same invariants
-    const Tangentd delta = (x.inverse() * y).log();
-    const Tangentd zero = Zero<Tangentd>();
-    Sophus::Manifold<LieGroup_> manifold;
-
-    LieGroupd test_group;
-
-    bool passed = true;
-    auto coeffs =
-        Eigen::Map<const Eigen::Matrix<double, num_parameters, 1>>(x.data());
-    auto coeffs_y =
-        Eigen::Map<const Eigen::Matrix<double, num_parameters, 1>>(y.data());
-    std::cerr << "XPlusZeroIsXAt " << coeffs.transpose() << std::endl;
-    passed &= xPlusZeroIsXAt(x);
-    std::cerr << "XMinusXIsZeroAt " << coeffs.transpose() << std::endl;
-    passed &= xMinusXIsZeroAt(x);
-    std::cerr << "MinusPlusIsIdentityAt " << coeffs.transpose() << std::endl;
-    passed &= minusPlusIsIdentityAt(x, delta);
-    std::cerr << "MinusPlusIsIdentityAt " << coeffs.transpose() << std::endl;
-    passed &= minusPlusIsIdentityAt(x, zero);
-    std::cerr << "PlusMinusIsIdentityAt " << coeffs.transpose() << std::endl;
-    passed &= plusMinusIsIdentityAt(x, x);
-    std::cerr << "PlusMinusIsIdentityAt " << coeffs.transpose() << " "
-              << coeffs_y.transpose() << std::endl;
-    passed &= plusMinusIsIdentityAt(x, y);
-    std::cerr << "MinusPlusJacobianIsIdentityAt " << coeffs.transpose()
-              << std::endl;
-    passed &= minusPlusJacobianIsIdentityAt(x);
-    return passed;
-  }
-
-  bool xPlusZeroIsXAt(const LieGroupd& x) {
-    const Tangentd zero = Zero<Tangentd>();
-    Sophus::Manifold<LieGroup_> manifold;
-    LieGroupd test_group;
-
-    bool passed = true;
-
-    passed &= manifold.Plus(x.data(), data(zero), test_group.data());
-    processTestResult(passed);
-    const double error = squaredNorm((x.inverse() * test_group).log());
-    passed &= error < Sophus::Constants<double>::epsilon();
-    processTestResult(passed);
-    return passed;
-  }
-
-  bool xMinusXIsZeroAt(const LieGroupd& x) {
-    Sophus::Manifold<LieGroup_> manifold;
-    LieGroupd test_group;
-    Tangentd test_tangent;
-
-    bool passed = true;
-
-    passed &= manifold.Minus(x.data(), x.data(), data(test_tangent));
-    processTestResult(passed);
-    const double error = squaredNorm(test_tangent);
-    passed &= error < Sophus::Constants<double>::epsilon();
-    processTestResult(passed);
-    return passed;
-  }
-
-  bool minusPlusIsIdentityAt(const LieGroupd& x, const Tangentd& delta) {
-    if (RotationalPart<LieGroupd>::Norm(delta) >
-        Sophus::Constants<double>::pi() *
-            (1. - Sophus::Constants<double>::epsilon()))
-      return true;
-    Sophus::Manifold<LieGroup_> manifold;
-    LieGroupd test_group;
-    Tangentd test_tangent;
-
-    bool passed = true;
-
-    passed &= manifold.Plus(x.data(), data(delta), test_group.data());
-    processTestResult(passed);
-
-    passed &= manifold.Minus(test_group.data(), x.data(), data(test_tangent));
-    processTestResult(passed);
-
-    const Tangentd diff = test_tangent - delta;
-    const double error = squaredNorm(diff);
-    passed &= error < Sophus::Constants<double>::epsilon();
-    processTestResult(passed);
-    return passed;
-  }
-
-  bool plusMinusIsIdentityAt(const LieGroupd& x, const LieGroupd& y) {
-    Sophus::Manifold<LieGroup_> manifold;
-    LieGroupd test_group;
-    Tangentd test_tangent;
-
-    bool passed = true;
-
-    passed &= manifold.Minus(y.data(), x.data(), data(test_tangent));
-    processTestResult(passed);
-
-    passed &= manifold.Plus(x.data(), data(test_tangent), test_group.data());
-    processTestResult(passed);
-
-    const double error = squaredNorm((y.inverse() * test_group).log());
-    passed &= error < Sophus::Constants<double>::epsilon();
-    processTestResult(passed);
-    return passed;
-  }
-
-  bool minusPlusJacobianIsIdentityAt(const LieGroupd& x) {
-    Sophus::Manifold<LieGroup_> manifold;
-    LieGroupd test_group;
-
-    bool passed = true;
-
-    Eigen::Matrix<double, num_parameters, DoF,
-                  DoF == 1 ? Eigen::ColMajor : Eigen::RowMajor>
-        Jplus;
-    Eigen::Matrix<double, DoF, num_parameters, Eigen::RowMajor> Jminus;
-
-    passed &= manifold.PlusJacobian(x.data(), Jplus.data());
-    processTestResult(passed);
-
-    passed &= manifold.MinusJacobian(x.data(), Jminus.data());
-    processTestResult(passed);
-
-    const Eigen::Matrix<double, DoF, DoF> diff =
-        Jminus * Jplus - Eigen::Matrix<double, DoF, DoF>::Identity();
-
-    std::cerr << diff << std::endl;
-    const double error = diff.squaredNorm();
-    passed &= error < Sophus::Constants<double>::epsilon();
-    processTestResult(passed);
-    return passed;
-  }
-
-  LieGroupCeresTests(const StdVector<LieGroupd>& group_vec,
-                     const StdVector<Pointd>& point_vec)
-      : group_vec(group_vec), point_vec(point_vec) {}
-
-  StdVector<LieGroupd> group_vec;
-  StdVector<Pointd> point_vec;
 };
+
+template <class LieGroupd>
+bool LieGroupCeresTests<LieGroupd>::registerAll(std::string const& group_name) {
+  std::string const suite = group_name + "/LieGroupCeresTest/" + scalarName();
+  StdVector<LieGroupd> const g =
+      LieGroupCeresTestData<LieGroupd>::groupElements();
+  StdVector<Pointd> const points = LieGroupCeresTestData<LieGroupd>::points();
+
+  for (std::size_t i = 0; i < g.size(); ++i) {
+    std::string const value = "x = " + describe(g[i]);
+    add(suite, "XPlusZeroIsX/" + indexName(i), value, __LINE__,
+        [x = g[i]] { xPlusZeroIsX(x); });
+    add(suite, "XMinusXIsZero/" + indexName(i), value, __LINE__,
+        [x = g[i]] { xMinusXIsZero(x); });
+    add(suite, "MinusJacobianTimesPlusJacobianIsIdentity/" + indexName(i),
+        value, __LINE__,
+        [x = g[i]] { minusJacobianTimesPlusJacobianIsIdentity(x); });
+  }
+
+  for (std::size_t i = 0; i < g.size(); ++i) {
+    for (std::size_t j = 0; j < g.size(); ++j) {
+      std::string const pair_value =
+          "x = " + describe(g[i]) + ", y = " + describe(g[j]);
+      if (i != j) {
+        add(suite, "PoseOptimizationConvergesToTarget/" + indexName(i, j),
+            "target " + describe(g[i]) + ", initial " + describe(g[j]),
+            __LINE__, [target = g[i], initial = g[j], points] {
+              poseOptimizationConvergesToTarget(target, initial, points);
+            });
+      }
+      add(suite, "PlusMinusIsIdentity/" + indexName(i, j), pair_value, __LINE__,
+          [x = g[i], y = g[j]] { plusMinusIsIdentity(x, y); });
+
+      // log recovers delta = log(x^-1 * y) from x * exp(delta) only if the
+      // rotational part of delta is below pi. Pairs rotated by more than
+      // pi * (1 - epsilon) relative to each other therefore have no test.
+      Tangentd const delta = (g[i].inverse() * g[j]).log();
+      if (RotationalPart<LieGroupd>::Norm(delta) <=
+          Constants<double>::pi() * (1. - epsilon())) {
+        add(suite, "MinusPlusIsIdentity/" + indexName(i, j), pair_value,
+            __LINE__, [x = g[i], delta] { minusPlusIsIdentity(x, delta); });
+      }
+    }
+  }
+
+  for (std::size_t const num_vertices : {20u, 40u, 80u, 160u}) {
+    add(suite,
+        "AveragingOnCompleteGraphReducesErrors/" + indexName(num_vertices),
+        "number of vertices = " + std::to_string(num_vertices), __LINE__,
+        [num_vertices] {
+          averagingOnCompleteGraphReducesErrors(num_vertices);
+        });
+  }
+  return true;
+}
 
 }  // namespace Sophus

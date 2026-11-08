@@ -1,8 +1,7 @@
-#include <iostream>
-
-#include <unsupported/Eigen/MatrixFunctions>
+// Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
 #include <sophus/sim2.hpp>
+
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -21,243 +20,239 @@ template class Sim2<ceres::Jet<double, 3>>;
 #endif
 
 template <class Scalar>
-class Tests {
- public:
+struct LieGroupTestData<Sim2<Scalar>> {
   using Sim2Type = Sim2<Scalar>;
   using RxSO2Type = RxSO2<Scalar>;
-  using Point = typename Sim2<Scalar>::Point;
+  using Point = typename Sim2Type::Point;
+  using Tangent = typename Sim2Type::Tangent;
   using Vector2Type = Vector2<Scalar>;
-  using Tangent = typename Sim2<Scalar>::Tangent;
-  Scalar const kPi = Constants<Scalar>::pi();
 
-  Tests() {
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(0.2, 1.)), Point(0, 0)));
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(0.2, 1.1)), Point(10, 0)));
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(0., 0.)), Point(0, 10)));
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(0.00001, 0.)), Point(0, 0)));
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(0.00001, 0.0000001)),
-                 Point(1, -1.00000001)));
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(0., 0.)), Point(0.01, 0)));
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(kPi, 0.9)), Point(4, 0)));
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(0.2, 0)), Point(0, 0)) *
-        Sim2Type(RxSO2Type::exp(Vector2Type(kPi, 0)), Point(0, 0)) *
-        Sim2Type(RxSO2Type::exp(Vector2Type(-0.2, 0)), Point(0, 0)));
-    sim2_vec_.push_back(
-        Sim2Type(RxSO2Type::exp(Vector2Type(0.3, 0)), Point(2, -7)) *
-        Sim2Type(RxSO2Type::exp(Vector2Type(kPi, 0)), Point(0, 0)) *
-        Sim2Type(RxSO2Type::exp(Vector2Type(-0.3, 0)), Point(0, 6)));
-    Tangent tmp;
-    tmp << Scalar(0), Scalar(0), Scalar(0), Scalar(0);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(1), Scalar(0), Scalar(0), Scalar(0);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(0), Scalar(1), Scalar(0), Scalar(0.1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(-1), Scalar(1), Scalar(1), Scalar(-0.1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(20), Scalar(-1), Scalar(0), Scalar(-0.1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(30), Scalar(5), Scalar(-1), Scalar(1.5);
-    tangent_vec_.push_back(tmp);
-
-    point_vec_.push_back(Point(Scalar(1), Scalar(4)));
-    point_vec_.push_back(Point(Scalar(1), Scalar(-3)));
+  static StdVector<Sim2Type> groupElements() {
+    Scalar const kPi = Constants<Scalar>::pi();
+    StdVector<Sim2Type> sim2_vec;
+    sim2_vec.push_back(
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(0.2), Scalar(1.))),
+                 Point(Scalar(0), Scalar(0))));
+    sim2_vec.push_back(
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(0.2), Scalar(1.1))),
+                 Point(Scalar(10), Scalar(0))));
+    sim2_vec.push_back(
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(0.), Scalar(0.))),
+                 Point(Scalar(0), Scalar(10))));
+    sim2_vec.push_back(
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(0.00001), Scalar(0.))),
+                 Point(Scalar(0), Scalar(0))));
+    sim2_vec.push_back(Sim2Type(
+        RxSO2Type::exp(Vector2Type(Scalar(0.00001), Scalar(0.0000001))),
+        Point(Scalar(1), Scalar(-1.00000001))));
+    sim2_vec.push_back(
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(0.), Scalar(0.))),
+                 Point(Scalar(0.01), Scalar(0))));
+    sim2_vec.push_back(Sim2Type(RxSO2Type::exp(Vector2Type(kPi, Scalar(0.9))),
+                                Point(Scalar(4), Scalar(0))));
+    sim2_vec.push_back(
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(0.2), Scalar(0))),
+                 Point(Scalar(0), Scalar(0))) *
+        Sim2Type(RxSO2Type::exp(Vector2Type(kPi, Scalar(0))),
+                 Point(Scalar(0), Scalar(0))) *
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(-0.2), Scalar(0))),
+                 Point(Scalar(0), Scalar(0))));
+    sim2_vec.push_back(
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(0.3), Scalar(0))),
+                 Point(Scalar(2), Scalar(-7))) *
+        Sim2Type(RxSO2Type::exp(Vector2Type(kPi, Scalar(0))),
+                 Point(Scalar(0), Scalar(0))) *
+        Sim2Type(RxSO2Type::exp(Vector2Type(Scalar(-0.3), Scalar(0))),
+                 Point(Scalar(0), Scalar(6))));
+    return sim2_vec;
   }
 
-  void runAll() {
-    bool passed = testLieProperties();
-    passed &= testRawDataAcces();
-    passed &= testConstructors();
-    passed &= testSmallAngleLog();
-    processTestResult(passed);
+  static StdVector<Tangent> tangents() {
+    StdVector<Tangent> tangent_vec;
+    tangent_vec.push_back(Tangent(Scalar(0), Scalar(0), Scalar(0), Scalar(0)));
+    tangent_vec.push_back(Tangent(Scalar(1), Scalar(0), Scalar(0), Scalar(0)));
+    tangent_vec.push_back(
+        Tangent(Scalar(0), Scalar(1), Scalar(0), Scalar(0.1)));
+    tangent_vec.push_back(
+        Tangent(Scalar(-1), Scalar(1), Scalar(1), Scalar(-0.1)));
+    tangent_vec.push_back(
+        Tangent(Scalar(20), Scalar(-1), Scalar(0), Scalar(-0.1)));
+    tangent_vec.push_back(
+        Tangent(Scalar(30), Scalar(5), Scalar(-1), Scalar(1.5)));
+    return tangent_vec;
   }
 
- private:
-  bool testLieProperties() {
-    LieGroupTests<Sim2Type> tests(sim2_vec_, tangent_vec_, point_vec_);
-    return tests.doAllTestsPass();
+  static StdVector<Point> points() {
+    StdVector<Point> point_vec;
+    point_vec.push_back(Point(Scalar(1), Scalar(4)));
+    point_vec.push_back(Point(Scalar(1), Scalar(-3)));
+    return point_vec;
   }
-
-  // Regression tests for catastrophic-cancellation bugs in calcWInv()
-  // (sim_details.hpp), intentionally standalone rather than entries in
-  // sim2_vec_ used by LieGroupTests, so that their precision is not
-  // diluted by unrelated pairwise interpolation/mean checks against that
-  // fixture's other, much larger-magnitude entries.
-  bool testSmallAngleLog() {
-    bool passed = true;
-    {
-      // For theta around 1e-4, the coefficient b used to be computed from
-      // a formula with quartic-order cancellation in theta, gated by a
-      // threshold calibrated for a much lower cancellation order, giving a
-      // completely wrong W_inv and hence a wrong log().
-      Sim2Type const T(RxSO2Type::exp(Vector2Type(Scalar(0.0001), Scalar(0))),
-                       Point(Scalar(1), Scalar(-0.5)));
-      Sim2Type const T2 = Sim2Type::exp(T.log());
-      SOPHUS_TEST_APPROX(passed, T.matrix(), T2.matrix(),
-                         Constants<Scalar>::epsilon(),
-                         "Sim2::log() small-theta cancellation");
-    }
-    {
-      // calcWInv()'s generic branch (neither theta nor sigma individually
-      // small enough to hit the dedicated small-value branches above, but
-      // simultaneously small enough that intermediate terms shared by both
-      // denominators and numerators nearly cancel).
-      Sim2Type const T(
-          RxSO2Type::exp(Vector2Type(Scalar(0.00003), Scalar(0.00002))),
-          Point(Scalar(1), Scalar(-0.5)));
-      Sim2Type const T2 = Sim2Type::exp(T.log());
-      SOPHUS_TEST_APPROX(
-          passed, T.matrix(), T2.matrix(), Constants<Scalar>::epsilon(),
-          "Sim2::log() simultaneous small-theta/small-sigma cancellation");
-    }
-    return passed;
-  }
-
-  bool testRawDataAcces() {
-    bool passed = true;
-    Eigen::Matrix<Scalar, 4, 1> raw;
-    raw << Scalar(0), Scalar(1), Scalar(3), Scalar(2);
-    Eigen::Map<Sim2Type const> map_of_const_sim2(raw.data());
-    SOPHUS_TEST_APPROX(passed, map_of_const_sim2.complex().eval(),
-                       raw.template head<2>().eval(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_APPROX(passed, map_of_const_sim2.translation().eval(),
-                       raw.template tail<2>().eval(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_const_sim2.complex().data(), raw.data(),
-                      "");
-    SOPHUS_TEST_EQUAL(passed, map_of_const_sim2.translation().data(),
-                      raw.data() + 2, "");
-    Eigen::Map<Sim2Type const> const_shallow_copy = map_of_const_sim2;
-    SOPHUS_TEST_EQUAL(passed, const_shallow_copy.complex().eval(),
-                      map_of_const_sim2.complex().eval(), "");
-    SOPHUS_TEST_EQUAL(passed, const_shallow_copy.translation().eval(),
-                      map_of_const_sim2.translation().eval(), "");
-
-    Eigen::Matrix<Scalar, 4, 1> raw2;
-    raw2 << Scalar(1), Scalar(0), Scalar(2), Scalar(1);
-    Eigen::Map<Sim2Type> map_of_sim2(raw.data());
-    Vector2<Scalar> z;
-    z = raw2.template head<2>();
-    map_of_sim2.setComplex(z);
-    map_of_sim2.translation() = raw2.template tail<2>();
-    SOPHUS_TEST_APPROX(passed, map_of_sim2.complex().eval(),
-                       raw2.template head<2>().eval(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_APPROX(passed, map_of_sim2.translation().eval(),
-                       raw2.template tail<2>().eval(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_sim2.complex().data(), raw.data(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_sim2.translation().data(), raw.data() + 2,
-                      "");
-    SOPHUS_TEST_NEQ(passed, map_of_sim2.complex().data(), z.data(), "");
-    Eigen::Map<Sim2Type> shallow_copy = map_of_sim2;
-    SOPHUS_TEST_EQUAL(passed, shallow_copy.complex().eval(),
-                      map_of_sim2.complex().eval(), "");
-    SOPHUS_TEST_EQUAL(passed, shallow_copy.translation().eval(),
-                      map_of_sim2.translation().eval(), "");
-    Eigen::Map<Sim2Type> const const_map_of_sim3 = map_of_sim2;
-    SOPHUS_TEST_EQUAL(passed, const_map_of_sim3.complex().eval(),
-                      map_of_sim2.complex().eval(), "");
-    SOPHUS_TEST_EQUAL(passed, const_map_of_sim3.translation().eval(),
-                      map_of_sim2.translation().eval(), "");
-
-    Sim2Type const const_sim2(z, raw2.template tail<2>().eval());
-    for (int i = 0; i < 4; ++i) {
-      SOPHUS_TEST_EQUAL(passed, const_sim2.data()[i], raw2.data()[i], "");
-    }
-
-    Sim2Type se3(z, raw2.template tail<2>().eval());
-    for (int i = 0; i < 4; ++i) {
-      SOPHUS_TEST_EQUAL(passed, se3.data()[i], raw2.data()[i], "");
-    }
-
-    for (int i = 0; i < 4; ++i) {
-      SOPHUS_TEST_EQUAL(passed, se3.data()[i], raw.data()[i], "");
-    }
-
-    Eigen::Matrix<Scalar, 4, 1> data1, data2;
-    data1 << Scalar(0), Scalar(2), Scalar(1), Scalar(2);
-    data2 << Scalar(2), Scalar(0), Scalar(2), Scalar(1);
-
-    Eigen::Map<Sim2Type> map1(data1.data()), map2(data2.data());
-
-    // map -> map assignment
-    map2 = map1;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), map2.matrix(), "");
-
-    // map -> type assignment
-    Sim2Type copy;
-    copy = map1;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), copy.matrix(), "");
-
-    // type -> map assignment
-    copy = Sim2Type(RxSO2Type::exp(Vector2Type(-1, 1)),
-                    Point(Scalar(10), Scalar(0)));
-    map1 = copy;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), copy.matrix(), "");
-
-    return passed;
-  }
-
-  bool testConstructors() {
-    bool passed = true;
-    Eigen::Matrix<Scalar, 3, 3> I = Eigen::Matrix<Scalar, 3, 3>::Identity();
-    SOPHUS_TEST_EQUAL(passed, Sim2Type().matrix(), I, "");
-
-    Sim2Type sim2 = sim2_vec_.front();
-    Point translation = sim2.translation();
-    RxSO2Type rxso2 = sim2.rxso2();
-
-    SOPHUS_TEST_APPROX(passed, Sim2Type(rxso2, translation).matrix(),
-                       sim2.matrix(), Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_APPROX(passed, Sim2Type(rxso2.complex(), translation).matrix(),
-                       sim2.matrix(), Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_APPROX(passed, Sim2Type(sim2.matrix()).matrix(), sim2.matrix(),
-                       Constants<Scalar>::epsilon(), "");
-
-    Scalar scale(1.2);
-    sim2.setScale(scale);
-    SOPHUS_TEST_APPROX(passed, scale, sim2.scale(),
-                       Constants<Scalar>::epsilon(), "setScale", "");
-
-    sim2.setComplex(sim2_vec_[0].rxso2().complex());
-    SOPHUS_TEST_APPROX(passed, sim2_vec_[0].rxso2().complex(),
-                       sim2_vec_[0].rxso2().complex(),
-                       Constants<Scalar>::epsilon(), "setComplex", "");
-    return passed;
-  }
-
-  std::vector<Sim2Type, Eigen::aligned_allocator<Sim2Type>> sim2_vec_;
-  std::vector<Tangent, Eigen::aligned_allocator<Tangent>> tangent_vec_;
-  std::vector<Point, Eigen::aligned_allocator<Point>> point_vec_;
 };
 
-int test_sim3() {
-  using std::cerr;
-  using std::endl;
+namespace {
 
-  cerr << "Test Sim2" << endl << endl;
-  cerr << "Double tests: " << endl;
-  Tests<double>().runAll();
-  cerr << "Float tests: " << endl;
-  Tests<float>().runAll();
-
+[[maybe_unused]] bool const kRegistered =
+    registerLieGroupTests<Sim2<double>, Sim2<float>
 #if SOPHUS_CERES
-  cerr << "ceres::Jet<double, 3> tests: " << endl;
-  Tests<ceres::Jet<double, 3>>().runAll();
+                          ,
+                          Sim2<ceres::Jet<double, 3>>
 #endif
+                          >("Sim2");
 
-  return 0;
+template <class Scalar>
+class Sim2Test : public ::testing::Test {};
+
+using Sim2Scalars = ::testing::Types<double, float
+#if SOPHUS_CERES
+                                     ,
+                                     ceres::Jet<double, 3>
+#endif
+                                     >;
+TYPED_TEST_SUITE(Sim2Test, Sim2Scalars, ScalarNameGenerator);
+
+// Catastrophic cancellation in calcWInv() of sim_details.hpp: for theta
+// around 1e-4, the coefficient b was computed from a formula with quartic
+// cancellation in theta, gated by a threshold calibrated for a much lower
+// order, which gave a wrong W_inv and hence a wrong log(). These elements are
+// separate from LieGroupTestData, so that their tolerance is not diluted by
+// the pairwise interpolation and mean checks against the much larger elements
+// there.
+TYPED_TEST(Sim2Test, ExpInvertsLogForSmallAngles) {
+  using Scalar = TypeParam;
+  using Sim2Type = Sim2<Scalar>;
+  using Point = typename Sim2Type::Point;
+
+  Sim2Type const T(
+      RxSO2<Scalar>::exp(Vector2<Scalar>(Scalar(0.0001), Scalar(0))),
+      Point(Scalar(1), Scalar(-0.5)));
+  EXPECT_THAT(Sim2Type::exp(T.log()), IsNear(T, Constants<Scalar>::epsilon()));
 }
-}  // namespace Sophus
 
-int main() { return Sophus::test_sim3(); }
+// The generic branch of calcWInv(), where neither theta nor sigma alone is
+// small enough for the dedicated small-value branches, but both together are
+// small enough that terms shared by the numerators and denominators nearly
+// cancel.
+TYPED_TEST(Sim2Test, ExpInvertsLogForSmallAnglesAndScales) {
+  using Scalar = TypeParam;
+  using Sim2Type = Sim2<Scalar>;
+  using Point = typename Sim2Type::Point;
+
+  Sim2Type const T(
+      RxSO2<Scalar>::exp(Vector2<Scalar>(Scalar(0.00003), Scalar(0.00002))),
+      Point(Scalar(1), Scalar(-0.5)));
+  EXPECT_THAT(Sim2Type::exp(T.log()), IsNear(T, Constants<Scalar>::epsilon()));
+}
+
+TYPED_TEST(Sim2Test, MapsAccessTheUnderlyingData) {
+  using Scalar = TypeParam;
+  using Sim2Type = Sim2<Scalar>;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  Vector4<Scalar> raw(Scalar(0), Scalar(1), Scalar(3), Scalar(2));
+  Eigen::Map<Sim2Type const> const map_of_const_sim2(raw.data());
+  EXPECT_THAT(map_of_const_sim2.complex(),
+              IsNear(raw.template head<2>(), kEpsilon));
+  EXPECT_THAT(map_of_const_sim2.translation(),
+              IsNear(raw.template tail<2>(), kEpsilon));
+  EXPECT_EQ(map_of_const_sim2.complex().data(), raw.data());
+  EXPECT_EQ(map_of_const_sim2.translation().data(), raw.data() + 2);
+  Eigen::Map<Sim2Type const> const const_shallow_copy = map_of_const_sim2;
+  EXPECT_EQ(const_shallow_copy.complex().eval(),
+            map_of_const_sim2.complex().eval());
+  EXPECT_EQ(const_shallow_copy.translation().eval(),
+            map_of_const_sim2.translation().eval());
+
+  Vector4<Scalar> const raw2(Scalar(1), Scalar(0), Scalar(2), Scalar(1));
+  Eigen::Map<Sim2Type> map_of_sim2(raw.data());
+  Vector2<Scalar> const z = raw2.template head<2>();
+  map_of_sim2.setComplex(z);
+  map_of_sim2.translation() = raw2.template tail<2>();
+  EXPECT_THAT(map_of_sim2.complex(), IsNear(raw2.template head<2>(), kEpsilon));
+  EXPECT_THAT(map_of_sim2.translation(),
+              IsNear(raw2.template tail<2>(), kEpsilon));
+  EXPECT_EQ(map_of_sim2.complex().data(), raw.data());
+  EXPECT_EQ(map_of_sim2.translation().data(), raw.data() + 2);
+  EXPECT_NE(map_of_sim2.complex().data(), z.data());
+  Eigen::Map<Sim2Type> const shallow_copy = map_of_sim2;
+  EXPECT_EQ(shallow_copy.complex().eval(), map_of_sim2.complex().eval());
+  EXPECT_EQ(shallow_copy.translation().eval(),
+            map_of_sim2.translation().eval());
+  Eigen::Map<Sim2Type> const const_map_of_sim2 = map_of_sim2;
+  EXPECT_EQ(const_map_of_sim2.complex().eval(), map_of_sim2.complex().eval());
+  EXPECT_EQ(const_map_of_sim2.translation().eval(),
+            map_of_sim2.translation().eval());
+  // Writing through the map changed the underlying data.
+  EXPECT_EQ(raw, raw2);
+}
+
+TYPED_TEST(Sim2Test, DataAccessesTheParameters) {
+  using Scalar = TypeParam;
+  using Sim2Type = Sim2<Scalar>;
+
+  Vector4<Scalar> const raw(Scalar(0), Scalar(1), Scalar(3), Scalar(2));
+  Vector4<Scalar> const raw2(Scalar(1), Scalar(0), Scalar(2), Scalar(1));
+  Vector2<Scalar> const z = raw2.template head<2>();
+
+  Sim2Type const const_sim2(z, raw2.template tail<2>().eval());
+  EXPECT_EQ(rawParams(const_sim2), raw2);
+
+  Sim2Type sim2(z, raw2.template tail<2>().eval());
+  EXPECT_EQ(rawParams(sim2), raw2);
+  Eigen::Map<Vector4<Scalar>>(sim2.data()) = raw;
+  EXPECT_EQ(rawParams(sim2), raw);
+}
+
+TYPED_TEST(Sim2Test, AssignsBetweenMapsAndElements) {
+  using Scalar = TypeParam;
+  using Sim2Type = Sim2<Scalar>;
+  using Point = typename Sim2Type::Point;
+
+  Vector4<Scalar> data1(Scalar(0), Scalar(2), Scalar(1), Scalar(2));
+  Vector4<Scalar> data2(Scalar(2), Scalar(0), Scalar(2), Scalar(1));
+  Eigen::Map<Sim2Type> map1(data1.data());
+  Eigen::Map<Sim2Type> map2(data2.data());
+
+  map2 = map1;
+  EXPECT_EQ(map2.matrix(), map1.matrix()) << "map -> map assignment";
+
+  Sim2Type copy;
+  copy = map1;
+  EXPECT_EQ(copy.matrix(), map1.matrix()) << "map -> type assignment";
+
+  copy = Sim2Type(RxSO2<Scalar>::exp(Vector2<Scalar>(Scalar(-1), Scalar(1))),
+                  Point(Scalar(10), Scalar(0)));
+  map1 = copy;
+  EXPECT_EQ(map1.matrix(), copy.matrix()) << "type -> map assignment";
+}
+
+TYPED_TEST(Sim2Test, ConstructorsAndSetters) {
+  using Scalar = TypeParam;
+  using Sim2Type = Sim2<Scalar>;
+  using Point = typename Sim2Type::Point;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  EXPECT_EQ(Sim2Type().matrix(), Matrix3<Scalar>::Identity().eval());
+
+  StdVector<Sim2Type> const sim2_vec =
+      LieGroupTestData<Sim2Type>::groupElements();
+  Sim2Type sim2 = sim2_vec.front();
+  Point const translation = sim2.translation();
+  RxSO2<Scalar> const rxso2 = sim2.rxso2();
+
+  EXPECT_THAT(Sim2Type(rxso2, translation), IsNear(sim2, kEpsilon));
+  EXPECT_THAT(Sim2Type(rxso2.complex(), translation), IsNear(sim2, kEpsilon));
+  EXPECT_THAT(Sim2Type(sim2.matrix()), IsNear(sim2, kEpsilon));
+
+  Scalar const scale(1.2);
+  sim2.setScale(scale);
+  EXPECT_THAT(sim2.scale(), IsNear(scale, kEpsilon)) << "setScale";
+
+  sim2.setComplex(sim2_vec[1].rxso2().complex());
+  EXPECT_THAT(sim2.rxso2().complex(),
+              IsNear(sim2_vec[1].rxso2().complex(), kEpsilon))
+      << "setComplex";
+}
+
+}  // namespace
+}  // namespace Sophus

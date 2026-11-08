@@ -1,6 +1,7 @@
-#include <iostream>
+// Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
 #include <sophus/cartesian.hpp>
+
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -18,76 +19,50 @@ template class Cartesian<float, 2, Eigen::DontAlign>;
 template class Cartesian<ceres::Jet<double, 2>, 2>;
 #endif
 
-template <class Scalar_>
-class Tests {
- public:
-  using Scalar = Scalar_;
-  using Point = typename Cartesian<Scalar, 2>::Point;
-  using Tangent = typename Cartesian<Scalar, 2>::Tangent;
+template <class Scalar>
+struct LieGroupTestData<Cartesian<Scalar, 2>> {
+  using CartesianType = Cartesian<Scalar, 2>;
+  using Point = typename CartesianType::Point;
+  using Tangent = typename CartesianType::Tangent;
 
-  Tests() {
-    Tangent tmp;
-    tmp << Scalar(0), Scalar(0);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(1), Scalar(0);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(1), Scalar(0.5);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(0), Scalar(1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(0), Scalar(-0.1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(-1), Scalar(1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(20), Scalar(-1);
-    tangent_vec_.push_back(tmp);
+  static StdVector<Tangent> tangents() {
+    StdVector<Tangent> tangent_vec;
+    tangent_vec.push_back(Tangent(Scalar(0), Scalar(0)));
+    tangent_vec.push_back(Tangent(Scalar(1), Scalar(0)));
+    tangent_vec.push_back(Tangent(Scalar(1), Scalar(0.5)));
+    tangent_vec.push_back(Tangent(Scalar(0), Scalar(1)));
+    tangent_vec.push_back(Tangent(Scalar(0), Scalar(-0.1)));
+    tangent_vec.push_back(Tangent(Scalar(-1), Scalar(1)));
+    tangent_vec.push_back(Tangent(Scalar(20), Scalar(-1)));
+    return tangent_vec;
+  }
 
-    for (const auto& t : tangent_vec_) {
-      cartesian2_vec_.push_back(Cartesian<Scalar, 2>(t));
+  static StdVector<CartesianType> groupElements() {
+    StdVector<CartesianType> cartesian_vec;
+    for (Tangent const& t : tangents()) {
+      cartesian_vec.push_back(CartesianType(t));
     }
-
-    point_vec_.push_back(Point(Scalar(1), Scalar(2)));
-    point_vec_.push_back(Point(Scalar(1), Scalar(-3)));
-    point_vec_.push_back(Point(Scalar(-5), Scalar(-6)));
+    return cartesian_vec;
   }
 
-  void runAll() {
-    bool passed = testLieProperties();
-    processTestResult(passed);
+  static StdVector<Point> points() {
+    StdVector<Point> point_vec;
+    point_vec.push_back(Point(Scalar(1), Scalar(2)));
+    point_vec.push_back(Point(Scalar(1), Scalar(-3)));
+    point_vec.push_back(Point(Scalar(-5), Scalar(-6)));
+    return point_vec;
   }
-
- private:
-  bool testLieProperties() {
-    LieGroupTests<Cartesian<Scalar, 2>> tests(cartesian2_vec_, tangent_vec_,
-                                              point_vec_);
-    return tests.doAllTestsPass();
-  }
-
-  std::vector<Cartesian<Scalar, 2>,
-              Eigen::aligned_allocator<Cartesian<Scalar, 2>>>
-      cartesian2_vec_;
-  std::vector<Tangent, Eigen::aligned_allocator<Tangent>> tangent_vec_;
-  std::vector<Point, Eigen::aligned_allocator<Point>> point_vec_;
 };
 
-int test_cartesian() {
-  using std::cerr;
-  using std::endl;
+namespace {
 
-  cerr << "Test Cartesian2" << endl << endl;
-  cerr << "Double tests: " << endl;
-  Tests<double>().runAll();
-  cerr << "Float tests: " << endl;
-  Tests<float>().runAll();
-
+[[maybe_unused]] bool const kRegistered =
+    registerLieGroupTests<Cartesian<double, 2>, Cartesian<float, 2>
 #if SOPHUS_CERES
-  cerr << "ceres::Jet<double, 2> tests: " << endl;
-  Tests<ceres::Jet<double, 2>>().runAll();
+                          ,
+                          Cartesian<ceres::Jet<double, 2>, 2>
 #endif
+                          >("Cartesian2");
 
-  return 0;
-}
-
+}  // namespace
 }  // namespace Sophus
-
-int main() { return Sophus::test_cartesian(); }

@@ -1,6 +1,11 @@
-#include <iostream>
+// Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
+#include <cmath>
+#include <limits>
+#include <random>
 
 #include <sophus/rxso2.hpp>
+
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -19,285 +24,281 @@ template class RxSO2<ceres::Jet<double, 3>>;
 #endif
 
 template <class Scalar>
-class Tests {
- public:
-  using SO2Type = SO2<Scalar>;
+struct LieGroupTestData<RxSO2<Scalar>> {
   using RxSO2Type = RxSO2<Scalar>;
-  using RotationMatrixType = typename SO2<Scalar>::Transformation;
-  using Point = typename RxSO2<Scalar>::Point;
-  using Tangent = typename RxSO2<Scalar>::Tangent;
-  Scalar const kPi = Constants<Scalar>::pi();
+  using Point = typename RxSO2Type::Point;
+  using Tangent = typename RxSO2Type::Tangent;
 
-  Tests() {
-    rxso2_vec_.push_back(RxSO2Type::exp(Tangent(0.2, 1.)));
-    rxso2_vec_.push_back(RxSO2Type::exp(Tangent(0.2, 1.1)));
-    rxso2_vec_.push_back(RxSO2Type::exp(Tangent(0., 1.1)));
-    rxso2_vec_.push_back(RxSO2Type::exp(Tangent(0.00001, 0.)));
-    rxso2_vec_.push_back(RxSO2Type::exp(Tangent(0.00001, 0.00001)));
-    rxso2_vec_.push_back(RxSO2Type::exp(Tangent(kPi, 0.9)));
-    rxso2_vec_.push_back(RxSO2Type::exp(Tangent(0.2, 0)) *
-                         RxSO2Type::exp(Tangent(kPi, 0.0)) *
-                         RxSO2Type::exp(Tangent(-0.2, 0)));
-    rxso2_vec_.push_back(RxSO2Type::exp(Tangent(0.3, 0)) *
-                         RxSO2Type::exp(Tangent(kPi, 0.001)) *
-                         RxSO2Type::exp(Tangent(-0.3, 0)));
-
-    Tangent tmp;
-    tmp << Scalar(0), Scalar(0);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(1), Scalar(0);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(1), Scalar(0.1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(0), Scalar(0.1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(0), Scalar(-0.1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(-1), Scalar(-0.1);
-    tangent_vec_.push_back(tmp);
-    tmp << Scalar(20), Scalar(2);
-    tangent_vec_.push_back(tmp);
-
-    point_vec_.push_back(Point(Scalar(1), Scalar(4)));
-    point_vec_.push_back(Point(Scalar(1), Scalar(-3)));
+  static StdVector<RxSO2Type> groupElements() {
+    Scalar const kPi = Constants<Scalar>::pi();
+    StdVector<RxSO2Type> rxso2_vec;
+    rxso2_vec.push_back(RxSO2Type::exp(Tangent(Scalar(0.2), Scalar(1.))));
+    rxso2_vec.push_back(RxSO2Type::exp(Tangent(Scalar(0.2), Scalar(1.1))));
+    rxso2_vec.push_back(RxSO2Type::exp(Tangent(Scalar(0.), Scalar(1.1))));
+    rxso2_vec.push_back(RxSO2Type::exp(Tangent(Scalar(0.00001), Scalar(0.))));
+    rxso2_vec.push_back(
+        RxSO2Type::exp(Tangent(Scalar(0.00001), Scalar(0.00001))));
+    rxso2_vec.push_back(RxSO2Type::exp(Tangent(kPi, Scalar(0.9))));
+    rxso2_vec.push_back(RxSO2Type::exp(Tangent(Scalar(0.2), Scalar(0))) *
+                        RxSO2Type::exp(Tangent(kPi, Scalar(0.0))) *
+                        RxSO2Type::exp(Tangent(Scalar(-0.2), Scalar(0))));
+    rxso2_vec.push_back(RxSO2Type::exp(Tangent(Scalar(0.3), Scalar(0))) *
+                        RxSO2Type::exp(Tangent(kPi, Scalar(0.001))) *
+                        RxSO2Type::exp(Tangent(Scalar(-0.3), Scalar(0))));
+    return rxso2_vec;
   }
 
-  template <class S = Scalar>
-  std::enable_if_t<std::is_floating_point<S>::value, bool> testFit() {
-    bool passed = true;
-    for (int i = 0; i < 10; ++i) {
-      Matrix2<Scalar> M = Matrix2<Scalar>::Random();
-      for (Scalar scale : {Scalar(0.01), Scalar(0.99), Scalar(1), Scalar(10)}) {
-        Matrix2<Scalar> R = makeRotationMatrix(M);
-        Matrix2<Scalar> sR = scale * R;
-        SOPHUS_TEST(passed, isScaledOrthogonalAndPositive(sR),
-                    "isScaledOrthogonalAndPositive(sR): {} *\n{}",
-                    SOPHUS_FMT_ARG(scale), SOPHUS_FMT_ARG(R));
-        Matrix2<Scalar> sR_cols_swapped;
-        sR_cols_swapped << sR.col(1), sR.col(0);
-        SOPHUS_TEST(passed, !isScaledOrthogonalAndPositive(sR_cols_swapped),
-                    "isScaledOrthogonalAndPositive(-sR): {} *\n{}",
-                    SOPHUS_FMT_ARG(scale), SOPHUS_FMT_ARG(R));
-      }
-    }
-    return passed;
+  static StdVector<Tangent> tangents() {
+    StdVector<Tangent> tangent_vec;
+    tangent_vec.push_back(Tangent(Scalar(0), Scalar(0)));
+    tangent_vec.push_back(Tangent(Scalar(1), Scalar(0)));
+    tangent_vec.push_back(Tangent(Scalar(1), Scalar(0.1)));
+    tangent_vec.push_back(Tangent(Scalar(0), Scalar(0.1)));
+    tangent_vec.push_back(Tangent(Scalar(0), Scalar(-0.1)));
+    tangent_vec.push_back(Tangent(Scalar(-1), Scalar(-0.1)));
+    tangent_vec.push_back(Tangent(Scalar(20), Scalar(2)));
+    return tangent_vec;
   }
 
-  template <class S = Scalar>
-  std::enable_if_t<!std::is_floating_point<S>::value, bool> testFit() {
-    return true;
+  static StdVector<Point> points() {
+    StdVector<Point> point_vec;
+    point_vec.push_back(Point(Scalar(1), Scalar(4)));
+    point_vec.push_back(Point(Scalar(1), Scalar(-3)));
+    return point_vec;
   }
-
-  void runAll() {
-    bool passed = testLieProperties();
-    passed &= testSaturation();
-    passed &= testRawDataAcces();
-    passed &= testConstructors();
-    passed &= testFit();
-    processTestResult(passed);
-  }
-
- private:
-  bool testLieProperties() {
-    LieGroupTests<RxSO2Type> tests(rxso2_vec_, tangent_vec_, point_vec_);
-    return tests.doAllTestsPass();
-  }
-
-  bool testSaturation() {
-    using std::cos;
-    using std::log;
-    using std::sin;
-
-    bool passed = true;
-    // Test if product of two small group elements has correct scale
-    RxSO2Type small1(Scalar(1.1) * Constants<Scalar>::epsilon(), SO2Type());
-    RxSO2Type small2(Scalar(1.1) * Constants<Scalar>::epsilon(),
-                     SO2Type::exp(Constants<Scalar>::pi()));
-    RxSO2Type saturated_product = small1 * small2;
-    SOPHUS_TEST_APPROX(passed, saturated_product.scale(),
-                       Constants<Scalar>::epsilon(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_APPROX(passed, saturated_product.so2().matrix(),
-                       (small1.so2() * small2.so2()).matrix(),
-                       Constants<Scalar>::epsilon(), "");
-
-    /*
-     * Test if group exponential produces group elements
-     * that can be multiplied safely even for large scale factors
-     */
-    const Tangent large_log(Scalar(1.), std::numeric_limits<Scalar>::max());
-    const Tangent regular_log(Scalar(2.), Scalar(0.));
-    const RxSO2Type large = RxSO2Type::exp(large_log);
-    const RxSO2Type regular = RxSO2Type::exp(regular_log);
-    const RxSO2Type product = regular * large;
-    SOPHUS_TEST(passed, isfinite(large.scale()), "");
-    SOPHUS_TEST(passed, isfinite(product.scale()), "");
-
-    // Test if saturation is handled correctly with imprecision of IEEE754-2008
-    std::mt19937 rng;
-    std::uniform_real_distribution<double> uniform(0., Constants<double>::pi());
-    Tangent small_log;
-    while (true) {
-      // Note: sample double and convert to Scalar for compatibility with
-      // ceres::Jet
-      const Scalar phi = Scalar(uniform(rng));
-      const Scalar c = cos(phi);
-      const Scalar s = sin(phi);
-      if (c * c + s * s < Scalar(1.)) {
-        small_log[0] = phi;
-        break;
-      }
-    }
-    small_log[1] = log(Constants<Scalar>::epsilon() / Scalar(2.));
-
-    const RxSO2Type small_exp = RxSO2Type::exp(small_log);
-    SOPHUS_TEST_APPROX(passed, small_exp.scale(), Constants<Scalar>::epsilon(),
-                       Constants<Scalar>::epsilon(), "");
-    return passed;
-  }
-
-  bool testRawDataAcces() {
-    bool passed = true;
-    Eigen::Matrix<Scalar, 2, 1> raw = {0, 1};
-    Eigen::Map<RxSO2Type const> map_of_const_rxso2(raw.data());
-    SOPHUS_TEST_APPROX(passed, map_of_const_rxso2.complex().eval(), raw,
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_const_rxso2.complex().data(), raw.data(),
-                      "");
-    Eigen::Map<RxSO2Type const> const_shallow_copy = map_of_const_rxso2;
-    SOPHUS_TEST_EQUAL(passed, const_shallow_copy.complex().eval(),
-                      map_of_const_rxso2.complex().eval(), "");
-
-    Eigen::Matrix<Scalar, 2, 1> raw2 = {1, 0};
-    Eigen::Map<RxSO2Type> map_of_rxso2(raw2.data());
-    SOPHUS_TEST_APPROX(passed, map_of_rxso2.complex().eval(), raw2,
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_rxso2.complex().data(), raw2.data(), "");
-    Eigen::Map<RxSO2Type> shallow_copy = map_of_rxso2;
-    SOPHUS_TEST_EQUAL(passed, shallow_copy.complex().eval(),
-                      map_of_rxso2.complex().eval(), "");
-
-    RxSO2Type const const_so2(raw2);
-    for (int i = 0; i < 2; ++i) {
-      SOPHUS_TEST_EQUAL(passed, const_so2.data()[i], raw2.data()[i], "");
-    }
-
-    RxSO2Type so2(raw2);
-    for (int i = 0; i < 2; ++i) {
-      so2.data()[i] = raw[i];
-    }
-
-    for (int i = 0; i < 2; ++i) {
-      SOPHUS_TEST_EQUAL(passed, so2.data()[i], raw.data()[i], "");
-    }
-
-    // regression: test that rotationMatrix API doesn't change underlying value
-    // for non-const-map and compiles at all for const-map
-    Eigen::Matrix<Scalar, 2, 1> raw3 = {Scalar(2), Scalar(0)};
-    Eigen::Map<RxSO2Type> map_of_rxso2_3(raw3.data());
-    Eigen::Map<const RxSO2Type> const_map_of_rxso2_3(raw3.data());
-    RxSO2Type rxso2_copy3 = map_of_rxso2_3;
-    const RotationMatrixType r_ref = map_of_rxso2_3.so2().matrix();
-
-    const RotationMatrixType r = map_of_rxso2_3.rotationMatrix();
-    SOPHUS_TEST_APPROX(passed, r_ref, r, Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_APPROX(passed, map_of_rxso2_3.complex().eval(),
-                       rxso2_copy3.complex().eval(),
-                       Constants<Scalar>::epsilon(), "");
-
-    const RotationMatrixType r_const = const_map_of_rxso2_3.rotationMatrix();
-    SOPHUS_TEST_APPROX(passed, r_ref, r_const, Constants<Scalar>::epsilon(),
-                       "");
-    SOPHUS_TEST_APPROX(passed, const_map_of_rxso2_3.complex().eval(),
-                       rxso2_copy3.complex().eval(),
-                       Constants<Scalar>::epsilon(), "");
-
-    Eigen::Matrix<Scalar, 2, 1> data1, data2;
-    data1 << Scalar(.1), Scalar(.2);
-    data2 << Scalar(.5), Scalar(.4);
-
-    Eigen::Map<RxSO2Type> map1(data1.data()), map2(data2.data());
-
-    // map -> map assignment
-    map2 = map1;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), map2.matrix(), "");
-
-    // map -> type assignment
-    RxSO2Type copy;
-    copy = map1;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), copy.matrix(), "");
-
-    // type -> map assignment
-    copy = RxSO2Type::exp(Tangent(Scalar(0.2), Scalar(0.5)));
-    map1 = copy;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), copy.matrix(), "");
-
-    return passed;
-  }
-
-  bool testConstructors() {
-    bool passed = true;
-    RxSO2Type rxso2;
-    Scalar scale(1.2);
-    rxso2.setScale(scale);
-    SOPHUS_TEST_APPROX(passed, scale, rxso2.scale(),
-                       Constants<Scalar>::epsilon(), "setScale");
-    Scalar angle(0.2);
-    rxso2.setAngle(angle);
-    SOPHUS_TEST_APPROX(passed, angle, rxso2.angle(),
-                       Constants<Scalar>::epsilon(), "setAngle");
-    SOPHUS_TEST_APPROX(passed, scale, rxso2.scale(),
-                       Constants<Scalar>::epsilon(),
-                       "setAngle leaves scale as is");
-
-    auto so2 = rxso2_vec_[0].so2();
-    rxso2.setSO2(so2);
-    SOPHUS_TEST_APPROX(passed, scale, rxso2.scale(),
-                       Constants<Scalar>::epsilon(), "setSO2");
-    SOPHUS_TEST_APPROX(passed, RxSO2Type(scale, so2).matrix(), rxso2.matrix(),
-                       Constants<Scalar>::epsilon(), "RxSO2(scale, SO2)");
-    SOPHUS_TEST_APPROX(passed, RxSO2Type(scale, so2.matrix()).matrix(),
-                       rxso2.matrix(), Constants<Scalar>::epsilon(),
-                       "RxSO2(scale, SO2)");
-    Matrix2<Scalar> R = SO2<Scalar>::exp(Scalar(0.2)).matrix();
-    Matrix2<Scalar> sR = R * Scalar(1.3);
-    SOPHUS_TEST_APPROX(passed, RxSO2Type(sR).matrix(), sR,
-                       Constants<Scalar>::epsilon(), "RxSO2(sR)");
-    rxso2.setScaledRotationMatrix(sR);
-    SOPHUS_TEST_APPROX(passed, sR, rxso2.matrix(), Constants<Scalar>::epsilon(),
-                       "setScaleRotationMatrix");
-    rxso2.setScale(scale);
-    rxso2.setRotationMatrix(R);
-    SOPHUS_TEST_APPROX(passed, R, rxso2.rotationMatrix(),
-                       Constants<Scalar>::epsilon(), "setRotationMatrix");
-    SOPHUS_TEST_APPROX(passed, scale, rxso2.scale(),
-                       Constants<Scalar>::epsilon(), "setScale");
-
-    return passed;
-  }
-
-  std::vector<RxSO2Type, Eigen::aligned_allocator<RxSO2Type>> rxso2_vec_;
-  std::vector<Tangent, Eigen::aligned_allocator<Tangent>> tangent_vec_;
-  std::vector<Point, Eigen::aligned_allocator<Point>> point_vec_;
 };
 
-int test_rxso2() {
-  using std::cerr;
-  using std::endl;
+namespace {
 
-  cerr << "Test RxSO2" << endl << endl;
-  cerr << "Double tests: " << endl;
-  Tests<double>().runAll();
-  cerr << "Float tests: " << endl;
-  Tests<float>().runAll();
-
+[[maybe_unused]] bool const kRegistered =
+    registerLieGroupTests<RxSO2<double>, RxSO2<float>
 #if SOPHUS_CERES
-  cerr << "ceres::Jet<double, 3> tests: " << endl;
-  Tests<ceres::Jet<double, 3>>().runAll();
+                          ,
+                          RxSO2<ceres::Jet<double, 3>>
 #endif
-  return 0;
+                          >("RxSO2");
+
+template <class Scalar>
+class RxSO2Test : public ::testing::Test {};
+
+using RxSO2Scalars = ::testing::Types<double, float
+#if SOPHUS_CERES
+                                      ,
+                                      ceres::Jet<double, 3>
+#endif
+                                      >;
+TYPED_TEST_SUITE(RxSO2Test, RxSO2Scalars, ScalarNameGenerator);
+
+TYPED_TEST(RxSO2Test, ProductOfSmallElementsSaturatesTheScale) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  RxSO2Type const small1(Scalar(1.1) * kEpsilon, SO2<Scalar>());
+  RxSO2Type const small2(Scalar(1.1) * kEpsilon,
+                         SO2<Scalar>::exp(Constants<Scalar>::pi()));
+  RxSO2Type const saturated_product = small1 * small2;
+  EXPECT_THAT(saturated_product.scale(), IsNear(kEpsilon, kEpsilon));
+  EXPECT_THAT(saturated_product.so2(),
+              IsNear(small1.so2() * small2.so2(), kEpsilon));
 }
 
-}  // namespace Sophus
+TYPED_TEST(RxSO2Test, ExpOfLargeScaleCanBeMultiplied) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+  using Tangent = typename RxSO2Type::Tangent;
 
-int main() { return Sophus::test_rxso2(); }
+  Tangent const large_log(Scalar(1.), std::numeric_limits<Scalar>::max());
+  Tangent const regular_log(Scalar(2.), Scalar(0.));
+  RxSO2Type const large = RxSO2Type::exp(large_log);
+  RxSO2Type const regular = RxSO2Type::exp(regular_log);
+  RxSO2Type const product = regular * large;
+  EXPECT_THAT(large.scale(), IsFinite());
+  EXPECT_THAT(product.scale(), IsFinite());
+}
+
+TYPED_TEST(RxSO2Test, ExpSaturatesTheScaleDespiteRoundingOfTheRotation) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+  using Tangent = typename RxSO2Type::Tangent;
+  using std::cos;
+  using std::log;
+  using std::sin;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  // Looks for an angle whose cosine and sine have a squared norm below 1
+  // after rounding. The angle is sampled in double and converted to Scalar
+  // for compatibility with ceres::Jet.
+  std::mt19937 rng;
+  std::uniform_real_distribution<double> uniform(0., Constants<double>::pi());
+  Tangent small_log;
+  while (true) {
+    Scalar const phi = Scalar(uniform(rng));
+    Scalar const c = cos(phi);
+    Scalar const s = sin(phi);
+    if (c * c + s * s < Scalar(1.)) {
+      small_log[0] = phi;
+      break;
+    }
+  }
+  small_log[1] = log(kEpsilon / Scalar(2.));
+
+  RxSO2Type const small_exp = RxSO2Type::exp(small_log);
+  EXPECT_THAT(small_exp.scale(), IsNear(kEpsilon, kEpsilon));
+}
+
+TYPED_TEST(RxSO2Test, MapsAccessTheUnderlyingData) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  Vector2<Scalar> const raw(Scalar(0), Scalar(1));
+  Eigen::Map<RxSO2Type const> const map_of_const_rxso2(raw.data());
+  EXPECT_THAT(map_of_const_rxso2.complex(), IsNear(raw, kEpsilon));
+  EXPECT_EQ(map_of_const_rxso2.complex().data(), raw.data());
+  Eigen::Map<RxSO2Type const> const const_shallow_copy = map_of_const_rxso2;
+  EXPECT_EQ(const_shallow_copy.complex().eval(),
+            map_of_const_rxso2.complex().eval());
+
+  Vector2<Scalar> raw2(Scalar(1), Scalar(0));
+  Eigen::Map<RxSO2Type> map_of_rxso2(raw2.data());
+  EXPECT_THAT(map_of_rxso2.complex(), IsNear(raw2, kEpsilon));
+  EXPECT_EQ(map_of_rxso2.complex().data(), raw2.data());
+  Eigen::Map<RxSO2Type> const shallow_copy = map_of_rxso2;
+  EXPECT_EQ(shallow_copy.complex().eval(), map_of_rxso2.complex().eval());
+}
+
+TYPED_TEST(RxSO2Test, DataAccessesTheParameters) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+
+  Vector2<Scalar> const raw(Scalar(0), Scalar(1));
+  Vector2<Scalar> const raw2(Scalar(1), Scalar(0));
+  RxSO2Type const const_rxso2(raw2);
+  EXPECT_EQ(rawParams(const_rxso2), raw2);
+
+  RxSO2Type rxso2(raw2);
+  Eigen::Map<Vector2<Scalar>>(rxso2.data()) = raw;
+  EXPECT_EQ(rawParams(rxso2), raw);
+}
+
+TYPED_TEST(RxSO2Test, RotationMatrixLeavesTheScaleOfMapsAsIs) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+  using RotationMatrixType = typename SO2<Scalar>::Transformation;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  // rotationMatrix() must not change the underlying value of a map, and must
+  // compile for a map of const.
+  Vector2<Scalar> raw3(Scalar(2), Scalar(0));
+  Eigen::Map<RxSO2Type> const map_of_rxso2_3(raw3.data());
+  Eigen::Map<RxSO2Type const> const const_map_of_rxso2_3(raw3.data());
+  RxSO2Type const rxso2_copy3 = map_of_rxso2_3;
+  RotationMatrixType const r_ref = map_of_rxso2_3.so2().matrix();
+
+  RotationMatrixType const r = map_of_rxso2_3.rotationMatrix();
+  EXPECT_THAT(r, IsNear(r_ref, kEpsilon));
+  EXPECT_THAT(map_of_rxso2_3.complex(),
+              IsNear(rxso2_copy3.complex(), kEpsilon));
+
+  RotationMatrixType const r_const = const_map_of_rxso2_3.rotationMatrix();
+  EXPECT_THAT(r_const, IsNear(r_ref, kEpsilon));
+  EXPECT_THAT(const_map_of_rxso2_3.complex(),
+              IsNear(rxso2_copy3.complex(), kEpsilon));
+}
+
+TYPED_TEST(RxSO2Test, AssignsBetweenMapsAndElements) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+  using Tangent = typename RxSO2Type::Tangent;
+
+  Vector2<Scalar> data1(Scalar(.1), Scalar(.2));
+  Vector2<Scalar> data2(Scalar(.5), Scalar(.4));
+  Eigen::Map<RxSO2Type> map1(data1.data());
+  Eigen::Map<RxSO2Type> map2(data2.data());
+
+  map2 = map1;
+  EXPECT_EQ(map2.matrix(), map1.matrix()) << "map -> map assignment";
+
+  RxSO2Type copy;
+  copy = map1;
+  EXPECT_EQ(copy.matrix(), map1.matrix()) << "map -> type assignment";
+
+  copy = RxSO2Type::exp(Tangent(Scalar(0.2), Scalar(0.5)));
+  map1 = copy;
+  EXPECT_EQ(map1.matrix(), copy.matrix()) << "type -> map assignment";
+}
+
+TYPED_TEST(RxSO2Test, ConstructorsAndSetters) {
+  using Scalar = TypeParam;
+  using RxSO2Type = RxSO2<Scalar>;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  RxSO2Type rxso2;
+  Scalar const scale(1.2);
+  rxso2.setScale(scale);
+  EXPECT_THAT(rxso2.scale(), IsNear(scale, kEpsilon)) << "setScale";
+  Scalar const angle(0.2);
+  rxso2.setAngle(angle);
+  EXPECT_THAT(rxso2.angle(), IsNear(angle, kEpsilon)) << "setAngle";
+  EXPECT_THAT(rxso2.scale(), IsNear(scale, kEpsilon))
+      << "setAngle leaves the scale as is";
+
+  SO2<Scalar> const so2 =
+      LieGroupTestData<RxSO2Type>::groupElements().front().so2();
+  rxso2.setSO2(so2);
+  EXPECT_THAT(rxso2.scale(), IsNear(scale, kEpsilon))
+      << "setSO2 leaves the scale as is";
+  EXPECT_THAT(RxSO2Type(scale, so2), IsNear(rxso2, kEpsilon))
+      << "RxSO2(scale, SO2)";
+  EXPECT_THAT(RxSO2Type(scale, so2.matrix()), IsNear(rxso2, kEpsilon))
+      << "RxSO2(scale, rotation matrix)";
+
+  Matrix2<Scalar> const R = SO2<Scalar>::exp(Scalar(0.2)).matrix();
+  Matrix2<Scalar> const sR = R * Scalar(1.3);
+  EXPECT_THAT(RxSO2Type(sR).matrix(), IsNear(sR, kEpsilon)) << "RxSO2(sR)";
+  rxso2.setScaledRotationMatrix(sR);
+  EXPECT_THAT(rxso2.matrix(), IsNear(sR, kEpsilon))
+      << "setScaledRotationMatrix";
+  rxso2.setScale(scale);
+  rxso2.setRotationMatrix(R);
+  EXPECT_THAT(rxso2.rotationMatrix(), IsNear(R, kEpsilon))
+      << "setRotationMatrix";
+  EXPECT_THAT(rxso2.scale(), IsNear(scale, kEpsilon))
+      << "setRotationMatrix leaves the scale as is";
+}
+
+template <class Scalar>
+class RxSO2FloatingPointTest : public ::testing::Test {};
+
+TYPED_TEST_SUITE(RxSO2FloatingPointTest, FloatingPointScalars,
+                 ScalarNameGenerator);
+
+TYPED_TEST(RxSO2FloatingPointTest, ScaledRotationsAreScaledOrthogonal) {
+  using Scalar = TypeParam;
+  using ::testing::Each;
+  using ::testing::Not;
+  int constexpr kNumSamples = 10;
+
+  StdVector<Matrix2<Scalar>> scaled_rotations;
+  for (Matrix2<Scalar> const& M :
+       randomMatrices<Matrix2<Scalar>>(kNumSamples)) {
+    Matrix2<Scalar> const R = makeRotationMatrix(M);
+    for (Scalar const scale :
+         {Scalar(0.01), Scalar(0.99), Scalar(1), Scalar(10)}) {
+      scaled_rotations.push_back(scale * R);
+    }
+  }
+  auto const reflections =
+      mapped(scaled_rotations, [](Matrix2<Scalar> const& sR) {
+        Matrix2<Scalar> sR_cols_swapped;
+        sR_cols_swapped << sR.col(1), sR.col(0);
+        return sR_cols_swapped;
+      });
+
+  EXPECT_THAT(scaled_rotations, Each(IsScaledOrthogonalAndPositive()));
+  EXPECT_THAT(reflections, Each(Not(IsScaledOrthogonalAndPositive())));
+}
+
+}  // namespace
+}  // namespace Sophus

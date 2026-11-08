@@ -1,8 +1,7 @@
-#include <iostream>
-
-#include <unsupported/Eigen/MatrixFunctions>
+// Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
 #include <sophus/sim3.hpp>
+
 #include "tests.hpp"
 
 // Explicit instantiate all class templates so that all member methods
@@ -21,48 +20,48 @@ template class Sim3<ceres::Jet<double, 3>>;
 #endif
 
 template <class Scalar>
-class Tests {
- public:
+struct LieGroupTestData<Sim3<Scalar>> {
   using Sim3Type = Sim3<Scalar>;
   using RxSO3Type = RxSO3<Scalar>;
-  using Point = typename Sim3<Scalar>::Point;
+  using Point = typename Sim3Type::Point;
+  using Tangent = typename Sim3Type::Tangent;
   using Vector4Type = Vector4<Scalar>;
-  using Tangent = typename Sim3<Scalar>::Tangent;
-  Scalar const kPi = Constants<Scalar>::pi();
 
-  Tests() {
-    sim3_vec_.push_back(
+  static StdVector<Sim3Type> groupElements() {
+    Scalar const kPi = Constants<Scalar>::pi();
+    StdVector<Sim3Type> sim3_vec;
+    sim3_vec.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.2), Scalar(0.5),
                                             Scalar(0.0), Scalar(1.))),
                  Point(Scalar(0), Scalar(0), Scalar(0))));
-    sim3_vec_.push_back(
+    sim3_vec.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.2), Scalar(0.5),
                                             Scalar(-1.0), Scalar(1.1))),
                  Point(Scalar(10), Scalar(0), Scalar(0))));
-    sim3_vec_.push_back(
+    sim3_vec.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.), Scalar(0.),
                                             Scalar(0.))),
                  Point(Scalar(0), Scalar(10), Scalar(5))));
-    sim3_vec_.push_back(
+    sim3_vec.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.), Scalar(0.),
                                             Scalar(1.1))),
                  Point(Scalar(0), Scalar(10), Scalar(5))));
-    sim3_vec_.push_back(
+    sim3_vec.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.),
                                             Scalar(0.00001), Scalar(0.))),
                  Point(Scalar(0), Scalar(0), Scalar(0))));
-    sim3_vec_.push_back(Sim3Type(
+    sim3_vec.push_back(Sim3Type(
         RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.), Scalar(0.00001),
                                    Scalar(0.0000001))),
         Point(Scalar(1), Scalar(-1.00000001), Scalar(2.0000000001))));
-    sim3_vec_.push_back(
+    sim3_vec.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.),
                                             Scalar(0.00001), Scalar(0))),
                  Point(Scalar(0.01), Scalar(0), Scalar(0))));
-    sim3_vec_.push_back(Sim3Type(
+    sim3_vec.push_back(Sim3Type(
         RxSO3Type::exp(Vector4Type(kPi, Scalar(0), Scalar(0), Scalar(0.9))),
         Point(Scalar(4), Scalar(-5), Scalar(0))));
-    sim3_vec_.push_back(
+    sim3_vec.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.2), Scalar(0.5),
                                             Scalar(0.0), Scalar(0))),
                  Point(Scalar(0), Scalar(0), Scalar(0))) *
@@ -72,7 +71,7 @@ class Tests {
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(-0.2), Scalar(-0.5),
                                             Scalar(-0.0), Scalar(0))),
                  Point(Scalar(0), Scalar(0), Scalar(0))));
-    sim3_vec_.push_back(
+    sim3_vec.push_back(
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.3), Scalar(0.5),
                                             Scalar(0.1), Scalar(0))),
                  Point(Scalar(2), Scalar(0), Scalar(-7))) *
@@ -82,239 +81,234 @@ class Tests {
         Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(-0.3), Scalar(-0.5),
                                             Scalar(-0.1), Scalar(0))),
                  Point(Scalar(0), Scalar(6), Scalar(0))));
+    return sim3_vec;
+  }
+
+  static StdVector<Tangent> tangents() {
+    StdVector<Tangent> tangent_vec;
     Tangent tmp;
     tmp << Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0),
         Scalar(0);
-    tangent_vec_.push_back(tmp);
+    tangent_vec.push_back(tmp);
     tmp << Scalar(1), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0),
         Scalar(0);
-    tangent_vec_.push_back(tmp);
+    tangent_vec.push_back(tmp);
     tmp << Scalar(0), Scalar(1), Scalar(0), Scalar(1), Scalar(0), Scalar(0),
         Scalar(0.1);
-    tangent_vec_.push_back(tmp);
+    tangent_vec.push_back(tmp);
     tmp << Scalar(0), Scalar(0), Scalar(1), Scalar(0), Scalar(1), Scalar(0),
         Scalar(0.1);
-    tangent_vec_.push_back(tmp);
+    tangent_vec.push_back(tmp);
     tmp << Scalar(-1), Scalar(1), Scalar(0), Scalar(0), Scalar(0), Scalar(1),
         Scalar(-0.1);
-    tangent_vec_.push_back(tmp);
+    tangent_vec.push_back(tmp);
     tmp << Scalar(20), Scalar(-1), Scalar(0), Scalar(-1), Scalar(1), Scalar(0),
         Scalar(-0.1);
-    tangent_vec_.push_back(tmp);
+    tangent_vec.push_back(tmp);
     tmp << Scalar(30), Scalar(5), Scalar(-1), Scalar(20), Scalar(-1), Scalar(0),
         Scalar(1.5);
-    tangent_vec_.push_back(tmp);
-
-    point_vec_.push_back(Point(Scalar(1), Scalar(2), Scalar(4)));
-    point_vec_.push_back(Point(Scalar(1), Scalar(-3), Scalar(0.5)));
-    point_vec_.push_back(Point(Scalar(-5), Scalar(-6), Scalar(7)));
+    tangent_vec.push_back(tmp);
+    return tangent_vec;
   }
 
-  void runAll() {
-    bool passed = testLieProperties();
-    passed &= testRawDataAcces();
-    passed &= testConstructors();
-    passed &= testSmallAngleLog();
-    processTestResult(passed);
+  static StdVector<Point> points() {
+    StdVector<Point> point_vec;
+    point_vec.push_back(Point(Scalar(1), Scalar(2), Scalar(4)));
+    point_vec.push_back(Point(Scalar(1), Scalar(-3), Scalar(0.5)));
+    point_vec.push_back(Point(Scalar(-5), Scalar(-6), Scalar(7)));
+    return point_vec;
   }
-
- private:
-  // Regression tests for catastrophic-cancellation bugs in calcWInv()
-  // (sim_details.hpp), intentionally standalone rather than entries in
-  // sim3_vec_ used by LieGroupTests, so that their precision is not
-  // diluted by unrelated pairwise interpolation/mean checks against that
-  // fixture's other, much larger-magnitude entries.
-  bool testSmallAngleLog() {
-    bool passed = true;
-    {
-      // For theta around 1e-4, the coefficient b used to be computed from
-      // a formula with quartic-order cancellation in theta, gated by a
-      // threshold calibrated for a much lower cancellation order, giving a
-      // completely wrong W_inv and hence a wrong log().
-      Sim3Type const T(
-          RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.), Scalar(0.0001),
-                                     Scalar(0.))),
-          Point(Scalar(1), Scalar(-0.5), Scalar(2)));
-      Sim3Type const T2 = Sim3Type::exp(T.log());
-      SOPHUS_TEST_APPROX(passed, T.matrix(), T2.matrix(),
-                         Constants<Scalar>::epsilon(),
-                         "Sim3::log() small-theta cancellation");
-    }
-    {
-      // calcWInv()'s generic branch (neither theta nor sigma individually
-      // small enough to hit the dedicated small-value branches above, but
-      // simultaneously small enough that intermediate terms shared by both
-      // denominators and numerators nearly cancel).
-      Sim3Type const T(
-          RxSO3Type::exp(Vector4Type(Scalar(0.), Scalar(0.), Scalar(0.00003),
-                                     Scalar(0.00002))),
-          Point(Scalar(1), Scalar(-0.5), Scalar(2)));
-      Sim3Type const T2 = Sim3Type::exp(T.log());
-      SOPHUS_TEST_APPROX(
-          passed, T.matrix(), T2.matrix(), Constants<Scalar>::epsilon(),
-          "Sim3::log() simultaneous small-theta/small-sigma cancellation");
-    }
-    return passed;
-  }
-
-  bool testLieProperties() {
-    LieGroupTests<Sim3Type> tests(sim3_vec_, tangent_vec_, point_vec_);
-    return tests.doAllTestsPass();
-  }
-
-  bool testRawDataAcces() {
-    bool passed = true;
-    Eigen::Matrix<Scalar, 7, 1> raw;
-    raw << Scalar(0), Scalar(1), Scalar(0), Scalar(0), Scalar(1), Scalar(3),
-        Scalar(2);
-    Eigen::Map<Sim3Type const> map_of_const_sim3(raw.data());
-    SOPHUS_TEST_APPROX(passed, map_of_const_sim3.quaternion().coeffs().eval(),
-                       raw.template head<4>().eval(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_APPROX(passed, map_of_const_sim3.translation().eval(),
-                       raw.template tail<3>().eval(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_const_sim3.quaternion().coeffs().data(),
-                      raw.data(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_const_sim3.translation().data(),
-                      raw.data() + 4, "");
-    Eigen::Map<Sim3Type const> const_shallow_copy = map_of_const_sim3;
-    SOPHUS_TEST_EQUAL(passed, const_shallow_copy.quaternion().coeffs().eval(),
-                      map_of_const_sim3.quaternion().coeffs().eval(), "");
-    SOPHUS_TEST_EQUAL(passed, const_shallow_copy.translation().eval(),
-                      map_of_const_sim3.translation().eval(), "");
-
-    Eigen::Matrix<Scalar, 7, 1> raw2;
-    raw2 << Scalar(1), Scalar(0), Scalar(0), Scalar(0), Scalar(3), Scalar(2),
-        Scalar(1);
-    Eigen::Map<Sim3Type> map_of_sim3(raw.data());
-    Eigen::Quaternion<Scalar> quat;
-    quat.coeffs() = raw2.template head<4>();
-    map_of_sim3.setQuaternion(quat);
-    map_of_sim3.translation() = raw2.template tail<3>();
-    SOPHUS_TEST_APPROX(passed, map_of_sim3.quaternion().coeffs().eval(),
-                       raw2.template head<4>().eval(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_APPROX(passed, map_of_sim3.translation().eval(),
-                       raw2.template tail<3>().eval(),
-                       Constants<Scalar>::epsilon(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_sim3.quaternion().coeffs().data(),
-                      raw.data(), "");
-    SOPHUS_TEST_EQUAL(passed, map_of_sim3.translation().data(), raw.data() + 4,
-                      "");
-    SOPHUS_TEST_NEQ(passed, map_of_sim3.quaternion().coeffs().data(),
-                    quat.coeffs().data(), "");
-    Eigen::Map<Sim3Type> shallow_copy = map_of_sim3;
-    SOPHUS_TEST_EQUAL(passed, shallow_copy.quaternion().coeffs().eval(),
-                      map_of_sim3.quaternion().coeffs().eval(), "");
-    SOPHUS_TEST_EQUAL(passed, shallow_copy.translation().eval(),
-                      map_of_sim3.translation().eval(), "");
-    Eigen::Map<Sim3Type> const const_map_of_sim3 = map_of_sim3;
-    SOPHUS_TEST_EQUAL(passed, const_map_of_sim3.quaternion().coeffs().eval(),
-                      map_of_sim3.quaternion().coeffs().eval(), "");
-    SOPHUS_TEST_EQUAL(passed, const_map_of_sim3.translation().eval(),
-                      map_of_sim3.translation().eval(), "");
-
-    Sim3Type const const_sim3(quat, raw2.template tail<3>().eval());
-    for (int i = 0; i < 7; ++i) {
-      SOPHUS_TEST_EQUAL(passed, const_sim3.data()[i], raw2.data()[i], "");
-    }
-
-    Sim3Type se3(quat, raw2.template tail<3>().eval());
-    for (int i = 0; i < 7; ++i) {
-      SOPHUS_TEST_EQUAL(passed, se3.data()[i], raw2.data()[i], "");
-    }
-
-    for (int i = 0; i < 7; ++i) {
-      SOPHUS_TEST_EQUAL(passed, se3.data()[i], raw.data()[i], "");
-    }
-
-    Eigen::Matrix<Scalar, 7, 1> data1, data2;
-    data1 << Scalar(0), Scalar(2), Scalar(0), Scalar(0), Scalar(1), Scalar(2),
-        Scalar(3);
-    data2 << Scalar(0), Scalar(0), Scalar(2), Scalar(0), Scalar(3), Scalar(2),
-        Scalar(1);
-
-    Eigen::Map<Sim3Type> map1(data1.data()), map2(data2.data());
-
-    // map -> map assignment
-    map2 = map1;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), map2.matrix(), "");
-
-    // map -> type assignment
-    Sim3Type copy;
-    copy = map1;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), copy.matrix(), "");
-
-    // type -> map assignment
-    copy = Sim3Type(RxSO3Type::exp(Vector4Type(Scalar(0.2), Scalar(0.5),
-                                               Scalar(-1.0), Scalar(1.1))),
-                    Point(Scalar(10), Scalar(0), Scalar(0)));
-    map1 = copy;
-    SOPHUS_TEST_EQUAL(passed, map1.matrix(), copy.matrix(), "");
-
-    return passed;
-  }
-
-  bool testConstructors() {
-    bool passed = true;
-    Eigen::Matrix<Scalar, 4, 4> I = Eigen::Matrix<Scalar, 4, 4>::Identity();
-    SOPHUS_TEST_EQUAL(passed, Sim3Type().matrix(), I, "");
-
-    Sim3Type sim3 = sim3_vec_.front();
-    Point translation = sim3.translation();
-    RxSO3Type rxso3 = sim3.rxso3();
-
-    SOPHUS_TEST_APPROX(passed, Sim3Type(rxso3, translation).matrix(),
-                       sim3.matrix(), Constants<Scalar>::epsilon(),
-                       "Sim3(RxSO3, translation)");
-    SOPHUS_TEST_APPROX(passed,
-                       Sim3Type(rxso3.quaternion(), translation).matrix(),
-                       sim3.matrix(), Constants<Scalar>::epsilon(),
-                       "Sim3(quaternion, translation)");
-    SOPHUS_TEST_APPROX(
-        passed,
-        Sim3Type(rxso3.scale(), rxso3.quaternion().normalized(), translation)
-            .matrix(),
-        sim3.matrix(), Constants<Scalar>::epsilon(),
-        "Sim3(scale, unit_quaternion, translation)");
-    SOPHUS_TEST_APPROX(passed, Sim3Type(sim3.matrix()).matrix(), sim3.matrix(),
-                       Constants<Scalar>::epsilon(), "Sim3(matrix4x4)");
-
-    Scalar scale(1.2);
-    sim3.setScale(scale);
-    SOPHUS_TEST_APPROX(passed, scale, sim3.scale(),
-                       Constants<Scalar>::epsilon(), "setScale");
-
-    sim3.setQuaternion(sim3_vec_[0].rxso3().quaternion());
-    SOPHUS_TEST_APPROX(passed, sim3_vec_[0].rxso3().quaternion().coeffs(),
-                       sim3_vec_[0].rxso3().quaternion().coeffs(),
-                       Constants<Scalar>::epsilon(), "setQuaternion");
-    return passed;
-  }
-
-  std::vector<Sim3Type, Eigen::aligned_allocator<Sim3Type>> sim3_vec_;
-  std::vector<Tangent, Eigen::aligned_allocator<Tangent>> tangent_vec_;
-  std::vector<Point, Eigen::aligned_allocator<Point>> point_vec_;
 };
 
-int test_sim3() {
-  using std::cerr;
-  using std::endl;
+namespace {
 
-  cerr << "Test Sim3" << endl << endl;
-  cerr << "Double tests: " << endl;
-  Tests<double>().runAll();
-  cerr << "Float tests: " << endl;
-  Tests<float>().runAll();
-
+[[maybe_unused]] bool const kRegistered =
+    registerLieGroupTests<Sim3<double>, Sim3<float>
 #if SOPHUS_CERES
-  cerr << "ceres::Jet<double, 3> tests: " << endl;
-  Tests<ceres::Jet<double, 3>>().runAll();
+                          ,
+                          Sim3<ceres::Jet<double, 3>>
 #endif
+                          >("Sim3");
 
-  return 0;
+template <class Scalar>
+class Sim3Test : public ::testing::Test {};
+
+using Sim3Scalars = ::testing::Types<double, float
+#if SOPHUS_CERES
+                                     ,
+                                     ceres::Jet<double, 3>
+#endif
+                                     >;
+TYPED_TEST_SUITE(Sim3Test, Sim3Scalars, ScalarNameGenerator);
+
+// Catastrophic cancellation in calcWInv() of sim_details.hpp: for theta
+// around 1e-4, the coefficient b was computed from a formula with quartic
+// cancellation in theta, gated by a threshold calibrated for a much lower
+// order, which gave a wrong W_inv and hence a wrong log(). These elements are
+// separate from LieGroupTestData, so that their tolerance is not diluted by
+// the pairwise interpolation and mean checks against the much larger elements
+// there.
+TYPED_TEST(Sim3Test, ExpInvertsLogForSmallAngles) {
+  using Scalar = TypeParam;
+  using Sim3Type = Sim3<Scalar>;
+  using Point = typename Sim3Type::Point;
+
+  Sim3Type const T(RxSO3<Scalar>::exp(Vector4<Scalar>(
+                       Scalar(0.), Scalar(0.), Scalar(0.0001), Scalar(0.))),
+                   Point(Scalar(1), Scalar(-0.5), Scalar(2)));
+  EXPECT_THAT(Sim3Type::exp(T.log()), IsNear(T, Constants<Scalar>::epsilon()));
 }
-}  // namespace Sophus
 
-int main() { return Sophus::test_sim3(); }
+// The generic branch of calcWInv(), where neither theta nor sigma alone is
+// small enough for the dedicated small-value branches, but both together are
+// small enough that terms shared by the numerators and denominators nearly
+// cancel.
+TYPED_TEST(Sim3Test, ExpInvertsLogForSmallAnglesAndScales) {
+  using Scalar = TypeParam;
+  using Sim3Type = Sim3<Scalar>;
+  using Point = typename Sim3Type::Point;
+
+  Sim3Type const T(
+      RxSO3<Scalar>::exp(Vector4<Scalar>(Scalar(0.), Scalar(0.),
+                                         Scalar(0.00003), Scalar(0.00002))),
+      Point(Scalar(1), Scalar(-0.5), Scalar(2)));
+  EXPECT_THAT(Sim3Type::exp(T.log()), IsNear(T, Constants<Scalar>::epsilon()));
+}
+
+TYPED_TEST(Sim3Test, MapsAccessTheUnderlyingData) {
+  using Scalar = TypeParam;
+  using Sim3Type = Sim3<Scalar>;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  Vector7<Scalar> raw;
+  raw << Scalar(0), Scalar(1), Scalar(0), Scalar(0), Scalar(1), Scalar(3),
+      Scalar(2);
+  Eigen::Map<Sim3Type const> const map_of_const_sim3(raw.data());
+  EXPECT_THAT(map_of_const_sim3.quaternion().coeffs(),
+              IsNear(raw.template head<4>(), kEpsilon));
+  EXPECT_THAT(map_of_const_sim3.translation(),
+              IsNear(raw.template tail<3>(), kEpsilon));
+  EXPECT_EQ(map_of_const_sim3.quaternion().coeffs().data(), raw.data());
+  EXPECT_EQ(map_of_const_sim3.translation().data(), raw.data() + 4);
+  Eigen::Map<Sim3Type const> const const_shallow_copy = map_of_const_sim3;
+  EXPECT_EQ(const_shallow_copy.quaternion().coeffs().eval(),
+            map_of_const_sim3.quaternion().coeffs().eval());
+  EXPECT_EQ(const_shallow_copy.translation().eval(),
+            map_of_const_sim3.translation().eval());
+
+  Vector7<Scalar> raw2;
+  raw2 << Scalar(1), Scalar(0), Scalar(0), Scalar(0), Scalar(3), Scalar(2),
+      Scalar(1);
+  Eigen::Map<Sim3Type> map_of_sim3(raw.data());
+  Eigen::Quaternion<Scalar> quat;
+  quat.coeffs() = raw2.template head<4>();
+  map_of_sim3.setQuaternion(quat);
+  map_of_sim3.translation() = raw2.template tail<3>();
+  EXPECT_THAT(map_of_sim3.quaternion().coeffs(),
+              IsNear(raw2.template head<4>(), kEpsilon));
+  EXPECT_THAT(map_of_sim3.translation(),
+              IsNear(raw2.template tail<3>(), kEpsilon));
+  EXPECT_EQ(map_of_sim3.quaternion().coeffs().data(), raw.data());
+  EXPECT_EQ(map_of_sim3.translation().data(), raw.data() + 4);
+  EXPECT_NE(map_of_sim3.quaternion().coeffs().data(), quat.coeffs().data());
+  Eigen::Map<Sim3Type> const shallow_copy = map_of_sim3;
+  EXPECT_EQ(shallow_copy.quaternion().coeffs().eval(),
+            map_of_sim3.quaternion().coeffs().eval());
+  EXPECT_EQ(shallow_copy.translation().eval(),
+            map_of_sim3.translation().eval());
+  Eigen::Map<Sim3Type> const const_map_of_sim3 = map_of_sim3;
+  EXPECT_EQ(const_map_of_sim3.quaternion().coeffs().eval(),
+            map_of_sim3.quaternion().coeffs().eval());
+  EXPECT_EQ(const_map_of_sim3.translation().eval(),
+            map_of_sim3.translation().eval());
+  // Writing through the map changed the underlying data.
+  EXPECT_EQ(raw, raw2);
+}
+
+TYPED_TEST(Sim3Test, DataAccessesTheParameters) {
+  using Scalar = TypeParam;
+  using Sim3Type = Sim3<Scalar>;
+
+  Vector7<Scalar> raw;
+  raw << Scalar(0), Scalar(1), Scalar(0), Scalar(0), Scalar(1), Scalar(3),
+      Scalar(2);
+  Vector7<Scalar> raw2;
+  raw2 << Scalar(1), Scalar(0), Scalar(0), Scalar(0), Scalar(3), Scalar(2),
+      Scalar(1);
+  Eigen::Quaternion<Scalar> quat;
+  quat.coeffs() = raw2.template head<4>();
+
+  Sim3Type const const_sim3(quat, raw2.template tail<3>().eval());
+  EXPECT_EQ(rawParams(const_sim3), raw2);
+
+  Sim3Type sim3(quat, raw2.template tail<3>().eval());
+  EXPECT_EQ(rawParams(sim3), raw2);
+  Eigen::Map<Vector7<Scalar>>(sim3.data()) = raw;
+  EXPECT_EQ(rawParams(sim3), raw);
+}
+
+TYPED_TEST(Sim3Test, AssignsBetweenMapsAndElements) {
+  using Scalar = TypeParam;
+  using Sim3Type = Sim3<Scalar>;
+  using Point = typename Sim3Type::Point;
+
+  Vector7<Scalar> data1;
+  data1 << Scalar(0), Scalar(2), Scalar(0), Scalar(0), Scalar(1), Scalar(2),
+      Scalar(3);
+  Vector7<Scalar> data2;
+  data2 << Scalar(0), Scalar(0), Scalar(2), Scalar(0), Scalar(3), Scalar(2),
+      Scalar(1);
+  Eigen::Map<Sim3Type> map1(data1.data());
+  Eigen::Map<Sim3Type> map2(data2.data());
+
+  map2 = map1;
+  EXPECT_EQ(map2.matrix(), map1.matrix()) << "map -> map assignment";
+
+  Sim3Type copy;
+  copy = map1;
+  EXPECT_EQ(copy.matrix(), map1.matrix()) << "map -> type assignment";
+
+  copy = Sim3Type(RxSO3<Scalar>::exp(Vector4<Scalar>(
+                      Scalar(0.2), Scalar(0.5), Scalar(-1.0), Scalar(1.1))),
+                  Point(Scalar(10), Scalar(0), Scalar(0)));
+  map1 = copy;
+  EXPECT_EQ(map1.matrix(), copy.matrix()) << "type -> map assignment";
+}
+
+TYPED_TEST(Sim3Test, ConstructorsAndSetters) {
+  using Scalar = TypeParam;
+  using Sim3Type = Sim3<Scalar>;
+  using Point = typename Sim3Type::Point;
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+
+  EXPECT_EQ(Sim3Type().matrix(), Matrix4<Scalar>::Identity().eval());
+
+  StdVector<Sim3Type> const sim3_vec =
+      LieGroupTestData<Sim3Type>::groupElements();
+  Sim3Type sim3 = sim3_vec.front();
+  Point const translation = sim3.translation();
+  RxSO3<Scalar> const rxso3 = sim3.rxso3();
+
+  EXPECT_THAT(Sim3Type(rxso3, translation), IsNear(sim3, kEpsilon))
+      << "Sim3(RxSO3, translation)";
+  EXPECT_THAT(Sim3Type(rxso3.quaternion(), translation), IsNear(sim3, kEpsilon))
+      << "Sim3(quaternion, translation)";
+  EXPECT_THAT(
+      Sim3Type(rxso3.scale(), rxso3.quaternion().normalized(), translation),
+      IsNear(sim3, kEpsilon))
+      << "Sim3(scale, unit quaternion, translation)";
+  EXPECT_THAT(Sim3Type(sim3.matrix()), IsNear(sim3, kEpsilon))
+      << "Sim3(matrix)";
+
+  Scalar const scale(1.2);
+  sim3.setScale(scale);
+  EXPECT_THAT(sim3.scale(), IsNear(scale, kEpsilon)) << "setScale";
+
+  sim3.setQuaternion(sim3_vec[1].rxso3().quaternion());
+  EXPECT_THAT(sim3.rxso3().quaternion().coeffs(),
+              IsNear(sim3_vec[1].rxso3().quaternion().coeffs(), kEpsilon))
+      << "setQuaternion";
+}
+
+}  // namespace
+}  // namespace Sophus

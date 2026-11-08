@@ -1,26 +1,16 @@
-function(add_test_ceres source postfix)
-  add_executable(${source}_${postfix} ${source}.cpp)
-  target_link_libraries(${source}_${postfix} sophus Ceres::ceres)
-  target_compile_definitions(${source}_${postfix} PRIVATE ${ARGN})
-  add_test(${source}_${postfix} ${source}_${postfix})
-endfunction()
+# Copyright 2021-2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
-if(Ceres_FOUND)
-  # Tests to run
-  set(TEST_SOURCES
-      test_ceres_so3
-      test_ceres_rxso3
-      test_ceres_se3
-      test_ceres_sim3
-      test_ceres_so2
-      test_ceres_rxso2
-      test_ceres_se2
-      test_ceres_sim2)
-
-  foreach(test_src ${TEST_SOURCES})
-    add_test_ceres(${test_src} "local_parameterization")
-  endforeach()
-  foreach(test_src ${TEST_SOURCES})
-    add_test_ceres(${test_src} "manifold")
-  endforeach()
-endif(Ceres_FOUND)
+if (Ceres_FOUND)
+  foreach (test_name
+    test_ceres_rxso2
+    test_ceres_rxso3
+    test_ceres_se2
+    test_ceres_se3
+    test_ceres_sim2
+    test_ceres_sim3
+    test_ceres_so2
+    test_ceres_so3
+  )
+    sophus_add_test (${test_name} ${test_name}.cpp tests.hpp)
+  endforeach (test_name)
+endif (Ceres_FOUND)

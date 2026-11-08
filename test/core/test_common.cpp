@@ -1,120 +1,146 @@
-#include <iostream>
+// Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
+#include <utility>
+#include <vector>
 
 #include <sophus/interpolate.hpp>
 #include <sophus/num_diff.hpp>
 #include <sophus/se3.hpp>
 #include <sophus/spline.hpp>
-#include <sophus/test_macros.hpp>
+
+#include "tests.hpp"
 
 namespace Sophus {
-
 namespace {
 
-bool testSmokeDetails() {
-  bool passed = true;
-  std::cout << details::pretty(4.2) << std::endl;
-  std::cout << details::pretty(Vector2f(1, 2)) << std::endl;
-  bool dummy = true;
-  details::testFailed(dummy, "dummyFunc", "dummyFile", 99,
-                      "This is just a pratice alarm!");
-  SOPHUS_TEST_EQUAL(passed, dummy, false, "");
+template <class Scalar>
+class CommonTest : public ::testing::Test {};
 
-  double val = transpose(42.0);
-  SOPHUS_TEST_EQUAL(passed, val, 42.0, "");
-  Matrix<float, 1, 2> row = transpose(Vector2f(1, 7));
-  Matrix<float, 1, 2> expected_row(1, 7);
-  SOPHUS_TEST_EQUAL(passed, row, expected_row, "");
+TYPED_TEST_SUITE(CommonTest, FloatingPointScalars, ScalarNameGenerator);
 
-  return passed;
+TYPED_TEST(CommonTest, TransposeOfScalarIsTheScalar) {
+  using Scalar = TypeParam;
+  EXPECT_EQ(transpose(Scalar(42)), Scalar(42));
 }
 
-bool testSpline() {
-  double const kSmallEpsSqrt = Constants<double>::epsilonSqrt();
+TYPED_TEST(CommonTest, TransposeOfVectorIsARowVector) {
+  using Scalar = TypeParam;
+  Matrix<Scalar, 1, 2> const row =
+      transpose(Vector2<Scalar>(Scalar(1), Scalar(7)));
+  Matrix<Scalar, 1, 2> const expected_row(Scalar(1), Scalar(7));
+  EXPECT_EQ(row, expected_row);
+}
 
-  bool passed = true;
-  for (double delta_t : {0.1, 0.5, 1.0}) {
-    for (double u : {0.0000, 0.1, 0.5, 0.51, 0.9, 0.999}) {
-      std::cout << details::pretty(SplineBasisFunction<double>::B(u))
-                << std::endl;
-
-      Eigen::Vector3d Dt_B = SplineBasisFunction<double>::Dt_B(u, delta_t);
-      std::cout << details::pretty(Dt_B) << std::endl;
-
-      Eigen::Vector3d Dt_B2 = curveNumDiff(
-          [delta_t](double u_bar) -> Eigen::Vector3d {
-            return SplineBasisFunction<double>::B(u_bar) / delta_t;
-          },
-          u);
-      SOPHUS_TEST_APPROX(passed, Dt_B, Dt_B2, kSmallEpsSqrt,
-                         "Dt_, u={}, delta_t={}", u, delta_t);
-
-      Eigen::Vector3d Dt2_B = SplineBasisFunction<double>::Dt2_B(u, delta_t);
-
-      Eigen::Vector3d Dt2_B2 = curveNumDiff(
-          [delta_t](double u_bar) -> Eigen::Vector3d {
-            return SplineBasisFunction<double>::Dt_B(u_bar, delta_t) / delta_t;
-          },
-          u);
-      SOPHUS_TEST_APPROX(passed, Dt2_B, Dt2_B2, kSmallEpsSqrt,
-                         "Dt2_B, u={}, delta_t={}", u, delta_t);
+/// The time steps and spline parameters the derivatives of the spline basis
+/// functions are checked at.
+template <class Scalar>
+std::vector<std::pair<Scalar, Scalar>> splineBasisSamples() {
+  std::vector<std::pair<Scalar, Scalar>> samples;
+  for (Scalar const delta_t : {Scalar(0.1), Scalar(0.5), Scalar(1.0)}) {
+    for (Scalar const u : {Scalar(0.0000), Scalar(0.1), Scalar(0.5),
+                           Scalar(0.51), Scalar(0.9), Scalar(0.999)}) {
+      samples.emplace_back(delta_t, u);
     }
   }
-
-  SE3d T_world_foo = SE3d::rotX(0.4) * SE3d::rotY(0.2);
-  SE3d T_world_bar =
-      SE3d::rotZ(-0.4) * SE3d::rotY(0.4) * SE3d::trans(0.0, 1.0, -2.0);
-
-  std::vector<SE3d> control_poses;
-  control_poses.push_back(interpolate(T_world_foo, T_world_bar, 0.0));
-
-  for (double p = 0.2; p < 1.0; p += 0.2) {
-    SE3d T_world_inter = interpolate(T_world_foo, T_world_bar, p);
-    control_poses.push_back(T_world_inter);
-  }
-
-  BasisSplineImpl<SE3d> spline(control_poses, 1.0);
-
-  SE3d T = spline.parent_T_spline(0.0, 1.0);
-  SE3d T2 = spline.parent_T_spline(1.0, 0.0);
-
-  Eigen::Matrix3d R = T.so3().matrix();
-  Eigen::Matrix3d R2 = T2.so3().matrix();
-  Eigen::Vector3d t = T.translation();
-  Eigen::Vector3d t2 = T2.translation();
-
-  SOPHUS_TEST_APPROX(passed, R, R2, kSmallEpsSqrt, "lambdsa");
-
-  SOPHUS_TEST_APPROX(passed, t, t2, kSmallEpsSqrt, "lambdsa");
-
-  Eigen::Matrix4d Dt_parent_T_spline = spline.Dt_parent_T_spline(0.0, 0.5);
-  Eigen::Matrix4d Dt_parent_T_spline2 = curveNumDiff(
-      [&](double u_bar) -> Eigen::Matrix4d {
-        return spline.parent_T_spline(0.0, u_bar).matrix();
-      },
-      0.5);
-  SOPHUS_TEST_APPROX(passed, Dt_parent_T_spline, Dt_parent_T_spline2,
-                     kSmallEpsSqrt, "Dt_parent_T_spline");
-
-  Eigen::Matrix4d Dt2_parent_T_spline = spline.Dt2_parent_T_spline(0.0, 0.5);
-  Eigen::Matrix4d Dt2_parent_T_spline2 = curveNumDiff(
-      [&](double u_bar) -> Eigen::Matrix4d {
-        return spline.Dt_parent_T_spline(0.0, u_bar).matrix();
-      },
-      0.5);
-  SOPHUS_TEST_APPROX(passed, Dt2_parent_T_spline, Dt2_parent_T_spline2,
-                     kSmallEpsSqrt, "Dt2_parent_T_spline");
-
-  return passed;
+  return samples;
 }
 
-void runAll() {
-  std::cerr << "Common tests:" << std::endl;
-  bool passed = testSmokeDetails();
-  passed &= testSpline();
-  processTestResult(passed);
+TYPED_TEST(CommonTest, SplineBasisDerivativeMatchesNumericalDerivative) {
+  using Scalar = TypeParam;
+  using Basis = SplineBasisFunction<Scalar>;
+  auto const samples = splineBasisSamples<Scalar>();
+
+  auto const Dt_B = mapped(samples, [](std::pair<Scalar, Scalar> const& s) {
+    return Basis::Dt_B(s.second, s.first);
+  });
+  auto const Dt_B_num = mapped(samples, [](std::pair<Scalar, Scalar> const& s) {
+    Scalar const delta_t = s.first;
+    return curveNumDiff(
+        [delta_t](Scalar u_bar) -> Vector3<Scalar> {
+          return Basis::B(u_bar) / delta_t;
+        },
+        s.second);
+  });
+  EXPECT_THAT(Dt_B, ::testing::Pointwise(
+                        IsNear(Constants<Scalar>::epsilonSqrt()), Dt_B_num))
+      << "for each pair of time step and spline parameter";
+}
+
+TYPED_TEST(CommonTest, SplineBasisSecondDerivativeMatchesNumericalDerivative) {
+  using Scalar = TypeParam;
+  using Basis = SplineBasisFunction<Scalar>;
+  auto const samples = splineBasisSamples<Scalar>();
+
+  auto const Dt2_B = mapped(samples, [](std::pair<Scalar, Scalar> const& s) {
+    return Basis::Dt2_B(s.second, s.first);
+  });
+  auto const Dt2_B_num =
+      mapped(samples, [](std::pair<Scalar, Scalar> const& s) {
+        Scalar const delta_t = s.first;
+        return curveNumDiff(
+            [delta_t](Scalar u_bar) -> Vector3<Scalar> {
+              return Basis::Dt_B(u_bar, delta_t) / delta_t;
+            },
+            s.second);
+      });
+  EXPECT_THAT(Dt2_B, ::testing::Pointwise(
+                         IsNear(Constants<Scalar>::epsilonSqrt()), Dt2_B_num))
+      << "for each pair of time step and spline parameter";
+}
+
+/// A spline that interpolates between two rigid body motions.
+template <class Scalar>
+BasisSplineImpl<SE3<Scalar>> se3Spline() {
+  using SE3Type = SE3<Scalar>;
+  int constexpr kNumIntermediatePoses = 4;
+  SE3Type const T_world_foo =
+      SE3Type::rotX(Scalar(0.4)) * SE3Type::rotY(Scalar(0.2));
+  SE3Type const T_world_bar = SE3Type::rotZ(Scalar(-0.4)) *
+                              SE3Type::rotY(Scalar(0.4)) *
+                              SE3Type::trans(Scalar(0), Scalar(1), Scalar(-2));
+
+  std::vector<SE3Type> control_poses;
+  control_poses.push_back(interpolate(T_world_foo, T_world_bar, Scalar(0)));
+  for (int i = 1; i <= kNumIntermediatePoses; ++i) {
+    Scalar const p = Scalar(i) / Scalar(kNumIntermediatePoses + 1);
+    control_poses.push_back(interpolate(T_world_foo, T_world_bar, p));
+  }
+  return BasisSplineImpl<SE3Type>(control_poses, Scalar(1));
+}
+
+TYPED_TEST(CommonTest, SE3SplineSegmentsJoinContinuously) {
+  using Scalar = TypeParam;
+  Scalar const kEpsSqrt = Constants<Scalar>::epsilonSqrt();
+  BasisSplineImpl<SE3<Scalar>> const spline = se3Spline<Scalar>();
+
+  SE3<Scalar> const T = spline.parent_T_spline(0, Scalar(1));
+  SE3<Scalar> const T2 = spline.parent_T_spline(1, Scalar(0));
+  EXPECT_THAT(T.so3().matrix(), IsNear(T2.so3().matrix(), kEpsSqrt));
+  EXPECT_THAT(T.translation(), IsNear(T2.translation(), kEpsSqrt));
+}
+
+TYPED_TEST(CommonTest, SE3SplineDerivativesMatchNumericalDerivatives) {
+  using Scalar = TypeParam;
+  Scalar const kEpsSqrt = Constants<Scalar>::epsilonSqrt();
+  Scalar const kU(0.5);
+  BasisSplineImpl<SE3<Scalar>> const spline = se3Spline<Scalar>();
+
+  Matrix4<Scalar> const Dt_parent_T_spline2 = curveNumDiff(
+      [&spline](Scalar u_bar) -> Matrix4<Scalar> {
+        return spline.parent_T_spline(0, u_bar).matrix();
+      },
+      kU);
+  EXPECT_THAT(spline.Dt_parent_T_spline(0, kU),
+              IsNear(Dt_parent_T_spline2, kEpsSqrt));
+
+  Matrix4<Scalar> const Dt2_parent_T_spline2 = curveNumDiff(
+      [&spline](Scalar u_bar) -> Matrix4<Scalar> {
+        return spline.Dt_parent_T_spline(0, u_bar);
+      },
+      kU);
+  EXPECT_THAT(spline.Dt2_parent_T_spline(0, kU),
+              IsNear(Dt2_parent_T_spline2, kEpsSqrt));
 }
 
 }  // namespace
 }  // namespace Sophus
-
-int main() { Sophus::runAll(); }

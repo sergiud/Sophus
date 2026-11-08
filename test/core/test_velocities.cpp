@@ -1,130 +1,120 @@
-#include <iostream>
+// Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
-#include "tests.hpp"
+#include <cmath>
+#include <vector>
 
 #include <sophus/velocities.hpp>
 
+#include "tests.hpp"
+
 namespace Sophus {
 namespace experimental {
+namespace {
+
+using ::testing::Pointwise;
 
 template <class Scalar>
-bool tests_linear_velocities() {
-  bool passed = true;
-  std::vector<SE3<Scalar>, Eigen::aligned_allocator<SE3<Scalar>>> bar_Ts_baz;
+class VelocitiesTest : public ::testing::Test {};
 
-  for (size_t i = 0; i < 10; ++i) {
-    bar_Ts_baz.push_back(SE3<Scalar>::rotX(i * 0.001) *
-                         SE3<Scalar>::rotY(i * 0.001) *
-                         SE3<Scalar>::transX(0.01 * i));
-  }
+TYPED_TEST_SUITE(VelocitiesTest, FloatingPointScalars, ScalarNameGenerator);
 
-  SE3<Scalar> foo_T_bar =
-      SE3<Scalar>::rotX(0.5) * SE3<Scalar>::rotZ(0.2) * SE3<Scalar>::transY(2);
-
-  std::vector<SE3<Scalar>, Eigen::aligned_allocator<SE3<Scalar>>> foo_Ts_baz;
-  for (auto const& bar_T_baz : bar_Ts_baz) {
-    foo_Ts_baz.push_back(foo_T_bar * bar_T_baz);
-  }
-
-  auto gen_linear_vels =
-      [](std::vector<SE3<Scalar>, Eigen::aligned_allocator<SE3<Scalar>>> const&
-             a_Ts_b) {
-        std::vector<Vector3<Scalar>, Eigen::aligned_allocator<Vector3<Scalar>>>
-            linearVels_a;
-        for (size_t i = 0; i < a_Ts_b.size() - 1; ++i) {
-          linearVels_a.push_back(a_Ts_b[i + 1].translation() -
-                                 a_Ts_b[i].translation());
-        }
-        return linearVels_a;
-      };
-
-  // linear velocities in frame bar
-  std::vector<Vector3<Scalar>, Eigen::aligned_allocator<Vector3<Scalar>>>
-      linearVels_bar = gen_linear_vels(bar_Ts_baz);
-  // linear velocities in frame foo
-  std::vector<Vector3<Scalar>, Eigen::aligned_allocator<Vector3<Scalar>>>
-      linearVels_foo = gen_linear_vels(foo_Ts_baz);
-
-  for (size_t i = 0; i < linearVels_bar.size(); ++i) {
-    SOPHUS_TEST_APPROX(passed, linearVels_foo[i],
-                       transformVelocity(foo_T_bar, linearVels_bar[i]),
-                       sqrt(Constants<Scalar>::epsilon()), "");
-  }
-  return passed;
+template <class Scalar>
+SE3<Scalar> fooTBar() {
+  return SE3<Scalar>::rotX(Scalar(0.5)) * SE3<Scalar>::rotZ(Scalar(0.2)) *
+         SE3<Scalar>::transY(Scalar(2));
 }
 
+/// Finite differences of consecutive translations.
 template <class Scalar>
-bool tests_rotational_velocities() {
-  bool passed = true;
+StdVector<Vector3<Scalar>> linearVelocities(
+    StdVector<SE3<Scalar>> const& a_Ts_b) {
+  StdVector<Vector3<Scalar>> linear_vels_a;
+  for (std::size_t i = 0; i + 1 < a_Ts_b.size(); ++i) {
+    linear_vels_a.push_back(a_Ts_b[i + 1].translation() -
+                            a_Ts_b[i].translation());
+  }
+  return linear_vels_a;
+}
 
-  SE3<Scalar> foo_T_bar =
-      SE3<Scalar>::rotX(0.5) * SE3<Scalar>::rotZ(0.2) * SE3<Scalar>::transY(2);
+TYPED_TEST(VelocitiesTest, TransformsLinearVelocitiesBetweenFrames) {
+  using Scalar = TypeParam;
+  using std::sqrt;
+  int constexpr kNumPoses = 10;
+  SE3<Scalar> const foo_T_bar = fooTBar<Scalar>();
+
+  StdVector<SE3<Scalar>> bar_Ts_baz;
+  for (int i = 0; i < kNumPoses; ++i) {
+    bar_Ts_baz.push_back(SE3<Scalar>::rotX(Scalar(i * 0.001)) *
+                         SE3<Scalar>::rotY(Scalar(i * 0.001)) *
+                         SE3<Scalar>::transX(Scalar(0.01 * i)));
+  }
+  auto const foo_Ts_baz =
+      mapped(bar_Ts_baz, [&foo_T_bar](SE3<Scalar> const& bar_T_baz) {
+        return SE3<Scalar>(foo_T_bar * bar_T_baz);
+      });
+
+  auto const transformed =
+      mapped(linearVelocities(bar_Ts_baz),
+             [&foo_T_bar](Vector3<Scalar> const& linear_vel_bar) {
+               return transformVelocity(foo_T_bar, linear_vel_bar);
+             });
+  EXPECT_THAT(transformed, Pointwise(IsNear(sqrt(Constants<Scalar>::epsilon())),
+                                     linearVelocities(foo_Ts_baz)));
+}
+
+TYPED_TEST(VelocitiesTest, TransformsRotationalVelocitiesBetweenFrames) {
+  using Scalar = TypeParam;
+  using std::sqrt;
+  SE3<Scalar> const foo_T_bar = fooTBar<Scalar>();
+  // Not too tight, because of the finite difference approximation.
+  Scalar const kTolerance = sqrt(Constants<Scalar>::epsilon());
+  Scalar const kH = Constants<Scalar>::epsilon();
+  // The velocities in frames foo and bar differ by more than this.
+  Scalar const kMinFrameDifference(1e-3);
+  std::vector<Scalar> const ts = {Scalar(0), Scalar(0.3), Scalar(1)};
 
   // One parameter subgroup of SE3, motion through space given time t.
-  auto bar_T_baz = [](Scalar t) -> SE3<Scalar> {
+  auto const bar_T_baz = [](Scalar t) -> SE3<Scalar> {
     return SE3<Scalar>::rotX(t * Scalar(0.01)) *
            SE3<Scalar>::rotY(t * Scalar(0.0001)) *
            SE3<Scalar>::transX(t * Scalar(0.0001));
   };
-
-  std::vector<Scalar> ts = {Scalar(0), Scalar(0.3), Scalar(1)};
-
-  Scalar h = Constants<Scalar>::epsilon();
-  for (Scalar t : ts) {
-    // finite difference approximiation of instantanious velocity in frame bar
-    Vector3<Scalar> rotVel_in_frame_bar =
-        finiteDifferenceRotationalVelocity<Scalar>(bar_T_baz, t, h);
-
-    // finite difference approximiation of instantanious velocity in frame foo
-    Vector3<Scalar> rotVel_in_frame_foo =
-        finiteDifferenceRotationalVelocity<Scalar>(
-            [&foo_T_bar, bar_T_baz](Scalar t) -> SE3<Scalar> {
-              return foo_T_bar * bar_T_baz(t);
+  auto const rot_vels_in_frame_bar = mapped(ts, [&bar_T_baz, kH](Scalar t) {
+    return finiteDifferenceRotationalVelocity<Scalar>(bar_T_baz, t, kH);
+  });
+  auto const rot_vels_in_frame_foo =
+      mapped(ts, [&foo_T_bar, &bar_T_baz, kH](Scalar t) {
+        return finiteDifferenceRotationalVelocity<Scalar>(
+            [&foo_T_bar, &bar_T_baz](Scalar t_bar) -> SE3<Scalar> {
+              return foo_T_bar * bar_T_baz(t_bar);
             },
-            t, h);
+            t, kH);
+      });
+  auto const transformed_to_bar = mapped(
+      rot_vels_in_frame_foo, [&foo_T_bar](Vector3<Scalar> const& vel_foo) {
+        return transformVelocity(foo_T_bar.inverse(), vel_foo);
+      });
 
-    Vector3<Scalar> rotVel_in_frame_bar2 =
-        transformVelocity(foo_T_bar.inverse(), rotVel_in_frame_foo);
-    SOPHUS_TEST_APPROX(
-        passed, rotVel_in_frame_bar, rotVel_in_frame_bar2,
-        // not too tight threshold, because of finit difference approximation
-        std::sqrt(Constants<Scalar>::epsilon()), "");
+  EXPECT_THAT(transformed_to_bar,
+              Pointwise(IsNear(kTolerance), rot_vels_in_frame_bar));
 
-    // The rotational velocities rotVel_in_frame_foo and rotVel_in_frame_bar
-    // should not be equal since they are in different frames (foo != bar).
-    SOPHUS_TEST_NOT_APPROX(passed, rotVel_in_frame_foo, rotVel_in_frame_bar,
-                           Scalar(1e-3), "");
+  // The velocities in frames foo and bar differ, since foo != bar.
+  EXPECT_THAT(rot_vels_in_frame_foo,
+              Pointwise(::testing::Not(IsNear(kMinFrameDifference)),
+                        rot_vels_in_frame_bar));
 
-    // Expect same result when using adjoint instead since:
-    //  vee(bar_R_foo * hat(vel_foo) * bar_R_foo^T = bar_R_foo 8 vel_foo.
-    SOPHUS_TEST_APPROX(
-        passed, transformVelocity(foo_T_bar.inverse(), rotVel_in_frame_foo),
-        SO3<Scalar>::vee(foo_T_bar.so3().inverse().matrix() *
-                         SO3<Scalar>::hat(rotVel_in_frame_foo) *
-                         foo_T_bar.so3().matrix()),
-        Constants<Scalar>::epsilon(), "");
-  }
-  return passed;
+  // The adjoint gives the same result, since
+  //   vee(bar_R_foo * hat(vel_foo) * bar_R_foo^T) = bar_R_foo * vel_foo.
+  auto const conjugated = mapped(
+      rot_vels_in_frame_foo, [&foo_T_bar](Vector3<Scalar> const& vel_foo) {
+        return Vector3<Scalar>(SO3<Scalar>::vee(
+            foo_T_bar.so3().inverse().matrix() * SO3<Scalar>::hat(vel_foo) *
+            foo_T_bar.so3().matrix()));
+      });
+  EXPECT_THAT(transformed_to_bar,
+              Pointwise(IsNear(Constants<Scalar>::epsilon()), conjugated));
 }
 
-int test_velocities() {
-  using std::cerr;
-  using std::endl;
-
-  cerr << "Test Velocities" << endl << endl;
-  cerr << "Double tests: " << endl;
-  bool passed = tests_linear_velocities<double>();
-  passed &= tests_rotational_velocities<double>();
-  processTestResult(passed);
-
-  cerr << "Float tests: " << endl;
-  passed = tests_linear_velocities<float>();
-  passed &= tests_rotational_velocities<float>();
-  processTestResult(passed);
-
-  return 0;
-}
+}  // namespace
 }  // namespace experimental
 }  // namespace Sophus
-
-int main() { return Sophus::experimental::test_velocities(); }
