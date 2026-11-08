@@ -1,5 +1,7 @@
 // Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <tuple>
+
 #include <sophus/sim3.hpp>
 
 #include "reference_sim3.hpp"
@@ -327,6 +329,12 @@ TYPED_TEST(Sim3FloatingPointTest, LogMatchesReference) {
 
 TYPED_TEST(Sim3FloatingPointTest, DxExpXMatchesReference) {
   reference::expectAccurateDxExpX<Sim3<TypeParam>>(reference::kSim3DxExpX);
+}
+
+TEST(Sim3DeathTest, RejectsMatricesWithoutHomogeneousLastRow) {
+  Matrix4<double> T = Matrix4<double>::Identity();
+  T(4 - 1, 0) = 5;
+  EXPECT_DEATH(std::ignore = Sim3<double>{T}, "Last row");
 }
 
 }  // namespace

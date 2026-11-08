@@ -464,7 +464,12 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC explicit Sim3(Matrix<Scalar, 4, 4> const& T)
       : rxso3_(T.template topLeftCorner<3, 3>()),
-        translation_(T.template rightCols<1>().template head<3>()) {}
+        translation_(T.template rightCols<1>().template head<3>()) {
+    SOPHUS_ENSURE((T.row(3) - Matrix<Scalar, 1, 4>::UnitW()).squaredNorm() <
+                      Constants<Scalar>::epsilon(),
+                  "Last row is not (0, 0, 0, 1), but ({}).",
+                  SOPHUS_FMT_ARG(T.row(3)));
+  }
 
   /// This provides unsafe read/write access to internal data. Sim(3) is
   /// represented by an Eigen::Quaternion (four parameters) and a 3-vector. When

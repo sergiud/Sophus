@@ -1,5 +1,7 @@
 // Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <tuple>
+
 #include <sophus/sim2.hpp>
 
 #include "reference_sim2.hpp"
@@ -271,6 +273,12 @@ TYPED_TEST(Sim2FloatingPointTest, LogMatchesReference) {
 
 TYPED_TEST(Sim2FloatingPointTest, DxExpXMatchesReference) {
   reference::expectAccurateDxExpX<Sim2<TypeParam>>(reference::kSim2DxExpX);
+}
+
+TEST(Sim2DeathTest, RejectsMatricesWithoutHomogeneousLastRow) {
+  Matrix3<double> T = Matrix3<double>::Identity();
+  T(3 - 1, 0) = 5;
+  EXPECT_DEATH(std::ignore = Sim2<double>{T}, "Last row");
 }
 
 }  // namespace

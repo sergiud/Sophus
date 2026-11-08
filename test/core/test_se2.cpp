@@ -1,5 +1,7 @@
 // Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <tuple>
+
 #include <sophus/se2.hpp>
 
 #include "reference_se2.hpp"
@@ -268,6 +270,12 @@ TYPED_TEST(SE2FloatingPointTest, ExpMatchesReference) {
 
 TYPED_TEST(SE2FloatingPointTest, DxExpXMatchesReference) {
   reference::expectAccurateDxExpX<SE2<TypeParam>>(reference::kSE2DxExpX);
+}
+
+TEST(SE2DeathTest, RejectsMatricesWithoutHomogeneousLastRow) {
+  Matrix3<double> T = Matrix3<double>::Identity();
+  T(3 - 1, 0) = 5;
+  EXPECT_DEATH(std::ignore = SE2<double>{T}, "Last row");
 }
 
 }  // namespace

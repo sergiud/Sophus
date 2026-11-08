@@ -467,7 +467,12 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC explicit SE2(Transformation const& T)
       : so2_(T.template topLeftCorner<2, 2>().eval()),
-        translation_(T.template rightCols<1>().template head<2>()) {}
+        translation_(T.template rightCols<1>().template head<2>()) {
+    SOPHUS_ENSURE((T.row(2) - Matrix<Scalar, 1, 3>::UnitZ()).squaredNorm() <
+                      Constants<Scalar>::epsilon(),
+                  "Last row is not (0, 0, 1), but ({}).",
+                  SOPHUS_FMT_ARG(T.row(2)));
+  }
 
   /// This provides unsafe read/write access to internal data. SO(2) is
   /// represented by a complex number (two parameters). When using direct write

@@ -446,7 +446,12 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
   ///
   SOPHUS_FUNC explicit Sim2(Matrix<Scalar, 3, 3> const& T)
       : rxso2_((T.template topLeftCorner<2, 2>()).eval()),
-        translation_(T.template rightCols<1>().template head<2>()) {}
+        translation_(T.template rightCols<1>().template head<2>()) {
+    SOPHUS_ENSURE((T.row(2) - Matrix<Scalar, 1, 3>::UnitZ()).squaredNorm() <
+                      Constants<Scalar>::epsilon(),
+                  "Last row is not (0, 0, 1), but ({}).",
+                  SOPHUS_FMT_ARG(T.row(2)));
+  }
 
   /// This provides unsafe read/write access to internal data. Sim(2) is
   /// represented by a complex number (two parameters) and a 2-vector. When
