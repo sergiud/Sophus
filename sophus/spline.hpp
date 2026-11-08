@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include <utility>
 
 #include "types.hpp"
 
@@ -308,9 +309,9 @@ class BasisSplineImpl {
   using Transformation = typename LieGroup::Transformation;
   using Tangent = typename LieGroup::Tangent;
 
-  BasisSplineImpl(const std::vector<LieGroup>& parent_Ts_control_point,
-                  double delta_t)
-      : parent_Ts_control_point_(parent_Ts_control_point), delta_t_(delta_t) {
+  BasisSplineImpl(std::vector<LieGroup> parent_Ts_control_point, double delta_t)
+      : parent_Ts_control_point_(std::move(parent_Ts_control_point)),
+        delta_t_(delta_t) {
     SOPHUS_ENSURE(parent_Ts_control_point_.size() >= 2u, ", but {}",
                   parent_Ts_control_point_.size());
   }
