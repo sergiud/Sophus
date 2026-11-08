@@ -200,5 +200,16 @@ TYPED_TEST(SO2FloatingPointTest, LogMatchesReference) {
   reference::expectAccurateLog<SO2<TypeParam>>(reference::kSO2Log);
 }
 
+TYPED_TEST(SO2FloatingPointTest, CompoundMultiplicationReturnsTheElement) {
+  using Scalar = TypeParam;
+  using SO2Type = SO2<Scalar>;
+  SO2Type const b = SO2Type::exp(Scalar(0.25));
+  SO2Type const c = SO2Type::exp(Scalar(-0.75));
+  SO2Type a = SO2Type::exp(Scalar(1));
+
+  (a *= b) *= c;
+  EXPECT_THAT(a.log(), IsNear(Scalar(0.5), Constants<Scalar>::epsilon()));
+}
+
 }  // namespace
 }  // namespace Sophus

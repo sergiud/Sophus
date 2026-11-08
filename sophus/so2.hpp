@@ -303,7 +303,7 @@ class SO2Base {
   ///
   template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
                                        Scalar, ReturnScalar<OtherDerived>>>>
-  SOPHUS_FUNC SO2Base<Derived> operator*=(SO2Base<OtherDerived> const& other) {
+  SOPHUS_FUNC SO2Base<Derived>& operator*=(SO2Base<OtherDerived> const& other) {
     *static_cast<Derived*>(this) = *this * other;
     return *this;
   }
