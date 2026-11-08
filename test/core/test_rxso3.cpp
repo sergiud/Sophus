@@ -1,6 +1,7 @@
 // Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
 #include <limits>
+#include <tuple>
 
 #include <sophus/rxso3.hpp>
 
@@ -332,6 +333,14 @@ TYPED_TEST(RxSO3FloatingPointTest, ExpMatchesReference) {
 
 TYPED_TEST(RxSO3FloatingPointTest, DxExpXMatchesReference) {
   reference::expectAccurateDxExpX<RxSO3<TypeParam>>(reference::kRxSO3DxExpX);
+}
+
+TEST(RxSO3DeathTest, RejectsScaledReflections) {
+  // A reflection scaled by 1/2 is scaled orthogonal, but has a negative
+  // determinant.
+  Matrix3<double> const scaled_reflection =
+      Vector3<double>(0.5, 0.5, -0.5).asDiagonal();
+  EXPECT_DEATH(std::ignore = RxSO3d{scaled_reflection}, "scaled orthogonal");
 }
 
 }  // namespace

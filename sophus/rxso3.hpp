@@ -419,6 +419,10 @@ class RxSO3Base {
   ///               and have a positive determinant.
   ///
   SOPHUS_FUNC void setScaledRotationMatrix(Transformation const& sR) {
+    SOPHUS_ENSURE(
+        isScaledOrthogonalAndPositive(sR),
+        "sR must be scaled orthogonal with positive determinant:\n {}",
+        SOPHUS_FMT_ARG(sR));
     Transformation squared_sR = sR * sR.transpose();
     Scalar squared_scale = squared_sR.diagonal().sum() / Scalar(3);
     SOPHUS_ENSURE(squared_scale >= Constants<Scalar>::epsilon() *
