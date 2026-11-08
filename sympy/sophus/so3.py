@@ -3,7 +3,7 @@ import unittest
 
 import sympy
 
-from sophus.cse_codegen import cse_codegen
+from sophus.cse_codegen import check_cpp_gencode
 from sophus.matrix import Vector3
 from sophus.matrix import ZeroVector3
 from sophus.matrix import squared_norm
@@ -200,7 +200,7 @@ class TestSo3(unittest.TestCase):
                   Vector3(0.01, 0.2, 0.03)]:
             w = So3.exp(o).log()
             for i in range(0, 3):
-                self.assertAlmostEqual(o[i], w[i])
+                self.assertAlmostEqual(float(o[i]), float(w[i]))
 
     def test_matrix(self):
         R_foo_bar = So3.exp(self.omega)
@@ -231,73 +231,21 @@ class TestSo3(unittest.TestCase):
                 sympy.Matrix.zeros(3, 3))
 
     def test_codegen(self):
-        stream = cse_codegen(So3.calc_Dx_exp_x(self.omega))
-        filename = "cpp_gencode/So3_Dx_exp_x.cpp"
-        # set to true to generate codegen files
-        if False:
-            file = open(filename, "w")
-            for line in stream:
-                file.write(line)
-            file.close()
-        else:
-            file = open(filename, "r")
-            file_lines = file.readlines()
-            for i, line in enumerate(stream):
-                self.assertEqual(line, file_lines[i])
-            file.close()
-        stream.close
+        check_cpp_gencode(
+            self, So3.calc_Dx_exp_x(self.omega),
+            "cpp_gencode/So3_Dx_exp_x.cpp")
 
-        stream = cse_codegen(
-            self.a.calc_Dx_this_mul_exp_x_at_0(self.omega))
-        filename = "cpp_gencode/So3_Dx_this_mul_exp_x_at_0.cpp"
-        # set to true to generate codegen files
-        if False:
-            file = open(filename, "w")
-            for line in stream:
-                file.write(line)
-            file.close()
-        else:
-            file = open(filename, "r")
-            file_lines = file.readlines()
-            for i, line in enumerate(stream):
-                self.assertEqual(line, file_lines[i])
-            file.close()
-        stream.close
+        check_cpp_gencode(
+            self, self.a.calc_Dx_this_mul_exp_x_at_0(self.omega),
+            "cpp_gencode/So3_Dx_this_mul_exp_x_at_0.cpp")
 
-        stream = cse_codegen(self.a.calc_Dx_log_this())
-        filename = "cpp_gencode/So3_Dx_log_this.cpp"
+        check_cpp_gencode(
+            self, self.a.calc_Dx_log_this(),
+            "cpp_gencode/So3_Dx_log_this.cpp")
 
-        # set to true to generate codegen files
-        if False:
-            file = open(filename, "w")
-            for line in stream:
-                file.write(line)
-            file.close()
-        else:
-            file = open(filename, "r")
-            file_lines = file.readlines()
-            for i, line in enumerate(stream):
-                self.assertEqual(line, file_lines[i])
-            file.close()
-        stream.close
-
-        stream = cse_codegen(self.a.calc_Dx_log_exp_x_times_this_at_0(
-                               self.omega))
-        filename = "cpp_gencode/So3_Dx_log_exp_x_times_this_at_0.cpp"
-
-        # set to true to generate codegen files
-        if False:
-            file = open(filename, "w")
-            for line in stream:
-                file.write(line)
-            file.close()
-        else:
-            file = open(filename, "r")
-            file_lines = file.readlines()
-            for i, line in enumerate(stream):
-                self.assertEqual(line, file_lines[i])
-            file.close()
-        stream.close
+        check_cpp_gencode(
+            self, self.a.calc_Dx_log_exp_x_times_this_at_0( self.omega),
+            "cpp_gencode/So3_Dx_log_exp_x_times_this_at_0.cpp")
 
 
 if __name__ == '__main__':
