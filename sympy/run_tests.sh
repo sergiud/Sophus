@@ -1,6 +1,9 @@
 #!/bin/bash
 # Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+# The modules are imported relative to the directory of this script.
+cd "$(dirname "$0")" || exit
+
 EXIT=0
 
 python3 -m sophus.complex || EXIT=$?
