@@ -15,11 +15,15 @@
 
 #undef SOPHUS_COMPILE_TIME_FMT
 
+// Expands to the first of at least two arguments.
+#define SOPHUS_FMT_FIRST(first, ...) first
+
 #ifdef SOPHUS_USE_BASIC_LOGGING
 
-#define SOPHUS_FMT_CSTR(description, ...) description
-#define SOPHUS_FMT_STR(description, ...) std::string(description)
-#define SOPHUS_FMT_PRINT(description, ...) std::printf("%s\n", description)
+#define SOPHUS_FMT_CSTR(...) SOPHUS_FMT_FIRST(__VA_ARGS__, 0)
+#define SOPHUS_FMT_STR(...) std::string(SOPHUS_FMT_FIRST(__VA_ARGS__, 0))
+#define SOPHUS_FMT_PRINT(...) \
+  std::printf("%s\n", SOPHUS_FMT_FIRST(__VA_ARGS__, 0))
 #define SOPHUS_FMT_ARG(arg)
 
 #else  // !SOPHUS_USE_BASIC_LOGGING
@@ -59,14 +63,21 @@
 #define SOPHUS_FMT_STRING(x) x
 #endif  // ! SOPHUS_COMPILE_TIME_FMT
 
-#define SOPHUS_FMT_CSTR(description, ...) \
-  fmt::format(SOPHUS_FMT_STRING(description), ##__VA_ARGS__).c_str()
+// The macros below append an unused argument 0, which fmt ignores, so that
+// the variadic arguments of their implementations are never empty. C++17
+// requires at least one, and dropping the comma before empty arguments with
+// ##__VA_ARGS__ is a GNU extension.
+#define SOPHUS_FMT_CSTR(...) SOPHUS_FMT_CSTR_IMPL(__VA_ARGS__, 0)
+#define SOPHUS_FMT_CSTR_IMPL(description, ...) \
+  fmt::format(SOPHUS_FMT_STRING(description), __VA_ARGS__).c_str()
 
-#define SOPHUS_FMT_STR(description, ...) \
-  fmt::format(SOPHUS_FMT_STRING(description), ##__VA_ARGS__)
+#define SOPHUS_FMT_STR(...) SOPHUS_FMT_STR_IMPL(__VA_ARGS__, 0)
+#define SOPHUS_FMT_STR_IMPL(description, ...) \
+  fmt::format(SOPHUS_FMT_STRING(description), __VA_ARGS__)
 
-#define SOPHUS_FMT_PRINT(description, ...)                   \
-  fmt::print(SOPHUS_FMT_STRING(description), ##__VA_ARGS__); \
+#define SOPHUS_FMT_PRINT(...) SOPHUS_FMT_PRINT_IMPL(__VA_ARGS__, 0)
+#define SOPHUS_FMT_PRINT_IMPL(description, ...)            \
+  fmt::print(SOPHUS_FMT_STRING(description), __VA_ARGS__); \
   fmt::print("\n")
 
 #endif  // !SOPHUS_USE_BASIC_LOGGING
@@ -111,32 +122,30 @@ void ensureFailed(char const* function, char const* file, int line,
                   char const* description);
 }
 
-#define SOPHUS_ENSURE(expr, description, ...)                        \
-  ((expr)                                                            \
-       ? ((void)0)                                                   \
-       : ::Sophus::ensureFailed(SOPHUS_FUNCTION, __FILE__, __LINE__, \
-                                SOPHUS_FMT_CSTR(description, ##__VA_ARGS__)))
+#define SOPHUS_ENSURE(expr, ...)                                        \
+  ((expr) ? ((void)0)                                                   \
+          : ::Sophus::ensureFailed(SOPHUS_FUNCTION, __FILE__, __LINE__, \
+                                   SOPHUS_FMT_CSTR(__VA_ARGS__)))
 #else
 
-#define SOPHUS_DEDAULT_ENSURE_FAILURE_IMPL(function, file, line, description, \
-                                           ...)                               \
-  do {                                                                        \
-    std::printf(                                                              \
-        "Sophus ensure failed in function '%s', "                             \
-        "file '%s', line %d.\n",                                              \
-        function, file, line);                                                \
-    SOPHUS_FMT_PRINT(description, ##__VA_ARGS__);                             \
-    std::abort();                                                             \
+#define SOPHUS_DEDAULT_ENSURE_FAILURE_IMPL(function, file, line, ...) \
+  do {                                                                \
+    std::printf(                                                      \
+        "Sophus ensure failed in function '%s', "                     \
+        "file '%s', line %d.\n",                                      \
+        function, file, line);                                        \
+    SOPHUS_FMT_PRINT(__VA_ARGS__);                                    \
+    std::abort();                                                     \
   } while (false)
 
 #ifdef __CUDACC__
-#define SOPHUS_ENSURE(expr, description, ...)                                  \
+#define SOPHUS_ENSURE(expr, ...)                                               \
   do {                                                                         \
     if (!(expr)) {                                                             \
       std::printf(                                                             \
           "Sophus ensure failed in function '%s', file '%s', line %d.\n",      \
           SOPHUS_FUNCTION, __FILE__, __LINE__);                                \
-      std::printf("%s", description);                                          \
+      std::printf("%s", SOPHUS_FMT_FIRST(__VA_ARGS__, 0));                     \
       /* there is no std::abort in cuda kernels, hence we just print the error \
        * message here*/                                                        \
     }                                                                          \
@@ -146,7 +155,7 @@ void ensureFailed(char const* function, char const* file, int line,
   do {                                                                        \
     if (!(expr)) {                                                            \
       SOPHUS_DEDAULT_ENSURE_FAILURE_IMPL(SOPHUS_FUNCTION, __FILE__, __LINE__, \
-                                         ##__VA_ARGS__);                      \
+                                         __VA_ARGS__);                        \
     }                                                                         \
   } while (false)
 #endif

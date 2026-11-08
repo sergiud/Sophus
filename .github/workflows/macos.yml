@@ -35,10 +35,8 @@ jobs:
           save: ${{ github.event_name == 'push' }}
 
       - name: Configure
-        # SOPHUS_ENSURE and related macros pass empty __VA_ARGS__, which
-        # AppleClang reports under -Wpedantic.
         env:
-          CXXFLAGS: -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments
+          CXXFLAGS: -Wall -Wextra -Wpedantic -Werror
         run: |
           cmake -S . -B build_${{matrix.build_type}} \
                 -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \

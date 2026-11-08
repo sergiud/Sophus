@@ -33,17 +33,11 @@ jobs:
             cxx: clang++
             eigen: '3.4.1'
             std: 20
-            # SOPHUS_ENSURE and related macros pass empty __VA_ARGS__, which
-            # Clang reports under -Wpedantic.
-            cxxflags: -Wno-gnu-zero-variadic-macro-arguments
           - build_type: Release
             compiler: Clang
             cxx: clang++
             eigen: '5.0.1'
             std: 20
-            # SOPHUS_ENSURE and related macros pass empty __VA_ARGS__, which
-            # Clang reports under -Wpedantic.
-            cxxflags: -Wno-gnu-zero-variadic-macro-arguments
           # Extends the GCC Release job with Eigen 3.4.1 and C++17 by Ceres,
           # which enables the tests of automatic differentiation with
           # ceres::Jet scalars and of the Ceres manifolds.
@@ -129,7 +123,7 @@ jobs:
       - name: Configure
         env:
           CXX: ${{matrix.cxx}}
-          CXXFLAGS: -Wall -Wextra -Wpedantic -Werror ${{matrix.cxxflags}} ${{env.CXXFLAGS}}
+          CXXFLAGS: -Wall -Wextra -Wpedantic -Werror ${{env.CXXFLAGS}}
         run: |
           cmake -S . -B build_${{matrix.build_type}} \
                 -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
