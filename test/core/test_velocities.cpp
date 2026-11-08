@@ -68,9 +68,6 @@ TYPED_TEST(VelocitiesTest, TransformsRotationalVelocitiesBetweenFrames) {
   SE3<Scalar> const foo_T_bar = fooTBar<Scalar>();
   // Not too tight, because of the finite difference approximation.
   Scalar const kTolerance = sqrt(Constants<Scalar>::epsilon());
-  // The step of the central differences. With a step of epsilon, the rounding
-  // error of float exceeds the tolerance, since it grows with 1 / kH.
-  Scalar const kH = Constants<Scalar>::epsilonSqrt();
   // The velocities in frames foo and bar differ by more than this.
   Scalar const kMinFrameDifference(1e-3);
   std::vector<Scalar> const ts = {Scalar(0), Scalar(0.3), Scalar(1)};
@@ -81,16 +78,16 @@ TYPED_TEST(VelocitiesTest, TransformsRotationalVelocitiesBetweenFrames) {
            SE3<Scalar>::rotY(t * Scalar(0.0001)) *
            SE3<Scalar>::transX(t * Scalar(0.0001));
   };
-  auto const rot_vels_in_frame_bar = mapped(ts, [&bar_T_baz, kH](Scalar t) {
-    return finiteDifferenceRotationalVelocity<Scalar>(bar_T_baz, t, kH);
+  auto const rot_vels_in_frame_bar = mapped(ts, [&bar_T_baz](Scalar t) {
+    return finiteDifferenceRotationalVelocity<Scalar>(bar_T_baz, t);
   });
   auto const rot_vels_in_frame_foo =
-      mapped(ts, [&foo_T_bar, &bar_T_baz, kH](Scalar t) {
+      mapped(ts, [&foo_T_bar, &bar_T_baz](Scalar t) {
         return finiteDifferenceRotationalVelocity<Scalar>(
             [&foo_T_bar, &bar_T_baz](Scalar t_bar) -> SE3<Scalar> {
               return foo_T_bar * bar_T_baz(t_bar);
             },
-            t, kH);
+            t);
       });
   auto const transformed_to_bar = mapped(
       rot_vels_in_frame_foo, [&foo_T_bar](Vector3<Scalar> const& vel_foo) {
@@ -115,6 +112,21 @@ TYPED_TEST(VelocitiesTest, TransformsRotationalVelocitiesBetweenFrames) {
       });
   EXPECT_THAT(transformed_to_bar,
               Pointwise(IsNear(Constants<Scalar>::epsilon()), conjugated));
+}
+
+TYPED_TEST(VelocitiesTest, DefaultStepRecoversRotationalVelocity) {
+  using Scalar = TypeParam;
+  // The error of a central difference with a step near the cube root of the
+  // machine epsilon is far below this tolerance.
+  Scalar const kTolerance = Scalar(10) * Constants<Scalar>::epsilon();
+  Vector3<Scalar> const velocity(Scalar(0.3), Scalar(-0.2), Scalar(0.1));
+  std::function<SO3<Scalar>(Scalar)> const foo_R_bar = [velocity](Scalar t) {
+    return SO3<Scalar>::exp(t * velocity);
+  };
+
+  EXPECT_THAT(
+      finiteDifferenceRotationalVelocity<Scalar>(foo_R_bar, Scalar(0.7)),
+      IsNear(velocity, kTolerance));
 }
 
 }  // namespace
