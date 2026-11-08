@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+name: CI
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  linux:
+    if: &skip-duplicate-pull-request github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    name: Linux
+    uses: ./.github/workflows/linux.yml
+    permissions:
+      contents: read
+    secrets: inherit
+
+  macos:
+    if: *skip-duplicate-pull-request
+    name: macOS
+    uses: ./.github/workflows/macos.yml
+    permissions:
+      contents: read
+    secrets: inherit
+
+  windows:
+    if: *skip-duplicate-pull-request
+    name: Windows
+    uses: ./.github/workflows/windows.yml
+    permissions:
+      contents: read
+    secrets: inherit

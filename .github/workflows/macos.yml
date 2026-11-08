@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+name: macOS
+
+on: workflow_call
+
+jobs:
+  build-macos:
+    name: AppleClang-C++${{matrix.std}}-${{matrix.build_type}}
+    runs-on: macos-15
+    permissions:
+      contents: read
+    env:
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+    strategy:
+      fail-fast: true
+      matrix:
+        build_type: [Debug, Release]
+        std: [17, 20, 23]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Dependencies
+        run: |
+          brew install eigen fmt googletest ninja
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: macos-C++${{matrix.std}}-${{matrix.build_type}}
+          evict-old-files: job
+          save: ${{ github.event_name == 'push' }}
+
+      - name: Configure
+        # SOPHUS_ENSURE and related macros pass empty __VA_ARGS__, which
+        # AppleClang reports under -Wpedantic.
+        env:
+          CXXFLAGS: -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments
+        run: |
+          cmake -S . -B build_${{matrix.build_type}} \
+                -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+                -DCMAKE_CXX_EXTENSIONS=OFF \
+                -DCMAKE_CXX_STANDARD=${{matrix.std}} \
+                -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+                -G Ninja \
+                -Werror=author
+
+      - name: Build
+        run: |
+          cmake --build build_${{matrix.build_type}}
+
+      - name: Test
+        run: |
+          ctest --test-dir build_${{matrix.build_type}} -j"$(sysctl -n hw.ncpu)" --output-on-failure

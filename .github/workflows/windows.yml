@@ -1,0 +1,152 @@
+# SPDX-FileCopyrightText: 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+name: Windows
+
+on: workflow_call
+
+jobs:
+  build-msvc:
+    name: ${{matrix.msvc}}-${{matrix.arch}}-C++${{matrix.std}}-${{matrix.build_type}}
+    runs-on: ${{matrix.os}}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: powershell
+    env:
+      CXXFLAGS: /WX /permissive-
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [x64]
+        build_type: [Debug, Release]
+        msvc: [VS-18-2026]
+        std: [17, 20]
+        include:
+          - msvc: VS-18-2026
+            os: windows-2025-vs2026
+            generator: 'Visual Studio 18 2026'
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache Dependencies
+        id: cache-dependencies
+        uses: actions/cache@v6
+        with:
+          path: deps/
+          key: ${{matrix.msvc}}-eigen-5.0.1-fmt-11.2.0-gtest-1.17.0-C++${{matrix.std}}-${{matrix.arch}}-${{matrix.build_type}}
+
+      - name: Download Dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: |
+          (New-Object System.Net.WebClient).DownloadFile("https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.zip", "eigen-5.0.1.zip")
+          (New-Object System.Net.WebClient).DownloadFile("https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.zip", "fmt-11.2.0.zip")
+          (New-Object System.Net.WebClient).DownloadFile("https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip", "googletest-1.17.0.zip")
+          Expand-Archive eigen-5.0.1.zip .
+          Expand-Archive fmt-11.2.0.zip .
+          Expand-Archive googletest-1.17.0.zip .
+
+      - name: Build Dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: |
+          cmake -S eigen-5.0.1 -B build-eigen `
+                -A ${{matrix.arch}} `
+                -DBUILD_TESTING=OFF `
+                -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/deps `
+                -DEIGEN_BUILD_DOC=OFF `
+                -DEIGEN_BUILD_TESTING=OFF `
+                -G "${{matrix.generator}}"
+          cmake --install build-eigen
+          cmake -S fmt-11.2.0 -B build-fmt `
+                -A ${{matrix.arch}} `
+                -DCMAKE_CXX_STANDARD=${{matrix.std}} `
+                -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/deps `
+                -DFMT_DOC=OFF `
+                -DFMT_TEST=OFF `
+                -G "${{matrix.generator}}"
+          cmake --build build-fmt --config ${{matrix.build_type}} --target install
+          cmake -S googletest-1.17.0 -B build-googletest `
+                -A ${{matrix.arch}} `
+                -DCMAKE_CXX_STANDARD=${{matrix.std}} `
+                -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/deps `
+                -Dgtest_force_shared_crt=ON `
+                -G "${{matrix.generator}}"
+          cmake --build build-googletest --config ${{matrix.build_type}} --target install
+
+      - name: Configure
+        run: |
+          cmake -S . -B build_${{matrix.build_type}} `
+                -A ${{matrix.arch}} `
+                -DCMAKE_CXX_EXTENSIONS=OFF `
+                -DCMAKE_CXX_STANDARD=${{matrix.std}} `
+                -DCMAKE_CXX_STANDARD_REQUIRED=ON `
+                -DCMAKE_PREFIX_PATH=${{github.workspace}}/deps `
+                -G "${{matrix.generator}}" `
+                -Werror=author
+
+      - name: Build
+        run: |
+          cmake --build build_${{matrix.build_type}} `
+                --config ${{matrix.build_type}}
+
+      - name: Test
+        run: |
+          ctest --test-dir build_${{matrix.build_type}} `
+                --build-config ${{matrix.build_type}} `
+                -j $env:NUMBER_OF_PROCESSORS `
+                --output-on-failure
+
+  build-mingw:
+    name: ${{matrix.sys}}-${{matrix.env}}-C++${{matrix.std}}-${{matrix.build_type}}
+    runs-on: windows-2025
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: msys2 {0}
+    strategy:
+      fail-fast: true
+      matrix:
+        build_type: [Debug, Release]
+        std: [17, 20, 23]
+        sys: [ucrt64]
+        include:
+          - sys: ucrt64
+            env: ucrt-x86_64
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.sys}}
+          install: >-
+            mingw-w64-${{matrix.env}}-cmake
+            mingw-w64-${{matrix.env}}-eigen3
+            mingw-w64-${{matrix.env}}-fmt
+            mingw-w64-${{matrix.env}}-gcc
+            mingw-w64-${{matrix.env}}-gtest
+            mingw-w64-${{matrix.env}}-ninja
+
+      - name: Configure
+        env:
+          CXXFLAGS: -Wall -Wextra -Wpedantic -Werror
+        run: |
+          cmake -S . -B build_${{matrix.build_type}} \
+                -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+                -DCMAKE_CXX_EXTENSIONS=OFF \
+                -DCMAKE_CXX_STANDARD=${{matrix.std}} \
+                -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+                -G Ninja \
+                -Werror=author
+
+      - name: Build
+        run: |
+          cmake --build build_${{matrix.build_type}}
+
+      - name: Test
+        run: |
+          ctest --test-dir build_${{matrix.build_type}} -j"$(nproc)" --output-on-failure

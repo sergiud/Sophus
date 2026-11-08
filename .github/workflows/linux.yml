@@ -1,0 +1,247 @@
+# SPDX-FileCopyrightText: 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+name: Linux
+
+on: workflow_call
+
+jobs:
+  build-linux:
+    defaults:
+      run:
+        shell: bash
+    name: ${{matrix.compiler}}-C++${{matrix.std}}-${{matrix.build_type}}-Eigen-${{matrix.eigen}}${{ matrix.ceres && '-Ceres' || '' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    env:
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+    strategy:
+      fail-fast: true
+      matrix:
+        build_type: [Debug, Release]
+        compiler: [GCC]
+        # The oldest and the newest version of Eigen that Sophus supports.
+        eigen: ['3.4.1', '5.0.1']
+        std: [17, 20, 23]
+        include:
+          - compiler: GCC
+            cxx: g++
+          - build_type: Release
+            compiler: Clang
+            cxx: clang++
+            eigen: '3.4.1'
+            std: 20
+            # SOPHUS_ENSURE and related macros pass empty __VA_ARGS__, which
+            # Clang reports under -Wpedantic.
+            cxxflags: -Wno-gnu-zero-variadic-macro-arguments
+          - build_type: Release
+            compiler: Clang
+            cxx: clang++
+            eigen: '5.0.1'
+            std: 20
+            # SOPHUS_ENSURE and related macros pass empty __VA_ARGS__, which
+            # Clang reports under -Wpedantic.
+            cxxflags: -Wno-gnu-zero-variadic-macro-arguments
+          # Extends the GCC Release job with Eigen 3.4.1 and C++17 by Ceres,
+          # which enables the tests of automatic differentiation with
+          # ceres::Jet scalars and of the Ceres manifolds.
+          - build_type: Release
+            ceres: true
+            compiler: GCC
+            cxx: g++
+            eigen: '3.4.1'
+            std: 17
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-suggests --no-install-recommends \
+            clang \
+            cmake \
+            g++ \
+            libfmt-dev \
+            libgmock-dev \
+            libgtest-dev \
+            ninja-build
+
+      - name: Setup Ceres
+        if: matrix.ceres
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get install -y --no-install-suggests --no-install-recommends \
+            libceres-dev
+
+      - name: Cache Eigen
+        id: cache-eigen
+        uses: actions/cache@v6
+        with:
+          path: ${{runner.temp}}/eigen
+          key: ${{runner.os}}-eigen-${{matrix.eigen}}
+
+      - name: Setup Eigen
+        if: steps.cache-eigen.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL https://gitlab.com/libeigen/eigen/-/archive/${{matrix.eigen}}/eigen-${{matrix.eigen}}.tar.bz2 \
+            | tar -xj -C ${{runner.temp}}
+          cmake -S ${{runner.temp}}/eigen-${{matrix.eigen}} \
+                -B ${{runner.temp}}/build-eigen \
+                -DBUILD_TESTING=OFF \
+                -DCMAKE_INSTALL_PREFIX=${{runner.temp}}/eigen \
+                -DEIGEN_BUILD_DOC=OFF \
+                -DEIGEN_BUILD_TESTING=OFF \
+                -G Ninja
+          cmake --install ${{runner.temp}}/build-eigen
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: linux-${{matrix.compiler}}-C++${{matrix.std}}-${{matrix.build_type}}-Eigen-${{matrix.eigen}}${{ matrix.ceres && '-Ceres' || '' }}
+          evict-old-files: job
+          save: ${{ github.event_name == 'push' }}
+
+      - uses: actions/setup-python@v7
+        if: matrix.build_type == 'Debug'
+        with:
+          python-version: '3.x'
+          cache: pip
+          cache-dependency-path: .github/coverage/requirements.txt
+
+      - name: Setup Coverage Dependencies
+        if: matrix.build_type == 'Debug'
+        run: |
+          pip install -r .github/coverage/requirements.txt
+
+      - name: Setup Environment
+        if: matrix.build_type == 'Debug'
+        run: |
+          echo 'CXXFLAGS=--coverage' >> "$GITHUB_ENV"
+
+      - name: Configure
+        env:
+          CXX: ${{matrix.cxx}}
+          CXXFLAGS: -Wall -Wextra -Wpedantic -Werror ${{matrix.cxxflags}} ${{env.CXXFLAGS}}
+        run: |
+          cmake -S . -B build_${{matrix.build_type}} \
+                -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+                -DCMAKE_CXX_EXTENSIONS=OFF \
+                -DCMAKE_CXX_STANDARD=${{matrix.std}} \
+                -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+                -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install \
+                -DEigen3_ROOT=${{runner.temp}}/eigen \
+                -G Ninja \
+                -Werror=author
+
+      - name: Build
+        run: |
+          cmake --build build_${{matrix.build_type}}
+
+      - name: Test
+        run: |
+          ctest --test-dir build_${{matrix.build_type}} -j"$(nproc)" --output-on-failure
+
+      - name: Install
+        run: |
+          cmake --install build_${{matrix.build_type}}
+
+      - name: Generate Coverage
+        if: matrix.build_type == 'Debug'
+        run: |
+          cd build_${{matrix.build_type}}
+          gcovr -r .. . -s --exclude ../test/ --cobertura coverage.xml --json coverage.json
+
+      - name: Upload Coverage to Codecov
+        if: matrix.build_type == 'Debug'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: build_${{matrix.build_type}}/coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+
+  sanitize-linux:
+    defaults:
+      run:
+        shell: bash
+    name: Clang-${{matrix.sanitizer.name}}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer:
+          - name: ASan-UBSan
+            flags: -fsanitize=address,undefined -fno-sanitize-recover=all
+    env:
+      CXX: clang++
+      CXXFLAGS: ${{matrix.sanitizer.flags}} -fno-omit-frame-pointer -Werror
+      LDFLAGS: ${{matrix.sanitizer.flags}}
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-suggests --no-install-recommends \
+            clang \
+            cmake \
+            libfmt-dev \
+            libgmock-dev \
+            libgtest-dev \
+            ninja-build
+
+      - name: Cache Eigen
+        id: cache-eigen
+        uses: actions/cache@v6
+        with:
+          path: ${{runner.temp}}/eigen
+          key: ${{runner.os}}-eigen-5.0.1
+
+      - name: Setup Eigen
+        if: steps.cache-eigen.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.bz2 \
+            | tar -xj -C ${{runner.temp}}
+          cmake -S ${{runner.temp}}/eigen-5.0.1 \
+                -B ${{runner.temp}}/build-eigen \
+                -DBUILD_TESTING=OFF \
+                -DCMAKE_INSTALL_PREFIX=${{runner.temp}}/eigen \
+                -DEIGEN_BUILD_DOC=OFF \
+                -DEIGEN_BUILD_TESTING=OFF \
+                -G Ninja
+          cmake --install ${{runner.temp}}/build-eigen
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: linux-${{matrix.sanitizer.name}}
+          evict-old-files: job
+          save: ${{ github.event_name == 'push' }}
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+                -DCMAKE_BUILD_TYPE=Debug \
+                -DEigen3_ROOT=${{runner.temp}}/eigen \
+                -G Ninja \
+                -Werror=author
+
+      - name: Build
+        run: |
+          cmake --build build
+
+      - name: Test
+        run: |
+          ctest --test-dir build -j"$(nproc)" --output-on-failure

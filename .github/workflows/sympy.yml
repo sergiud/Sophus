@@ -1,3 +1,5 @@
+# Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 name: Linux - sympy
 
 on:
@@ -8,18 +10,36 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    name: Python-${{matrix.python}}-sympy-${{matrix.sympy}}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
     strategy:
-      matrix:
-        os: [ubuntu-20.04]
       fail-fast: false
-
+      matrix:
+        python: ['3.15']
+        # The lower bound of sympy/requirements.txt and the newest release.
+        sympy: [lowest, newest]
+        include:
+          - sympy: lowest
+            constraint: sympy==1.12.*
+          - sympy: newest
+            constraint: ''
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{matrix.python}}
+          cache: pip
+          cache-dependency-path: sympy/requirements.txt
+
+      - name: Setup Dependencies
+        run: |
+          pip install -r sympy/requirements.txt ${{matrix.constraint}}
 
       - name: Run sympy tests
         run: |
-          pip3 install sympy==1.8
           cd sympy
           ./run_tests.sh
