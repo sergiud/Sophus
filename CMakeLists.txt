@@ -156,6 +156,11 @@ endif (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
 if (PROJECT_IS_TOP_LEVEL AND BUILD_EXAMPLES)
   add_executable (HelloSO3 examples/HelloSO3.cpp)
   target_link_libraries (HelloSO3 PRIVATE Sophus::Sophus)
+
+  if (BUILD_TESTING)
+    # Running the example keeps it working, not only compiling.
+    add_test (NAME HelloSO3 COMMAND HelloSO3)
+  endif (BUILD_TESTING)
 endif (PROJECT_IS_TOP_LEVEL AND BUILD_EXAMPLES)
 
 set (SOPHUS_CMAKE_EXPORT_DIR ${CMAKE_INSTALL_DATADIR}/sophus/cmake)
