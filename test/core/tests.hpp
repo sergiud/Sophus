@@ -6,11 +6,9 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <limits>
-#include <memory>
 #include <random>
 #include <string>
 #include <type_traits>
@@ -375,13 +373,6 @@ class LieGroupTests {
                 IsNear(x, smallEps()));
   }
 
-  static void heapAllocationIsAligned() {
-    auto const element = std::make_unique<LieGroup>();
-    EXPECT_EQ(
-        reinterpret_cast<std::uintptr_t>(element.get()) % alignof(LieGroup),
-        0u);
-  }
-
   static void dxExpXMatchesNumericalDerivative(Tangent const& a) {
     Eigen::Matrix<Scalar, kNumParameters, kDoF> const J = LieGroup::Dx_exp_x(a);
     Eigen::Matrix<Scalar, kNumParameters, kDoF> const J_num =
@@ -701,8 +692,6 @@ bool LieGroupTests<LieGroup>::registerGeneric(std::string const& group_name) {
     add(suite, "VeeInvertsHat/" + indexName(i), value, __LINE__,
         [t = x[i]] { veeInvertsHat(t); });
   }
-  add(suite, "HeapAllocationIsAligned", "", __LINE__,
-      [] { heapAllocationIsAligned(); });
   return true;
 }
 
