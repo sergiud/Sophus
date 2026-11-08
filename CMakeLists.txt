@@ -134,6 +134,20 @@ if (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
     )
   endforeach (test_name)
 
+  # Building the program must fail on the shape check of Cartesian, whose
+  # message distinguishes it from unrelated compile errors.
+  add_executable (test_cartesian_fixed_shape EXCLUDE_FROM_ALL
+    test/compile_fail/cartesian_fixed_shape.cpp
+  )
+  target_link_libraries (test_cartesian_fixed_shape PRIVATE Sophus::Sophus)
+  add_test (NAME test_cartesian_fixed_shape
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR}
+            --target test_cartesian_fixed_shape --config $<CONFIG>
+  )
+  set_tests_properties (test_cartesian_fixed_shape PROPERTIES
+    PASS_REGULAR_EXPRESSION "must be an M-vector or an \\(M\\+1\\)x\\(M\\+1\\)"
+  )
+
   # Installs the package into the build tree and builds a project against
   # it, so that the installed package configuration is tested as consumers
   # use it.
