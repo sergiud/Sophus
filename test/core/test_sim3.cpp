@@ -336,9 +336,19 @@ TEST(Sim3DeathTest, RejectsMatricesWithoutHomogeneousLastRow) {
 
 TYPED_TEST(Sim3FloatingPointTest, SetsRotationFromTemporaryMatrix) {
   using Scalar = TypeParam;
-  Sim3<Scalar> T;
-  T.setRotationMatrix(Matrix3<Scalar>::Identity());
-  EXPECT_EQ(T.rotationMatrix(), Matrix3<Scalar>::Identity().eval());
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+  Scalar const kLogScale(0.3);
+  Vector3<Scalar> const omega(Scalar(0.2), Scalar(0.5), Scalar(-1));
+  Vector3<Scalar> const new_omega(Scalar(-1.2), Scalar(0.4), Scalar(0.1));
+  Sim3<Scalar> T(
+      RxSO3<Scalar>::exp((Vector4<Scalar>() << omega, kLogScale).finished()),
+      Vector3<Scalar>(Scalar(1), Scalar(2), Scalar(3)));
+  Scalar const scale = T.scale();
+  T.setRotationMatrix(SO3<Scalar>::exp(new_omega).matrix());
+  EXPECT_THAT(T.rotationMatrix(),
+              IsNear(SO3<Scalar>::exp(new_omega).matrix(), kEpsilon));
+  EXPECT_THAT(T.scale(), IsNear(scale, kEpsilon))
+      << "setRotationMatrix leaves the scale as is";
 }
 
 }  // namespace

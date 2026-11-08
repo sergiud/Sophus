@@ -280,9 +280,18 @@ TEST(Sim2DeathTest, RejectsMatricesWithoutHomogeneousLastRow) {
 
 TYPED_TEST(Sim2FloatingPointTest, SetsRotationFromTemporaryMatrix) {
   using Scalar = TypeParam;
-  Sim2<Scalar> T;
-  T.setRotationMatrix(Matrix2<Scalar>::Identity());
-  EXPECT_EQ(T.rotationMatrix(), Matrix2<Scalar>::Identity().eval());
+  Scalar const kEpsilon = Constants<Scalar>::epsilon();
+  Scalar const kAngle(0.5);
+  Scalar const kLogScale(0.3);
+  Scalar const kNewAngle(-1.2);
+  Sim2<Scalar> T(RxSO2<Scalar>::exp(Vector2<Scalar>(kAngle, kLogScale)),
+                 Vector2<Scalar>(Scalar(1), Scalar(2)));
+  Scalar const scale = T.scale();
+  T.setRotationMatrix(SO2<Scalar>::exp(kNewAngle).matrix());
+  EXPECT_THAT(T.rotationMatrix(),
+              IsNear(SO2<Scalar>::exp(kNewAngle).matrix(), kEpsilon));
+  EXPECT_THAT(T.scale(), IsNear(scale, kEpsilon))
+      << "setRotationMatrix leaves the scale as is";
 }
 
 }  // namespace
