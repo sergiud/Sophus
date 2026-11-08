@@ -79,6 +79,13 @@ jobs:
           sudo apt-get install -y --no-install-suggests --no-install-recommends \
             libceres-dev
 
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: linux-${{matrix.compiler}}-C++${{matrix.std}}-${{matrix.build_type}}-Eigen-${{matrix.eigen}}${{ matrix.ceres && '-Ceres' || '' }}
+          evict-old-files: job
+          save: ${{ github.event_name == 'push' }}
+
       - name: Cache Eigen
         id: cache-eigen
         uses: actions/cache@v6
@@ -99,13 +106,6 @@ jobs:
                 -DEIGEN_BUILD_TESTING=OFF \
                 -G Ninja
           cmake --install ${{runner.temp}}/build-eigen
-
-      - name: Setup Compiler Cache
-        uses: hendrikmuhs/ccache-action@v1.2.24
-        with:
-          key: linux-${{matrix.compiler}}-C++${{matrix.std}}-${{matrix.build_type}}-Eigen-${{matrix.eigen}}${{ matrix.ceres && '-Ceres' || '' }}
-          evict-old-files: job
-          save: ${{ github.event_name == 'push' }}
 
       - uses: actions/setup-python@v7
         if: matrix.build_type == 'Debug'
@@ -202,6 +202,13 @@ jobs:
             libgtest-dev \
             ninja-build
 
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: linux-${{matrix.sanitizer.name}}
+          evict-old-files: job
+          save: ${{ github.event_name == 'push' }}
+
       - name: Cache Eigen
         id: cache-eigen
         uses: actions/cache@v6
@@ -222,13 +229,6 @@ jobs:
                 -DEIGEN_BUILD_TESTING=OFF \
                 -G Ninja
           cmake --install ${{runner.temp}}/build-eigen
-
-      - name: Setup Compiler Cache
-        uses: hendrikmuhs/ccache-action@v1.2.24
-        with:
-          key: linux-${{matrix.sanitizer.name}}
-          evict-old-files: job
-          save: ${{ github.event_name == 'push' }}
 
       - name: Configure
         run: |
