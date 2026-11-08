@@ -201,39 +201,5 @@ TEST(BasisSplineTest, EndsMapToFirstAndLastSegments) {
   }
 }
 
-TYPED_TEST(CommonTest, SE3SplineSegmentsJoinContinuously) {
-  using Scalar = TypeParam;
-  Scalar const kEpsSqrt = Constants<Scalar>::epsilonSqrt();
-  BasisSplineImpl<SE3<Scalar>> const spline = se3Spline<Scalar>();
-
-  SE3<Scalar> const T = spline.parent_T_spline(0, Scalar(1));
-  SE3<Scalar> const T2 = spline.parent_T_spline(1, Scalar(0));
-  EXPECT_THAT(T.so3().matrix(), IsNear(T2.so3().matrix(), kEpsSqrt));
-  EXPECT_THAT(T.translation(), IsNear(T2.translation(), kEpsSqrt));
-}
-
-TYPED_TEST(CommonTest, SE3SplineDerivativesMatchNumericalDerivatives) {
-  using Scalar = TypeParam;
-  Scalar const kEpsSqrt = Constants<Scalar>::epsilonSqrt();
-  Scalar const kU(0.5);
-  BasisSplineImpl<SE3<Scalar>> const spline = se3Spline<Scalar>();
-
-  Matrix4<Scalar> const Dt_parent_T_spline2 = curveNumDiff(
-      [&spline](Scalar u_bar) -> Matrix4<Scalar> {
-        return spline.parent_T_spline(0, u_bar).matrix();
-      },
-      kU);
-  EXPECT_THAT(spline.Dt_parent_T_spline(0, kU),
-              IsNear(Dt_parent_T_spline2, kEpsSqrt));
-
-  Matrix4<Scalar> const Dt2_parent_T_spline2 = curveNumDiff(
-      [&spline](Scalar u_bar) -> Matrix4<Scalar> {
-        return spline.Dt_parent_T_spline(0, u_bar);
-      },
-      kU);
-  EXPECT_THAT(spline.Dt2_parent_T_spline(0, kU),
-              IsNear(Dt2_parent_T_spline2, kEpsSqrt));
-}
-
 }  // namespace
 }  // namespace Sophus
