@@ -38,7 +38,7 @@ template <class SequenceContainer>
 std::optional<typename SequenceContainer::value_type> iterativeMean(
     SequenceContainer const& foo_Ts_bar, int max_num_iterations) {
   size_t N = foo_Ts_bar.size();
-  SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
+  SOPHUS_ENSURE(N >= 1, "N is {}, but must be at least 1.", N);
 
   using Group = typename SequenceContainer::value_type;
   using Scalar = typename Group::Scalar;
@@ -85,7 +85,7 @@ std::enable_if_t<std::is_same_v<typename SequenceContainer::value_type,
                  std::optional<typename SequenceContainer::value_type> >
 average(SequenceContainer const& foo_Ts_bar) {
   size_t N = std::distance(std::begin(foo_Ts_bar), std::end(foo_Ts_bar));
-  SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
+  SOPHUS_ENSURE(N >= 1, "N is {}, but must be at least 1.", N);
 
   Sophus::Vector<Scalar, Dim> average;
   average.setZero();
@@ -105,7 +105,7 @@ average(SequenceContainer const& foo_Ts_bar) {
   // This implements rotational part of Proposition 12 from Sec. 6.2 of
   // ftp://ftp-sop.inria.fr/epidaure/Publications/Arsigny/arsigny_rr_biinvariant_average.pdf.
   size_t N = std::distance(std::begin(foo_Ts_bar), std::end(foo_Ts_bar));
-  SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
+  SOPHUS_ENSURE(N >= 1, "N is {}, but must be at least 1.", N);
   SO2<Scalar> foo_T_average = foo_Ts_bar.front();
   Scalar average(0);
   for (SO2<Scalar> const& foo_T_bar : foo_Ts_bar) {
@@ -123,7 +123,7 @@ std::enable_if_t<
     std::optional<typename SequenceContainer::value_type> >
 average(SequenceContainer const& foo_Ts_bar) {
   size_t N = std::distance(std::begin(foo_Ts_bar), std::end(foo_Ts_bar));
-  SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
+  SOPHUS_ENSURE(N >= 1, "N is {}, but must be at least 1.", N);
   RxSO2<Scalar> foo_T_average = foo_Ts_bar.front();
   Vector2<Scalar> average(Scalar(0), Scalar(0));
   for (RxSO2<Scalar> const& foo_T_bar : foo_Ts_bar) {
@@ -153,7 +153,7 @@ Eigen::Quaternion<Scalar> averageUnitQuaternion(
     SequenceContainer const& foo_Ts_bar) {
   // This:  http://stackoverflow.com/a/27410865/1221742
   size_t N = std::distance(std::begin(foo_Ts_bar), std::end(foo_Ts_bar));
-  SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
+  SOPHUS_ENSURE(N >= 1, "N is {}, but must be at least 1.", N);
   Eigen::Matrix<Scalar, 4, Eigen::Dynamic> Q(4, N);
   int i = 0;
   for (auto const& foo_T_bar : foo_Ts_bar) {
@@ -191,7 +191,7 @@ std::enable_if_t<
 average(SequenceContainer const& foo_Ts_bar) {
   size_t N = std::distance(std::begin(foo_Ts_bar), std::end(foo_Ts_bar));
 
-  SOPHUS_ENSURE(N >= 1, "N must be >= 1.");
+  SOPHUS_ENSURE(N >= 1, "N is {}, but must be at least 1.", N);
   Scalar scale_sum = Scalar(0);
   using std::exp;
   using std::log;

@@ -769,7 +769,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   /// Precondition: ``i`` must be 0, 1 or 2.
   ///
   [[nodiscard]] SOPHUS_FUNC static Transformation generator(int i) {
-    SOPHUS_ENSURE(i >= 0 && i <= 2, "i should be in range [0,2].");
+    SOPHUS_ENSURE(i >= 0 && i <= 2, "i is {}, but must be in [0, 2].", i);
     Tangent e;
     e.setZero();
     e[i] = Scalar(1);

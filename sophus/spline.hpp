@@ -21,8 +21,6 @@ class SplineBasisFunction {
   }
 
   static SOPHUS_FUNC Vector3<Scalar> B(Scalar const& u) {
-    // SOPHUS_ENSURE(u >= Scalar(0), "but %", u);
-    // SOPHUS_ENSURE(u < Scalar(1), "but %", u);
     Scalar u_square(u * u);
     return sixfoldC() * Vector4<Scalar>(Scalar(1), u, u_square, u * u_square) /
            Scalar(kCDenominator);
@@ -30,8 +28,6 @@ class SplineBasisFunction {
 
   static SOPHUS_FUNC Vector3<Scalar> Dt_B(Scalar const& u,
                                           Scalar const& delta_t) {
-    // SOPHUS_ENSURE(u >= Scalar(0), "but %", u);
-    // SOPHUS_ENSURE(u < Scalar(1), "but %", u);
     return sixfoldC() *
            Vector4<Scalar>(Scalar(0), Scalar(1), Scalar(2) * u,
                            Scalar(3) * u * u) /
@@ -40,8 +36,6 @@ class SplineBasisFunction {
 
   static SOPHUS_FUNC Vector3<Scalar> Dt2_B(Scalar const& u,
                                            Scalar const& delta_t) {
-    // SOPHUS_ENSURE(u >= Scalar(0), "but %", u);
-    // SOPHUS_ENSURE(u < Scalar(1), "but %", u);
     return sixfoldC() *
            Vector4<Scalar>(Scalar(0), Scalar(0), Scalar(2), Scalar(6) * u) /
            (Scalar(kCDenominator) * delta_t * delta_t);

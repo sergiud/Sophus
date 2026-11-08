@@ -346,12 +346,8 @@ class RxSO2Base {
   ///
   /// Precondition: ``z`` must not be close to either zero or infinity.
   SOPHUS_FUNC void setComplex(Vector2<Scalar> const& z) {
-    SOPHUS_ENSURE(z.squaredNorm() > Constants<Scalar>::epsilon() *
-                                        Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
-    SOPHUS_ENSURE(z.squaredNorm() < Scalar(1.) / (Constants<Scalar>::epsilon() *
-                                                  Constants<Scalar>::epsilon()),
-                  "Inverse scale factor must be greate-equal epsilon.");
+    // The scale is the norm of the complex number.
+    details::ensureScaleInRange(Scalar(z.norm()));
     static_cast<Derived*>(this)->complex_nonconst() = z;
   }
 
@@ -596,7 +592,7 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
   /// Precondition: ``i`` must be 0, or 1.
   ///
   [[nodiscard]] SOPHUS_FUNC static Transformation generator(int i) {
-    SOPHUS_ENSURE(i >= 0 && i <= 1, "i should be 0 or 1.");
+    SOPHUS_ENSURE(i >= 0 && i <= 1, "i is {}, but must be in [0, 1].", i);
     return hat(Tangent::Unit(i));
   }
 

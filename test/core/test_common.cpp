@@ -1,8 +1,10 @@
 // Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include <sophus/average.hpp>
 #include <sophus/interpolate.hpp>
 #include <sophus/num_diff.hpp>
 #include <sophus/se3.hpp>
@@ -24,6 +26,19 @@ TEST(EnsureDeathTest, ReportsTheFormattedMessageOnStandardError) {
   int const actual = 1;
   EXPECT_DEATH(SOPHUS_ENSURE(actual == 2, "expected {}, got {}", 2, actual),
                "Sophus ensure failed .*\nexpected 2, got 1");
+}
+
+TEST(EnsureDeathTest, MessagesStateActualAndExpectedValues) {
+  EXPECT_DEATH(std::ignore = SO3d::generator(3),
+               "i is 3, but must be in \\[0, 2\\]");
+  EXPECT_DEATH(std::ignore = SE3d::generator(-1),
+               "i is -1, but must be in \\[0, 5\\]");
+  EXPECT_DEATH(std::ignore = average(std::vector<SO2d>{}),
+               "N is 0, but must be at least 1");
+  EXPECT_DEATH(std::ignore = RxSO3d(1e-15, SO3d()),
+               "Scale factor 1e-15 must be greater-equal epsilon 1e-10");
+  EXPECT_DEATH(SO2d().setComplex(Eigen::Vector2d(1e-12, 0)),
+               "length 1e-12 is below 1e-10");
 }
 
 TEST(FormatTest, PrintIsASingleStatement) {

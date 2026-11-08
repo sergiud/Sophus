@@ -200,6 +200,20 @@ SOPHUS_FUNC typename Derived::Scalar squaredNormMinusOne(
   return (m - Scalar(1)) * (m + Scalar(1)) + rest;
 }
 
+/// Checks the class invariant of RxSO2 and RxSO3 that their scale is
+/// neither close to zero nor to infinity.
+template <class Scalar>
+SOPHUS_FUNC void ensureScaleInRange(Scalar const& scale) {
+  SOPHUS_ENSURE(scale >= Constants<Scalar>::epsilon(),
+                "Scale factor {} must be greater-equal epsilon {}.",
+                SOPHUS_FMT_ARG(scale),
+                SOPHUS_FMT_ARG(Constants<Scalar>::epsilon()));
+  SOPHUS_ENSURE(scale < Scalar(1) / Constants<Scalar>::epsilon(),
+                "Scale factor {} must be less than the inverse epsilon {}.",
+                SOPHUS_FMT_ARG(scale),
+                SOPHUS_FMT_ARG(Scalar(1) / Constants<Scalar>::epsilon()));
+}
+
 /// Returns the scale @f$e^\sigma@f$ of a log scale, saturated to the range
 /// that the class invariants of RxSO2 and RxSO3 allow.
 template <class Scalar>

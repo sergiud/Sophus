@@ -261,7 +261,8 @@ class RxSO3Base {
 
     ResultT scale = result_quaternion.squaredNorm();
     if (scale < Constants<ResultT>::epsilon()) {
-      SOPHUS_ENSURE(scale > ResultT(0), "Scale must be greater zero.");
+      SOPHUS_ENSURE(scale > ResultT(0), "Scale {} must be greater than zero.",
+                    SOPHUS_FMT_ARG(scale));
       /// Saturation to ensure class invariant.
       result_quaternion.normalize();
       result_quaternion.coeffs() *= sqrt(Constants<ResultT>::epsilonPlus());
@@ -361,15 +362,7 @@ class RxSO3Base {
   /// Precondition: ``quat`` must not be close to either zero or infinity
   SOPHUS_FUNC void setQuaternion(Eigen::Quaternion<Scalar> const& quat) {
     // The scale is the squared norm, which the class invariant bounds.
-    SOPHUS_ENSURE(quat.squaredNorm() >= Constants<Scalar>::epsilon(),
-                  "Scale factor {} must be greater-equal epsilon {}.",
-                  SOPHUS_FMT_ARG(quat.squaredNorm()),
-                  SOPHUS_FMT_ARG(Constants<Scalar>::epsilon()));
-    SOPHUS_ENSURE(
-        quat.squaredNorm() < Scalar(1.) / Constants<Scalar>::epsilon(),
-        "Scale factor {} must be less than the inverse epsilon {}.",
-        SOPHUS_FMT_ARG(quat.squaredNorm()),
-        SOPHUS_FMT_ARG(Scalar(1.) / Constants<Scalar>::epsilon()));
+    details::ensureScaleInRange(Scalar(quat.squaredNorm()));
     static_cast<Derived*>(this)->quaternion_nonconst() = quat;
   }
 
@@ -426,13 +419,8 @@ class RxSO3Base {
         SOPHUS_FMT_ARG(sR));
     Transformation squared_sR = sR * sR.transpose();
     Scalar squared_scale = squared_sR.diagonal().sum() / Scalar(3);
-    SOPHUS_ENSURE(squared_scale >= Constants<Scalar>::epsilon() *
-                                       Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
-    SOPHUS_ENSURE(squared_scale < Scalar(1.) / (Constants<Scalar>::epsilon() *
-                                                Constants<Scalar>::epsilon()),
-                  "Inverse scale factor must be greater-equal epsilon.");
     Scalar scale = sqrt(squared_scale);
+    details::ensureScaleInRange(scale);
     quaternion_nonconst() = sR / scale;
     quaternion_nonconst().coeffs() *= sqrt(scale);
   }
@@ -555,10 +543,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC RxSO3(Scalar const& scale, Transformation const& R)
       : quaternion_(R) {
-    SOPHUS_ENSURE(scale >= Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
-    SOPHUS_ENSURE(scale < Scalar(1.) / Constants<Scalar>::epsilon(),
-                  "Inverse scale factor must be greater-equal epsilon.");
+    details::ensureScaleInRange(scale);
     using std::sqrt;
     quaternion_.coeffs() *= sqrt(scale);
   }
@@ -569,10 +554,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///
   [[nodiscard]] SOPHUS_FUNC RxSO3(Scalar const& scale, SO3<Scalar> const& so3)
       : quaternion_(so3.unit_quaternion()) {
-    SOPHUS_ENSURE(scale >= Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
-    SOPHUS_ENSURE(scale < Scalar(1.) / Constants<Scalar>::epsilon(),
-                  "Inverse scale factor must be greater-equal epsilon.");
+    details::ensureScaleInRange(scale);
     using std::sqrt;
     quaternion_.coeffs() *= sqrt(scale);
   }
@@ -586,11 +568,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
       : quaternion_(quat) {
     static_assert(std::is_same_v<typename D::Scalar, Scalar>,
                   "must be same Scalar type.");
-    SOPHUS_ENSURE(quaternion_.squaredNorm() >= Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
-    SOPHUS_ENSURE(
-        quat.squaredNorm() < Scalar(1.) / Constants<Scalar>::epsilon(),
-        "Inverse scale factor must be greater-equal epsilon.");
+    details::ensureScaleInRange(Scalar(quaternion_.squaredNorm()));
   }
 
   /// Constructor from scale factor and unit quaternion
@@ -713,7 +691,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// Precondition: ``i`` must be 0, 1, 2 or 3.
   ///
   [[nodiscard]] SOPHUS_FUNC static Transformation generator(int i) {
-    SOPHUS_ENSURE(i >= 0 && i <= 3, "i should be in range [0,3].");
+    SOPHUS_ENSURE(i >= 0 && i <= 3, "i is {}, but must be in [0, 3].", i);
     Tangent e;
     e.setZero();
     e[i] = Scalar(1);

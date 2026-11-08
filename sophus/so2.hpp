@@ -181,7 +181,11 @@ class SO2Base {
     // Avoid under/overflows for higher precision
     Scalar length = hypot(unit_complex().x(), unit_complex().y());
     SOPHUS_ENSURE(length >= Constants<Scalar>::epsilon(),
-                  "Complex number should not be close to zero!");
+                  "Complex number ({}) must not be close to zero, but its "
+                  "length {} is below {}.",
+                  SOPHUS_FMT_ARG(unit_complex().transpose()),
+                  SOPHUS_FMT_ARG(length),
+                  SOPHUS_FMT_ARG(Constants<Scalar>::epsilon()));
     unit_complex_nonconst() /= length;
   }
 
