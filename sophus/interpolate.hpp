@@ -1,4 +1,4 @@
-// Copyright 2022 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+// Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
 /// @file
 /// Interpolation for Lie groups.

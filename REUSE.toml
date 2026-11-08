@@ -19,6 +19,7 @@ SPDX-License-Identifier = "MIT"
 # Files whose SPDX tags in their headers are complete.
 [[annotations]]
 path = [
+  ".github/ISSUE_TEMPLATE/**",
   ".github/coverage/**",
   "sympy/requirements.txt",
   ".github/workflows/ci.yml",

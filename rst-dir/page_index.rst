@@ -1,3 +1,5 @@
+.. Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 Sophus -  Lie groups for 2d/3d Geometry
 =======================================
 

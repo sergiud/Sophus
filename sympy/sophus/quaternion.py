@@ -1,3 +1,5 @@
+# Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 """ run with: python3 -m sophus.quaternion """
 
 import unittest

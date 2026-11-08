@@ -1,3 +1,5 @@
+// Copyright 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+
 #pragma once
 
 #include <functional>
