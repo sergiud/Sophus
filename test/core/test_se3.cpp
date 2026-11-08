@@ -1,5 +1,8 @@
 // Copyright 2022, 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
+#include <optional>
+
+#include <sophus/average.hpp>
 #include <sophus/se3.hpp>
 
 #include "reference_se3.hpp"
@@ -316,6 +319,35 @@ TEST(SE3MapTest, AlignedMapAccessesTheUnderlyingData) {
   map.translation() = Eigen::Vector3d(4, 5, 6);
   EXPECT_EQ(raw[4], 4);
   EXPECT_EQ(raw[6], 6);
+}
+
+TYPED_TEST(SE3FloatingPointTest, IterativeMeanCancelsTheDeviations) {
+  using Scalar = TypeParam;
+  using SE3Type = SE3<Scalar>;
+  using Tangent = typename SE3Type::Tangent;
+  int constexpr kMaxNumIterations = 100;
+  // The mean T satisfies sum_i log(T^{-1} T_i) = 0. Iterating until steps
+  // fall below epsilon keeps the sum within a few steps of zero.
+  Scalar const kTolerance = Scalar(10) * Constants<Scalar>::epsilon();
+  StdVector<SE3Type> poses;
+  for (Tangent const& x : {Tangent(Scalar(0.5), Scalar(-1), Scalar(2),
+                                   Scalar(0.3), Scalar(0.4), Scalar(-0.2)),
+                           Tangent(Scalar(-1), Scalar(0.25), Scalar(1),
+                                   Scalar(-0.5), Scalar(0.1), Scalar(0.6)),
+                           Tangent(Scalar(2), Scalar(1), Scalar(-0.5),
+                                   Scalar(0.2), Scalar(-0.7), Scalar(0.1)),
+                           Tangent(Scalar(0), Scalar(-2), Scalar(0.5),
+                                   Scalar(-0.4), Scalar(0.3), Scalar(-0.3))}) {
+    poses.push_back(SE3Type::exp(x));
+  }
+
+  std::optional<SE3Type> const mean = iterativeMean(poses, kMaxNumIterations);
+  ASSERT_TRUE(mean.has_value());
+  Tangent deviation = Tangent::Zero();
+  for (SE3Type const& pose : poses) {
+    deviation += (mean->inverse() * pose).log();
+  }
+  EXPECT_THAT(deviation, IsNear(Tangent::Zero().eval(), kTolerance));
 }
 
 }  // namespace

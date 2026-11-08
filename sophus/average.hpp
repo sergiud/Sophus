@@ -47,9 +47,11 @@ std::optional<typename SequenceContainer::value_type> iterativeMean(
     }
     average /= Scalar(N);
     Group foo_T_newaverage = foo_T_average * Group::exp(average);
+    // The squared step is compared with the squared epsilon, so that the
+    // iteration stops once its steps fall below epsilon.
     if (squaredNorm<Tangent>(
             (foo_T_newaverage.inverse() * foo_T_average).log()) <
-        Constants<Scalar>::epsilon()) {
+        Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
       return foo_T_newaverage;
     }
 
