@@ -33,11 +33,11 @@ jobs:
             generator: 'Visual Studio 18 2026'
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Cache Dependencies
         id: cache-dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: deps/
           key: ${{matrix.msvc}}-eigen-5.0.1-fmt-11.2.0-gtest-1.17.0-C++${{matrix.std}}-${{matrix.arch}}-${{matrix.build_type}}
@@ -123,9 +123,9 @@ jobs:
             env: ucrt-x86_64
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: msys2/setup-msys2@v2
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2.33.0
         with:
           msystem: ${{matrix.sys}}
           install: >-

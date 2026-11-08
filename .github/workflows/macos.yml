@@ -21,14 +21,14 @@ jobs:
         std: [17, 20, 23]
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Dependencies
         run: |
           brew install eigen fmt googletest ninja
 
       - name: Setup Compiler Cache
-        uses: hendrikmuhs/ccache-action@v1.2.24
+        uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
         with:
           key: macos-C++${{matrix.std}}-${{matrix.build_type}}
           evict-old-files: job
