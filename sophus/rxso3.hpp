@@ -124,7 +124,8 @@ class RxSO3Base {
   /// element ``A`` such that for all ``x`` it holds that
   /// ``hat(Ad_A * x) = A * hat(x) A^{-1}``. See hat-operator below.
   ///
-  /// For RxSO(3), it simply returns the rotation matrix corresponding to ``A``.
+  /// For RxSO(3), it returns the 4x4 block-diagonal matrix ``diag(R, 1)`` with
+  /// ``R`` being the rotation matrix corresponding to ``A``.
   ///
   [[nodiscard]] SOPHUS_FUNC Adjoint Adj() const {
     Adjoint res;
@@ -285,7 +286,7 @@ class RxSO3Base {
       typename = std::enable_if_t<IsFixedSizeVector<PointDerived, 3>::value>>
   [[nodiscard]] SOPHUS_FUNC PointProduct<PointDerived> operator*(
       Eigen::MatrixBase<PointDerived> const& p) const {
-    // Follows http:///eigen.tuxfamily.org/bz/show_bug.cgi?id=459
+    // Follows http://eigen.tuxfamily.org/bz/show_bug.cgi?id=459
     Scalar scale = quaternion().squaredNorm();
     PointProduct<PointDerived> two_vec_cross_p = quaternion().vec().cross(p);
     two_vec_cross_p += two_vec_cross_p;
@@ -403,7 +404,7 @@ class RxSO3Base {
 
   /// Sets scale and leaves rotation as is.
   ///
-  /// Note: This function as a significant computational cost, since it has to
+  /// Note: This function has a significant computational cost, since it has to
   /// call the square root twice.
   ///
   SOPHUS_FUNC
@@ -654,7 +655,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// plus logarithm of scale) and returns the corresponding element of the
   /// group RxSO3.
   ///
-  /// To be more specific, thixs function computes ``expmat(hat(omega))``
+  /// To be more specific, this function computes ``expmat(hat(omega))``
   /// with ``expmat(.)`` being the matrix exponential and ``hat(.)`` being the
   /// hat()-operator of RSO3.
   ///
@@ -706,7 +707,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   ///         |  0  0  0 |
   ///
   ///         |  1  0  0 |
-  ///   G_2 = |  0  1  0 |
+  ///   G_3 = |  0  1  0 |
   ///         |  0  0  1 |
   /// ```
   ///

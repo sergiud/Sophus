@@ -143,11 +143,11 @@ class Sim3Base {
   /// of Sim(3).
   ///
   [[nodiscard]] SOPHUS_FUNC Tangent log() const {
-    // The derivation of the closed-form Sim(3) logarithm for is done
+    // The derivation of the closed-form Sim(3) logarithm is done
     // analogously to the closed-form solution of the SE(3) logarithm, see
     // J. Gallier, D. Xu, "Computing exponentials of skew symmetric matrices
     // and logarithms of orthogonal matrices", IJRA 2002.
-    // https:///pdfs.semanticscholar.org/cfe3/e4b39de63c8cabd89bf3feff7f5449fc981d.pdf
+    // https://pdfs.semanticscholar.org/cfe3/e4b39de63c8cabd89bf3feff7f5449fc981d.pdf
     // (Sec. 6., pp. 8)
     Tangent res;
     auto omega_sigma_and_theta = rxso3().logAndTheta();
@@ -268,7 +268,7 @@ class Sim3Base {
   }
 
   /// In-place group multiplication. This method is only valid if the return
-  /// type of the multiplication is compatible with this SO3's Scalar type.
+  /// type of the multiplication is compatible with this Sim3's Scalar type.
   ///
   template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
                                        Scalar, ReturnScalar<OtherDerived>>>>
@@ -334,13 +334,13 @@ class Sim3Base {
     return rxso3().rotationMatrix();
   }
 
-  /// Mutator of SO3 group.
+  /// Mutator of RxSO3 group.
   ///
   [[nodiscard]] SOPHUS_FUNC RxSO3Type& rxso3() {
     return static_cast<Derived*>(this)->rxso3();
   }
 
-  /// Accessor of SO3 group.
+  /// Accessor of RxSO3 group.
   ///
   [[nodiscard]] SOPHUS_FUNC RxSO3Type const& rxso3() const {
     return static_cast<Derived const*>(this)->rxso3();
@@ -358,7 +358,7 @@ class Sim3Base {
 
   /// Sets scale and leaves rotation as is.
   ///
-  /// Note: This function as a significant computational cost, since it has to
+  /// Note: This function has a significant computational cost, since it has to
   /// call the square root twice.
   ///
   SOPHUS_FUNC void setScale(Scalar const& scale) { rxso3().setScale(scale); }
@@ -488,11 +488,11 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
     return rxso3_.data();
   }
 
-  /// Accessor of RxSO3
+  /// Mutator of RxSO3
   ///
   [[nodiscard]] SOPHUS_FUNC RxSo3Member& rxso3() { return rxso3_; }
 
-  /// Mutator of RxSO3
+  /// Accessor of RxSO3
   ///
   [[nodiscard]] SOPHUS_FUNC RxSo3Member const& rxso3() const { return rxso3_; }
 
@@ -583,7 +583,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
     // For the derivation of the exponential map of Sim(3) see
     // H. Strasdat, "Local Accuracy and Global Consistency for Efficient Visual
     // SLAM", PhD thesis, 2012.
-    // http:///hauke.strasdat.net/files/strasdat_thesis_2012.pdf (A.5, pp. 186)
+    // http://hauke.strasdat.net/files/strasdat_thesis_2012.pdf (A.5, pp. 186)
     Vector3<Scalar> const upsilon = a.segment(0, 3);
     Vector3<Scalar> const omega = a.segment(3, 3);
     Scalar const sigma = a[6];
@@ -809,7 +809,7 @@ class Map<Sophus::Sim3<Scalar_>, Options>
 
 /// Specialization of Eigen::Map for ``Sim3 const``; derived from Sim3Base.
 ///
-/// Allows us to wrap RxSO3 objects around POD array.
+/// Allows us to wrap Sim3 objects around POD array.
 template <class Scalar_, int Options>
 class Map<Sophus::Sim3<Scalar_> const, Options>
     : public Sophus::Sim3Base<Map<Sophus::Sim3<Scalar_> const, Options>> {

@@ -128,11 +128,11 @@ class SO3Base {
   using HomogeneousPointProduct = Vector4<ReturnScalar<HPointDerived>>;
 
   /// Adjoint transformation
-  //
+  ///
   /// This function return the adjoint transformation ``Ad`` of the group
   /// element ``A`` such that for all ``x`` it holds that
   /// ``hat(Ad_A * x) = A * hat(x) A^{-1}``. See hat-operator below.
-  //
+  ///
   /// For SO(3), it simply returns the rotation matrix corresponding to ``A``.
   ///
   [[nodiscard]] SOPHUS_FUNC Adjoint Adj() const { return matrix(); }

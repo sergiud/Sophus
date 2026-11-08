@@ -241,7 +241,7 @@ class SE3Base {
     // For the derivation of the logarithm of SE(3), see
     // J. Gallier, D. Xu, "Computing exponentials of skew symmetric matrices
     // and logarithms of orthogonal matrices", IJRA 2002.
-    // https:///pdfs.semanticscholar.org/cfe3/e4b39de63c8cabd89bf3feff7f5449fc981d.pdf
+    // https://pdfs.semanticscholar.org/cfe3/e4b39de63c8cabd89bf3feff7f5449fc981d.pdf
     // (Sec. 6., pp. 8)
     using std::abs;
     using std::cos;

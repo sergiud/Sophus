@@ -1,9 +1,9 @@
 // Copyright 2022 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
 /// @file
-// Basis spline implementation on Lie Group following:
-// S. Lovegrove, A. Patron-Perez, G. Sibley, BMVC 2013
-// http://www.bmva.org/bmvc/2013/Papers/paper0093/paper0093.pdf
+/// Basis spline implementation on Lie Group following:
+/// S. Lovegrove, A. Patron-Perez, G. Sibley, BMVC 2013
+/// http://www.bmva.org/bmvc/2013/Papers/paper0093/paper0093.pdf
 
 #pragma once
 

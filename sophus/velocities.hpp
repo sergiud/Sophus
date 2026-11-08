@@ -18,7 +18,7 @@ Vector3<Scalar> transformVelocity(SO3<Scalar> const& foo_R_bar,
                                   Vector3<Scalar> const& vel_bar) {
   // For rotational velocities note that:
   //
-  //   vel_bar = vee(foo_R_bar * hat(vel_bar) * foo_R_bar^T)
+  //   vel_foo = vee(foo_R_bar * hat(vel_bar) * foo_R_bar^T)
   //           = vee(hat(Adj(foo_R_bar) * vel_bar))
   //           = Adj(foo_R_bar) * vel_bar
   //           = foo_R_bar * vel_bar.
@@ -36,7 +36,7 @@ Vector3<Scalar> transformVelocity(SE3<Scalar> const& foo_T_bar,
   return transformVelocity(foo_T_bar.so3(), vel_bar);
 }
 
-// finite difference approximation of instantanious velocity in frame foo
+// finite difference approximation of instantaneous velocity in frame foo
 //
 template <class Scalar>
 Vector3<Scalar> finiteDifferenceRotationalVelocity(
@@ -56,7 +56,7 @@ Vector3<Scalar> finiteDifferenceRotationalVelocity(
   return SO3<Scalar>::vee(W_in_frame_foo);
 }
 
-// finite difference approximation of instantanious velocity in frame foo
+// finite difference approximation of instantaneous velocity in frame foo
 //
 template <class Scalar>
 Vector3<Scalar> finiteDifferenceRotationalVelocity(

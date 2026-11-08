@@ -12,10 +12,10 @@
 namespace Sophus {
 
 /// This function interpolates between two Lie group elements ``foo_T_bar``
-/// and ``foo_T_baz`` with an interpolation factor of ``alpha`` in [0, 1].
+/// and ``foo_T_baz`` with an interpolation factor of ``p`` in [0, 1].
 ///
 /// It returns a pose ``foo_T_quiz`` with ``quiz`` being a frame between ``bar``
-/// and ``baz``. If ``alpha=0`` it returns ``foo_T_bar``. If it is 1, it returns
+/// and ``baz``. If ``p=0`` it returns ``foo_T_bar``. If it is 1, it returns
 /// ``foo_T_baz``.
 ///
 /// (Since interpolation on Lie groups is inverse-invariant, we can equivalently

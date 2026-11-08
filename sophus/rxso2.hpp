@@ -508,7 +508,7 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
 
   /// Constructor from complex number.
   ///
-  /// Precondition: complex number must not be close to either zero or inifnity.
+  /// Precondition: complex number must not be close to either zero or infinity.
   ///
   [[nodiscard]] SOPHUS_FUNC explicit RxSO2(Scalar const& real,
                                            Scalar const& imag)
@@ -608,7 +608,7 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
   ///
   /// Formally, the hat()-operator of RxSO2 is defined as
   ///
-  ///   ``hat(.): R^2 -> R^{2x2},  hat(a) = sum_i a_i * G_i``  (for i=0,1,2)
+  ///   ``hat(.): R^2 -> R^{2x2},  hat(a) = sum_i a_i * G_i``  (for i=0,1)
   ///
   /// with ``G_i`` being the ith infinitesimal generator of RxSO2.
   ///
@@ -636,8 +636,8 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
 
   /// Draw uniform sample from RxSO(2) manifold.
   ///
-  /// The scale factor is drawn uniformly in log2-space from [-1, 1],
-  /// hence the scale is in [0.5, 2)].
+  /// The scale factor is drawn uniformly in log2-space from [-1, 1),
+  /// hence the scale is in [0.5, 2).
   ///
   template <class UniformRandomBitGenerator>
   static RxSO2 sampleUniform(UniformRandomBitGenerator& generator) {

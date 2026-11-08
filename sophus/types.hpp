@@ -202,7 +202,7 @@ SOPHUS_FUNC typename Derived::Scalar squaredNormMinusOne(
 }  // namespace details
 
 /// Returns maximum metric between two points ``p0`` and ``p1``, with ``p0, p1``
-/// being matrices or a scalars.
+/// being matrices or scalars.
 ///
 template <class T>
 auto maxMetric(T const& p0, T const& p1)
@@ -232,8 +232,8 @@ auto squaredNorm(T const& p) -> decltype(details::SquaredNorm<T>::impl(p)) {
   return details::SquaredNorm<T>::impl(p);
 }
 
-/// Returns ``p.transpose()`` if ``p`` is a matrix, and simply ``p`` if m is a
-/// scalar.
+/// Returns ``p.transpose()`` if ``p`` is a matrix, and simply ``p`` if ``p``
+/// is a scalar.
 ///
 template <class T>
 auto transpose(T const& p) -> decltype(details::Transpose<T>::impl(T())) {

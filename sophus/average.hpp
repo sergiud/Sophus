@@ -1,7 +1,15 @@
 // Copyright 2021-2022 Sergiu Deitsch <sergiu.deitsch@gmail.com>
 
 /// @file
-/// Calculation of biinvariant means.
+/// Means of Lie group elements.
+///
+/// Cartesian uses the arithmetic mean. SO2 and RxSO2 average the logarithms
+/// relative to the first element. SO3 and RxSO3 compute the rotation as the
+/// chordal L2 mean, which is the unit quaternion along the eigenvector of the
+/// largest eigenvalue of the quaternion scatter matrix. RxSO3 takes the
+/// geometric mean of the scales. The chordal L2 mean approximates but in
+/// general differs from the bi-invariant Karcher mean. SE2, Sim2, SE3 and Sim3
+/// compute the bi-invariant mean iteratively.
 
 #ifndef SOPHUS_AVERAGE_HPP
 #define SOPHUS_AVERAGE_HPP
@@ -161,7 +169,7 @@ Eigen::Quaternion<Scalar> averageUnitQuaternion(
 }
 }  // namespace details
 
-// Mean implementation for SO(3).
+// Chordal L2 mean for SO(3).
 //
 // TODO: Detect degenerated cases and return std::nullopt.
 template <class SequenceContainer,
@@ -173,7 +181,8 @@ average(SequenceContainer const& foo_Ts_bar) {
   return SO3<Scalar>(details::averageUnitQuaternion(foo_Ts_bar));
 }
 
-// Mean implementation for R x SO(3).
+// Chordal L2 mean of the rotations and geometric mean of the scales for
+// R x SO(3).
 template <class SequenceContainer,
           class Scalar = typename SequenceContainer::value_type::Scalar>
 std::enable_if_t<

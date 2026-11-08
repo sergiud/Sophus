@@ -53,8 +53,8 @@ namespace Sophus {
 /// Euclidean vector space as Lie group.
 ///
 /// Lie groups can be seen as a generalization over the Euclidean vector
-/// space R^M. Here a N-dimensional vector ``p`` is represented as a
-//  (M+1) x (M+1) homogeneous matrix:
+/// space R^M. Here an M-dimensional vector ``p`` is represented as a
+/// (M+1) x (M+1) homogeneous matrix:
 ///
 ///   | I p |
 ///   | o 1 |
@@ -159,7 +159,7 @@ class CartesianBase {
   ///
   SOPHUS_FUNC Tangent log() const { return params(); }
 
-  /// Returns 4x4 matrix representation of the instance.
+  /// Returns (M+1)x(M+1) matrix representation of the instance.
   ///
   /// It has the following form:
   ///
@@ -173,7 +173,7 @@ class CartesianBase {
     return matrix;
   }
 
-  /// Group multiplication, are vector additions.
+  /// Assignment-like operator from OtherDerived.
   ///
   template <class OtherDerived>
   SOPHUS_FUNC CartesianBase<Derived, M>& operator=(
@@ -392,7 +392,7 @@ class Cartesian : public CartesianBase<Cartesian<Scalar_, M, Options>, M> {
   ///
   /// For Euclidean vector space, just the identity. Or to be more precise
   /// it just constructs the (M+1xM+1) homogeneous matrix representation
-  //  from the M-vector.
+  /// from the M-vector.
   ///
   SOPHUS_FUNC static Cartesian<Scalar, M> exp(Tangent const& a) {
     return Cartesian<Scalar, M>(a);
@@ -423,7 +423,7 @@ class Cartesian : public CartesianBase<Cartesian<Scalar_, M, Options>, M> {
     return Tangent::Zero();
   }
 
-  /// Draws uniform samples in the range [-1, 1] per coordinates.
+  /// Draws uniform samples in the range [-1, 1) per coordinate.
   ///
   template <class UniformRandomBitGenerator>
   static Cartesian sampleUniform(UniformRandomBitGenerator& generator) {

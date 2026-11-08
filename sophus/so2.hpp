@@ -91,7 +91,7 @@ class SO2Base {
   static int constexpr num_parameters = 2;
   /// Group transformations are 2x2 matrices.
   static int constexpr N = 2;
-  /// Points are 3-dimensional
+  /// Points are 2-dimensional
   static int constexpr Dim = 2;
   using Transformation = Matrix<Scalar, N, N>;
   using Point = Vector2<Scalar>;
@@ -342,7 +342,7 @@ class SO2Base {
     normalize();
   }
 
-  /// Accessor of unit quaternion.
+  /// Accessor of unit complex number.
   ///
   [[nodiscard]] SOPHUS_FUNC ComplexT const& unit_complex() const {
     return static_cast<Derived const*>(this)->unit_complex();
@@ -500,7 +500,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
   ///
   /// Formally, the hat()-operator of SO(2) is defined as
   ///
-  ///   ``hat(.): R^2 -> R^{2x2},  hat(theta) = theta * G``
+  ///   ``hat(.): R -> R^{2x2},  hat(theta) = theta * G``
   ///
   /// with ``G`` being the infinitesimal generator of SO(2).
   ///
@@ -516,7 +516,7 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
     return Omega;
   }
 
-  /// Returns closed SO2 given arbitrary 2x2 matrix.
+  /// Returns closest SO2 given arbitrary 2x2 matrix.
   ///
   template <class S = Scalar>
   [[nodiscard]] static SOPHUS_FUNC

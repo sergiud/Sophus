@@ -13,7 +13,7 @@
 
 namespace Sophus {
 
-/// Takes in a rotation ``R_foo_plane`` and returns the corresponding line
+/// Takes in a rotation ``R_foo_line`` and returns the corresponding line
 /// normal along the y-axis (in reference frame ``foo``).
 ///
 template <class T>
@@ -122,7 +122,7 @@ SO3<T> SO3FromNormal(Vector3<T> const& normal_foo) {
 /// Returns a line (wrt. to frame ``foo``), given a pose of the ``line`` in
 /// reference frame ``foo``.
 ///
-/// Note: The plane is defined by X-axis of the ``line`` frame.
+/// Note: The line is defined by X-axis of the ``line`` frame.
 ///
 template <class T>
 Line2<T> lineFromSE2(SE2<T> const& T_foo_line) {

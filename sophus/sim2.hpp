@@ -141,11 +141,11 @@ class Sim2Base {
   /// of Sim(2).
   ///
   SOPHUS_FUNC Tangent log() const {
-    /// The derivation of the closed-form Sim(2) logarithm for is done
+    /// The derivation of the closed-form Sim(2) logarithm is done
     /// analogously to the closed-form solution of the SE(2) logarithm, see
     /// J. Gallier, D. Xu, "Computing exponentials of skew symmetric matrices
     /// and logarithms of orthogonal matrices", IJRA 2002.
-    /// https:///pdfs.semanticscholar.org/cfe3/e4b39de63c8cabd89bf3feff7f5449fc981d.pdf
+    /// https://pdfs.semanticscholar.org/cfe3/e4b39de63c8cabd89bf3feff7f5449fc981d.pdf
     /// (Sec. 6., pp. 8)
     Vector2<Scalar> const theta_sigma = rxso2().log();
     Scalar const theta = theta_sigma[0];
@@ -264,7 +264,7 @@ class Sim2Base {
   /// Returns internal parameters of Sim(2).
   ///
   /// It returns (c[0], c[1], t[0], t[1]),
-  /// with c being the complex number, t the translation 3-vector.
+  /// with c being the complex number, t the translation 2-vector.
   ///
   SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params() const {
     Sophus::Vector<Scalar, num_parameters> p;
@@ -273,7 +273,7 @@ class Sim2Base {
   }
 
   /// In-place group multiplication. This method is only valid if the return
-  /// type of the multiplication is compatible with this SO2's Scalar type.
+  /// type of the multiplication is compatible with this Sim2's Scalar type.
   ///
   template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
                                        Scalar, ReturnScalar<OtherDerived>>>>
@@ -330,13 +330,13 @@ class Sim2Base {
     return rxso2().rotationMatrix();
   }
 
-  /// Mutator of SO2 group.
+  /// Mutator of RxSO2 group.
   ///
   SOPHUS_FUNC RxSO2Type& rxso2() {
     return static_cast<Derived*>(this)->rxso2();
   }
 
-  /// Accessor of SO2 group.
+  /// Accessor of RxSO2 group.
   ///
   SOPHUS_FUNC RxSO2Type const& rxso2() const {
     return static_cast<Derived const*>(this)->rxso2();
@@ -354,8 +354,8 @@ class Sim2Base {
 
   /// Sets scale and leaves rotation as is.
   ///
-  /// Note: This function as a significant computational cost, since it has to
-  /// call the square root twice.
+  /// Note: This function has to call the square root once to normalize the
+  /// complex number.
   ///
   SOPHUS_FUNC void setScale(Scalar const& scale) { rxso2().setScale(scale); }
 
@@ -470,11 +470,11 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
     return rxso2_.data();
   }
 
-  /// Accessor of RxSO2
+  /// Mutator of RxSO2
   ///
   SOPHUS_FUNC RxSo2Member& rxso2() { return rxso2_; }
 
-  /// Mutator of RxSO2
+  /// Accessor of RxSO2
   ///
   SOPHUS_FUNC RxSo2Member const& rxso2() const { return rxso2_; }
 
@@ -541,22 +541,14 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
     return generator(i);
   }
 
-  /// Derivative of Lie bracket with respect to first element.
-  ///
-  /// This function returns ``D_a [a, b]`` with ``D_a`` being the
-  /// differential operator with respect to ``a``, ``[a, b]`` being the lie
-  /// bracket of the Lie algebra sim(2).
-  /// See ``lieBracket()`` below.
-  ///
-
   /// Group exponential
   ///
   /// This functions takes in an element of tangent space and returns the
   /// corresponding element of the group Sim(2).
   ///
   /// The first two components of ``a`` represent the translational part
-  /// ``upsilon`` in the tangent space of Sim(2), the following two components
-  /// of ``a`` represents the rotation ``theta`` and the final component
+  /// ``upsilon`` in the tangent space of Sim(2), the following component
+  /// of ``a`` represents the rotation angle ``theta`` and the final component
   /// represents the logarithm of the scaling factor ``sigma``.
   /// To be more specific, this function computes ``expmat(hat(a))`` with
   /// ``expmat(.)`` being the matrix exponential and ``hat(.)`` the hat-operator
@@ -566,7 +558,7 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
     // For the derivation of the exponential map of Sim(N) see
     // H. Strasdat, "Local Accuracy and Global Consistency for Efficient Visual
     // SLAM", PhD thesis, 2012.
-    // http:///hauke.strasdat.net/files/strasdat_thesis_2012.pdf (A.5, pp. 186)
+    // http://hauke.strasdat.net/files/strasdat_thesis_2012.pdf (A.5, pp. 186)
     Vector2<Scalar> const upsilon = a.template head<2>();
     Scalar const theta = a[2];
     Scalar const sigma = a[3];
@@ -615,7 +607,7 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
   ///
   /// Formally, the hat()-operator of Sim(2) is defined as
   ///
-  ///   ``hat(.): R^4 -> R^{3x3},  hat(a) = sum_i a_i * G_i``  (for i=0,...,6)
+  ///   ``hat(.): R^4 -> R^{3x3},  hat(a) = sum_i a_i * G_i``  (for i=0,...,3)
   ///
   /// with ``G_i`` being the ith infinitesimal generator of Sim(2).
   ///
@@ -763,7 +755,7 @@ class Map<Sophus::Sim2<Scalar_>, Options>
 
 /// Specialization of Eigen::Map for ``Sim2 const``; derived from Sim2Base.
 ///
-/// Allows us to wrap RxSO2 objects around POD array.
+/// Allows us to wrap Sim2 objects around POD array.
 template <class Scalar_, int Options>
 class Map<Sophus::Sim2<Scalar_> const, Options>
     : public Sophus::Sim2Base<Map<Sophus::Sim2<Scalar_> const, Options>> {

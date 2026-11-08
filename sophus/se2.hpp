@@ -66,7 +66,7 @@ class SE2Base {
   using SO2Type = typename Eigen::internal::traits<Derived>::SO2Type;
 
   /// Degrees of freedom of manifold, number of dimensions in tangent space
-  /// (two for translation, three for rotation).
+  /// (two for translation, one for rotation).
   static int constexpr DoF = 3;
   /// Number of internal parameters used (tuple for complex, two for
   /// translation).
@@ -310,7 +310,7 @@ class SE2Base {
   }
 
   /// In-place group multiplication. This method is only valid if the return
-  /// type of the multiplication is compatible with this SO2's Scalar type.
+  /// type of the multiplication is compatible with this SE2's Scalar type.
   ///
   template <typename OtherDerived, typename = std::enable_if_t<std::is_same_v<
                                        Scalar, ReturnScalar<OtherDerived>>>>
@@ -322,7 +322,7 @@ class SE2Base {
   /// Returns internal parameters of SE(2).
   ///
   /// It returns (c[0], c[1], t[0], t[1]),
-  /// with c being the unit complex number, t the translation 3-vector.
+  /// with c being the unit complex number, t the translation 2-vector.
   ///
   [[nodiscard]] SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params()
       const {
@@ -359,13 +359,13 @@ class SE2Base {
     so2().setComplex(complex);
   }
 
-  /// Mutator of SO3 group.
+  /// Mutator of SO2 group.
   ///
   [[nodiscard]] SOPHUS_FUNC SO2Type& so2() {
     return static_cast<Derived*>(this)->so2();
   }
 
-  /// Accessor of SO3 group.
+  /// Accessor of SO2 group.
   ///
   [[nodiscard]] SOPHUS_FUNC SO2Type const& so2() const {
     return static_cast<Derived const*>(this)->so2();
@@ -426,7 +426,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from SO3 and translation vector
+  /// Constructor from SO2 and translation vector
   ///
   template <class OtherDerived, class D>
   [[nodiscard]] SOPHUS_FUNC SE2(SO2Base<OtherDerived> const& so2,
@@ -491,11 +491,11 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
     return so2_.data();
   }
 
-  /// Accessor of SO3
+  /// Mutator of SO2
   ///
   [[nodiscard]] SOPHUS_FUNC SO2Member& so2() { return so2_; }
 
-  /// Mutator of SO3
+  /// Accessor of SO2
   ///
   [[nodiscard]] SOPHUS_FUNC SO2Member const& so2() const { return so2_; }
 
@@ -598,8 +598,8 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   /// returns the corresponding element of the group SE(2).
   ///
   /// The first two components of ``a`` represent the translational part
-  /// ``upsilon`` in the tangent space of SE(2), while the last three components
-  /// of ``a`` represents the rotation vector ``omega``.
+  /// ``upsilon`` in the tangent space of SE(2), while the last component
+  /// of ``a`` represents the rotation angle ``theta``.
   /// To be more specific, this function computes ``expmat(hat(a))`` with
   /// ``expmat(.)`` being the matrix exponential and ``hat(.)`` the hat-operator
   /// of SE(2), see below.
@@ -630,7 +630,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
     return SE2<Scalar>(so2, A * a.template head<2>());
   }
 
-  /// Returns closest SE3 given arbitrary 4x4 matrix.
+  /// Returns closest SE2 given arbitrary 3x3 matrix.
   ///
   template <class S = Scalar>
   [[nodiscard]] static SOPHUS_FUNC
@@ -818,11 +818,11 @@ class Map<Sophus::SE2<Scalar_>, Options>
       : so2_(coeffs),
         translation_(coeffs + Sophus::SO2<Scalar>::num_parameters) {}
 
-  /// Mutator of SO3
+  /// Mutator of SO2
   ///
   SOPHUS_FUNC Map<Sophus::SO2<Scalar>, Options>& so2() { return so2_; }
 
-  /// Accessor of SO3
+  /// Accessor of SO2
   ///
   SOPHUS_FUNC Map<Sophus::SO2<Scalar>, Options> const& so2() const {
     return so2_;
@@ -867,7 +867,7 @@ class Map<Sophus::SE2<Scalar_> const, Options>
       : so2_(coeffs),
         translation_(coeffs + Sophus::SO2<Scalar>::num_parameters) {}
 
-  /// Accessor of SO3
+  /// Accessor of SO2
   ///
   [[nodiscard]] SOPHUS_FUNC Map<Sophus::SO2<Scalar> const, Options> const& so2()
       const {
