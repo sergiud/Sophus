@@ -229,15 +229,18 @@ TYPED_TEST(SE2Test, Constructors) {
 
   EXPECT_EQ(SE2Type().matrix(), Matrix3<Scalar>::Identity().eval());
 
-  SE2Type const se2 = LieGroupTestData<SE2Type>::groupElements().front();
-  Point const translation = se2.translation();
-  SO2<Scalar> const so2 = se2.so2();
+  for (SE2Type const& se2 : LieGroupTestData<SE2Type>::groupElements()) {
+    SCOPED_TRACE(::testing::PrintToString(se2.params()));
+    Point const translation = se2.translation();
+    SO2<Scalar> const so2 = se2.so2();
 
-  EXPECT_THAT(SE2Type(so2.log(), translation), IsNear(se2, kEpsilon));
-  EXPECT_THAT(SE2Type(so2, translation), IsNear(se2, kEpsilon));
-  EXPECT_THAT(SE2Type(so2.matrix(), translation), IsNear(se2, kEpsilon));
-  EXPECT_THAT(SE2Type(so2.unit_complex(), translation), IsNear(se2, kEpsilon));
-  EXPECT_THAT(SE2Type(se2.matrix()), IsNear(se2, kEpsilon));
+    EXPECT_THAT(SE2Type(so2.log(), translation), IsNear(se2, kEpsilon));
+    EXPECT_THAT(SE2Type(so2, translation), IsNear(se2, kEpsilon));
+    EXPECT_THAT(SE2Type(so2.matrix(), translation), IsNear(se2, kEpsilon));
+    EXPECT_THAT(SE2Type(so2.unit_complex(), translation),
+                IsNear(se2, kEpsilon));
+    EXPECT_THAT(SE2Type(se2.matrix()), IsNear(se2, kEpsilon));
+  }
 }
 
 template <class Scalar>

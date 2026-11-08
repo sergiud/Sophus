@@ -228,15 +228,17 @@ TYPED_TEST(SE3Test, Constructors) {
 
   EXPECT_EQ(SE3Type().matrix(), Matrix4<Scalar>::Identity().eval());
 
-  SE3Type const se3 = LieGroupTestData<SE3Type>::groupElements().front();
-  Point const translation = se3.translation();
-  SO3<Scalar> const so3 = se3.so3();
+  for (SE3Type const& se3 : LieGroupTestData<SE3Type>::groupElements()) {
+    SCOPED_TRACE(::testing::PrintToString(se3.params()));
+    Point const translation = se3.translation();
+    SO3<Scalar> const so3 = se3.so3();
 
-  EXPECT_THAT(SE3Type(so3, translation), IsNear(se3, kEpsilon));
-  EXPECT_THAT(SE3Type(so3.matrix(), translation), IsNear(se3, kEpsilon));
-  EXPECT_THAT(SE3Type(so3.unit_quaternion(), translation),
-              IsNear(se3, kEpsilon));
-  EXPECT_THAT(SE3Type(se3.matrix()), IsNear(se3, kEpsilon));
+    EXPECT_THAT(SE3Type(so3, translation), IsNear(se3, kEpsilon));
+    EXPECT_THAT(SE3Type(so3.matrix(), translation), IsNear(se3, kEpsilon));
+    EXPECT_THAT(SE3Type(so3.unit_quaternion(), translation),
+                IsNear(se3, kEpsilon));
+    EXPECT_THAT(SE3Type(se3.matrix()), IsNear(se3, kEpsilon));
+  }
 }
 
 template <class Scalar>
