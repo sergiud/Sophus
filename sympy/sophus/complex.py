@@ -32,8 +32,9 @@ class Complex:
         """ We use the following convention [real, imag] """
         if key == 0:
             return self.real
-        else:
+        if key == 1:
             return self.imag
+        raise IndexError(f"index {key} out of range [0, 1]")
 
     def squared_norm(self):
         """ squared norm when considering the complex number as tuple """
@@ -94,6 +95,11 @@ class TestComplex(unittest.TestCase):
         product = self.a.inv() * self.a
         self.assertEqual(product.simplify(),
                          Complex.identity())
+
+    def test_indexing(self):
+        self.assertEqual((self.a[0], self.a[1]), (self.a.real, self.a.imag))
+        with self.assertRaises(IndexError):
+            self.a[2]
 
     def test_negation(self):
         self.assertEqual(-self.a, Complex(-self.a.real, -self.a.imag))
