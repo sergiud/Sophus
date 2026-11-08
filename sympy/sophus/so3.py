@@ -4,9 +4,7 @@ import unittest
 import sympy
 
 from sophus.cse_codegen import check_cpp_gencode
-from sophus.matrix import Vector3
-from sophus.matrix import ZeroVector3
-from sophus.matrix import squared_norm
+from sophus.matrix import Vector3, ZeroVector3, squared_norm
 from sophus.quaternion import Quaternion
 
 
@@ -99,7 +97,7 @@ class So3:
             return (self.q * Quaternion(0, right) * self.q.conj()).vec
         elif isinstance(right, So3):
             return So3(self.q * right.q)
-        assert False, "unsupported type: {0}".format(type(right))
+        assert False, f"unsupported type: {type(right)}"
 
     def __getitem__(self, key):
         return self.q[key]
@@ -190,7 +188,7 @@ class TestSo3(unittest.TestCase):
                   Vector3(0.1, 0.1, 0.1),
                   Vector3(0.01, 0.2, 0.03)]:
             w = So3.exp(o).log()
-            for i in range(0, 3):
+            for i in range(3):
                 self.assertAlmostEqual(float(o[i]), float(w[i]))
 
     def test_matrix(self):

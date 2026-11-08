@@ -4,8 +4,7 @@ import unittest
 
 import sympy
 
-from sophus.matrix import Vector3
-from sophus.matrix import squared_norm
+from sophus.matrix import Vector3, squared_norm
 
 
 class Quaternion:
@@ -134,4 +133,3 @@ class TestQuaternion(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-    print('hello')

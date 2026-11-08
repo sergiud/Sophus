@@ -4,13 +4,15 @@ import unittest
 import sympy
 
 from sophus.cse_codegen import check_cpp_gencode
-from sophus.matrix import Vector3
-from sophus.matrix import Vector6
-from sophus.matrix import ZeroVector3
-from sophus.matrix import ZeroVector6
-from sophus.matrix import proj
-from sophus.matrix import squared_norm
-from sophus.matrix import unproj
+from sophus.matrix import (
+    Vector3,
+    Vector6,
+    ZeroVector3,
+    ZeroVector6,
+    proj,
+    squared_norm,
+    unproj,
+)
 from sophus.quaternion import Quaternion
 from sophus.so3 import So3
 
@@ -104,7 +106,7 @@ class Se3:
             r = self.so3 * right.so3
             t = self.t + self.so3 * right.t
             return Se3(r, t)
-        assert False, "unsupported type: {0}".format(type(right))
+        assert False, f"unsupported type: {type(right)}"
 
     def __getitem__(self, key):
         """ We use the following convention [q0, q1, q2, q3, t0, t1, t2] """
@@ -159,7 +161,7 @@ class Se3:
     def Dxi_exp_x_matrix(x, i):
         T = Se3.exp(x)
         Dx_exp_x = Se3.calc_Dx_exp_x(x)
-        list = [Dx_exp_x[j, i] * Se3.Dxi_x_matrix(T, j) for j in range(0, 7)]
+        list = [Dx_exp_x[j, i] * Se3.Dxi_x_matrix(T, j) for j in range(7)]
         return functools.reduce((lambda a, b: a + b), list)
 
     @staticmethod
@@ -201,7 +203,7 @@ class TestSe3(unittest.TestCase):
                   Vector6(0.1, 0.1, 0.1, 0., 1, 0.5),
                   Vector6(0.01, 0.2, 0.03, 0.01, 0.2, 0.03)]:
             w = Se3.exp(v).log()
-            for i in range(0, 3):
+            for i in range(3):
                 self.assertAlmostEqual(float(v[i]), float(w[i]))
 
     def test_matrix(self):
@@ -219,11 +221,11 @@ class TestSe3(unittest.TestCase):
             Se3.Dx_exp_x_at_0()),
             sympy.Matrix.zeros(7, 6))
 
-        for i in range(0, 7):
+        for i in range(7):
             self.assertEqual(sympy.simplify(Se3.calc_Dxi_x_matrix(self.a, i) -
                                             Se3.Dxi_x_matrix(self.a, i)),
                              sympy.Matrix.zeros(4, 4))
-        for i in range(0, 6):
+        for i in range(6):
             self.assertEqual(sympy.simplify(
                 Se3.Dxi_exp_x_matrix(self.upsilon_omega, i) -
                 Se3.calc_Dxi_exp_x_matrix(self.upsilon_omega, i)),

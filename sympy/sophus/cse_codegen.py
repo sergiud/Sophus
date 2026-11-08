@@ -62,18 +62,18 @@ def evaluate_cpp_gencode(code, values):
     # Longer names first, so that a name is not replaced inside a longer one.
     names = sorted(values, key=lambda symbol: -len(symbol.name))
     for index, symbol in enumerate(names):
-        placeholder = '_symbol{}'.format(index)
+        placeholder = f'_symbol{index}'
         placeholders[placeholder] = values[symbol]
         # A name must not continue another name, so that the symbol t[1] does
         # not match within result[1].
-        pattern = r'(?<![\w.]){}'.format(re.escape(symbol.name))
+        pattern = rf'(?<![\w.]){re.escape(symbol.name)}'
         if re.search(r'\w$', symbol.name):
             pattern += r'\b'
         code = re.sub(pattern, placeholder, code)
 
-    namespace = dict(FUNCTIONS)
-    namespace.update(placeholders)
-    namespace['result'] = {}
+    result: dict[int, float] = {}
+    namespace: dict[str, object] = {
+        **FUNCTIONS, **placeholders, 'result': result}
     for line in code.splitlines():
         statement = line.strip()
         if not statement:
@@ -82,9 +82,9 @@ def evaluate_cpp_gencode(code, values):
         statement = re.sub(r';$', '', statement)
         if statement.startswith('result ='):
             statement = statement.replace('result =', 'result[0] =', 1)
-        exec(statement, namespace)
+        # The statements come from the generated code under test.
+        exec(statement, namespace)  # noqa: S102
 
-    result = namespace['result']
     return [result[index] for index in sorted(result)]
 
 
@@ -121,11 +121,9 @@ def check_cpp_gencode(test_case, expression, filename):
         actual = evaluate_cpp_gencode(code, values)
         test_case.assertEqual(
             len(actual), len(expected),
-            '{} assigns {} results, but the expression has {} entries'.format(
-                filename, len(actual), len(expected)))
+            f'{filename} assigns {len(actual)} results, but the expression has {len(expected)} entries')
         for index, (a, e) in enumerate(zip(actual, expected)):
             test_case.assertTrue(
                 math.isclose(a, e, rel_tol=RELATIVE_TOLERANCE,
                              abs_tol=RELATIVE_TOLERANCE),
-                '{} result[{}] is {}, but the expression is {} at {}'.format(
-                    filename, index, a, e, values))
+                f'{filename} result[{index}] is {a}, but the expression is {e} at {values}')

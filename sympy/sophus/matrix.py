@@ -1,8 +1,4 @@
-import sys
-
 import sympy
-
-assert sys.version_info >= (3, 5)
 
 
 def dot(left, right):
@@ -10,8 +6,8 @@ def dot(left, right):
     assert(isinstance(right, sympy.Matrix))
 
     sum = 0
-    for c in range(0, left.cols):
-        for r in range(0, left.rows):
+    for c in range(left.cols):
+        for r in range(left.rows):
             sum += left[r, c] * right[r, c]
     return sum
 
@@ -65,7 +61,7 @@ def proj(v):
     m, n = v.shape
     assert m > 1
     assert n == 1
-    list = [v[i] / v[m - 1] for i in range(0, m - 1)]
+    list = [v[i] / v[m - 1] for i in range(m - 1)]
     r = sympy.Matrix(m - 1, 1,  list)
     return r
 

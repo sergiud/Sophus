@@ -5,8 +5,7 @@ import sympy
 
 from sophus.complex import Complex
 from sophus.cse_codegen import check_cpp_gencode
-from sophus.matrix import Vector2
-from sophus.matrix import ZeroVector2
+from sophus.matrix import Vector2, ZeroVector2
 
 
 class So2:
@@ -53,7 +52,7 @@ class So2:
             return self.matrix() * right
         elif isinstance(right, So2):
             return So2(self.z * right.z)
-        assert False, "unsupported type: {0}".format(type(right))
+        assert False, f"unsupported type: {type(right)}"
 
     def __getitem__(self, key):
         return self.z[key]

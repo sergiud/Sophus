@@ -5,12 +5,7 @@ import sympy
 
 from sophus.complex import Complex
 from sophus.cse_codegen import check_cpp_gencode
-from sophus.matrix import Vector2
-from sophus.matrix import Vector3
-from sophus.matrix import ZeroVector2
-from sophus.matrix import ZeroVector3
-from sophus.matrix import proj
-from sophus.matrix import unproj
+from sophus.matrix import Vector2, Vector3, ZeroVector2, ZeroVector3, proj, unproj
 from sophus.so2 import So2
 
 
@@ -75,7 +70,7 @@ class Se2:
         elif isinstance(right, Se2):
             return Se2(self.so2 * right.so2,
                        self.t + self.so2 * right.t)
-        assert False, "unsupported type: {0}".format(type(right))
+        assert False, f"unsupported type: {type(right)}"
 
     def __getitem__(self, key):
         """ We use the following convention [q0, q1, q2, q3, t0, t1, t2] """
@@ -125,7 +120,7 @@ class Se2:
     def Dxi_exp_x_matrix(x, i):
         T = Se2.exp(x)
         Dx_exp_x = Se2.calc_Dx_exp_x(x)
-        list = [Dx_exp_x[j, i] * Se2.Dxi_x_matrix(T, j) for j in range(0, 4)]
+        list = [Dx_exp_x[j, i] * Se2.Dxi_x_matrix(T, j) for j in range(4)]
         return functools.reduce((lambda a, b: a + b), list)
 
     @staticmethod
@@ -165,7 +160,7 @@ class TestSe2(unittest.TestCase):
                   Vector3(0.1, 0.1, 0.1),
                   Vector3(0.01, 0.2, 0.03)]:
             w = Se2.exp(v).log()
-            for i in range(0, 3):
+            for i in range(3):
                 self.assertAlmostEqual(float(v[i]), float(w[i]))
 
     def test_matrix(self):
@@ -182,11 +177,11 @@ class TestSe2(unittest.TestCase):
             Se2.calc_Dx_exp_x_at_0(self.upsilon_theta) -
             Se2.Dx_exp_x_at_0()),
             sympy.Matrix.zeros(4, 3))
-        for i in range(0, 4):
+        for i in range(4):
             self.assertEqual(sympy.simplify(Se2.calc_Dxi_x_matrix(self.a, i) -
                                             Se2.Dxi_x_matrix(self.a, i)),
                              sympy.Matrix.zeros(3, 3))
-        for i in range(0, 3):
+        for i in range(3):
             self.assertEqual(sympy.simplify(
                 Se2.Dxi_exp_x_matrix(self.upsilon_theta, i) -
                 Se2.calc_Dxi_exp_x_matrix(self.upsilon_theta, i)),
