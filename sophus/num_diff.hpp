@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cmath>
 #include <functional>
 #include <type_traits>
 #include <utility>
@@ -26,7 +28,12 @@ class Curve {
                   "ReturnType must be either a floating point scalar, "
                   "vector or matrix.");
 
-    return (curve(t + h) - curve(t - h)) / (Scalar(2) * h);
+    // The step grows with the magnitude of the argument, so that it stays
+    // above the spacing of the floating-point numbers there.
+    using std::abs;
+    using std::max;
+    Scalar const step = h * max(Scalar(1), abs(t));
+    return (curve(t + step) - curve(t - step)) / (Scalar(2) * step);
   }
 };
 
@@ -40,13 +47,17 @@ class VectorField {
     static_assert(std::is_floating_point_v<Scalar>,
                   "Scalar must be a floating point type.");
     Eigen::Matrix<Scalar, N, M> J;
-    Sophus::Vector<Scalar, M> h;
-    h.setZero();
     for (int i = 0; i < M; ++i) {
-      h[i] = eps;
+      // See Curve::num_diff for the choice of the step.
+      using std::abs;
+      using std::max;
+      Sophus::Vector<Scalar, M> forward = a;
+      Sophus::Vector<Scalar, M> backward = a;
+      Scalar const step = eps * max(Scalar(1), abs(a[i]));
+      forward[i] += step;
+      backward[i] -= step;
       J.col(i) =
-          (vector_field(a + h) - vector_field(a - h)) / (Scalar(2) * eps);
-      h[i] = Scalar(0);
+          (vector_field(forward) - vector_field(backward)) / (Scalar(2) * step);
     }
 
     return J;
@@ -67,7 +78,8 @@ class VectorField<Scalar, N, 1> {
 /// Calculates the derivative of a curve at a point ``t``.
 ///
 /// Here, a curve is a function from a Scalar to a Euclidean space. Thus, it
-/// returns either a Scalar, a vector or a matrix.
+/// returns either a Scalar, a vector or a matrix. The central difference
+/// steps by ``h * max(1, |t|)``.
 ///
 template <class Scalar, class Fn>
 auto curveNumDiff(Fn curve, Scalar t,
@@ -79,7 +91,8 @@ auto curveNumDiff(Fn curve, Scalar t,
 /// Calculates the derivative of a vector field at a point ``a``.
 ///
 /// Here, a vector field is a function from a vector space to another vector
-/// space.
+/// space. The central difference steps each coordinate ``a_i`` by
+/// ``eps * max(1, |a_i|)``.
 ///
 template <class Scalar, int N, int M, class ScalarOrVector, class Fn>
 Eigen::Matrix<Scalar, N, M> vectorFieldNumDiff(
