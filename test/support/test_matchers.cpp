@@ -206,38 +206,6 @@ TYPED_TEST(MatchersTest, IsNearWithOnlyAToleranceComparesPairsPointwise) {
   EXPECT_THAT(listener.str(), HasSubstr(PrintToString(Scalar(0.25))));
 }
 
-TYPED_TEST(MatchersTest, IsNearQuaternionAcceptsBothCoversOfARotation) {
-  using Scalar = TypeParam;
-  using Quaternion = Eigen::Quaternion<Scalar>;
-  Quaternion const q(Scalar(0.5), Scalar(0.5), Scalar(-0.5), Scalar(0.5));
-  Quaternion const minus_q(-q.coeffs());
-  Quaternion near_q = q;
-  near_q.x() += Scalar(0.125);
-
-  EXPECT_THAT(q, IsNearQuaternion(q, Scalar(0)));
-  EXPECT_THAT(minus_q, IsNearQuaternion(q, Scalar(0)));
-  EXPECT_THAT(near_q, IsNearQuaternion(q, Scalar(0.125)));
-  EXPECT_THAT(near_q, Not(IsNearQuaternion(q, Scalar(0.0625))));
-  EXPECT_THAT(Quaternion(-near_q.coeffs()), IsNearQuaternion(q, Scalar(0.125)));
-  EXPECT_THAT(Quaternion(-near_q.coeffs()),
-              Not(IsNearQuaternion(q, Scalar(0.0625))));
-}
-
-TYPED_TEST(MatchersTest, IsNearQuaternionRejectsADifferentRotation) {
-  using Scalar = TypeParam;
-  using Quaternion = Eigen::Quaternion<Scalar>;
-  Quaternion const q(Scalar(1), Scalar(0), Scalar(0), Scalar(0));
-  Quaternion const other(Scalar(0), Scalar(1), Scalar(0), Scalar(0));
-  EXPECT_THAT(other, Not(IsNearQuaternion(q, Scalar(0.5))));
-
-  StringMatchResultListener listener;
-  EXPECT_FALSE(
-      ExplainMatchResult(IsNearQuaternion(q, Scalar(0.5)), other, &listener));
-  EXPECT_THAT(listener.str(), HasSubstr(PrintToString(Scalar(1))));
-  EXPECT_THAT(DescribeMatcher<Quaternion>(IsNearQuaternion(q, Scalar(0.5))),
-              HasSubstr("sign"));
-}
-
 TEST(RegisterTest, RegistersTheTestWithItsNamesAndParameters) {
   ::testing::TestInfo const* const info = findRegisteredTest();
   ASSERT_THAT(info, ::testing::NotNull());

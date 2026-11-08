@@ -175,27 +175,6 @@ auto IsNear(Tolerance tolerance) {
   return details::IsNearPairMatcher(tolerance);
 }
 
-/// Matches a quaternion that represents the same rotation as `expected` up
-/// to `tolerance`. Since q and -q represent the same rotation, the distance
-/// is the smaller max-norm distance of the coefficients to those of
-/// `expected` and of its negation.
-MATCHER_P2(IsNearQuaternion, expected, tolerance,
-           std::string(negation ? "isn't" : "is") +
-               " within max-norm distance " +
-               ::testing::PrintToString(tolerance) + " of " +
-               ::testing::PrintToString(expected) +
-               " or of its negation, ignoring the sign of the quaternion") {
-  using std::min;
-  auto const coeffs = arg.coeffs().eval();
-  auto const expected_coeffs = expected.coeffs().eval();
-  auto const distance =
-      min(maxMetric(coeffs, expected_coeffs),
-          maxMetric(coeffs, decltype(expected_coeffs)(-expected_coeffs)));
-  *result_listener << "whose max-norm distance up to sign is "
-                   << ::testing::PrintToString(distance);
-  return distance <= tolerance;
-}
-
 /// Matches a scalar that is neither infinite nor NaN.
 MATCHER(IsFinite, negation ? "isn't finite" : "is finite") {
   using std::isfinite;
