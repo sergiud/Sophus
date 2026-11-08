@@ -172,12 +172,17 @@ SE3<T> SE3FromPlane(Plane3<T> const& plane_foo) {
 }
 
 /// Takes in a hyperplane and returns unique representation by ensuring that the
-/// ``offset`` is not negative.
+/// ``offset`` is not negative. For a hyperplane through the origin, the first
+/// nonzero coefficient of the normal is made positive instead.
 ///
 template <class T, int N>
 Eigen::Hyperplane<T, N> makeHyperplaneUnique(
     Eigen::Hyperplane<T, N> const& plane) {
-  if (plane.offset() >= 0) {
+  T sign = plane.offset();
+  for (Eigen::Index i = 0; sign == T(0) && i < plane.normal().size(); ++i) {
+    sign = plane.normal()[i];
+  }
+  if (sign >= T(0)) {
     return plane;
   }
 

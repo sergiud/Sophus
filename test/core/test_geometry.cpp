@@ -170,6 +170,15 @@ TYPED_TEST(GeometryTest, FrameOfLineWithNonUnitNormalLiesOnTheLine) {
                      Constants<Scalar>::epsilon()));
 }
 
+TYPED_TEST(GeometryTest, UniqueHyperplaneThroughOriginIgnoresNormalSign) {
+  using Scalar = TypeParam;
+  Vector3<Scalar> const normal(Scalar(0), Scalar(-0.6), Scalar(0.8));
+  Plane3<Scalar> const plane(normal, Scalar(0));
+  Plane3<Scalar> const flipped(-normal, Scalar(0));
+  EXPECT_EQ(makeHyperplaneUnique(plane).coeffs(),
+            makeHyperplaneUnique(flipped).coeffs());
+}
+
 TEST(GeometryDeathTest, PerpendicularityOfHintsIgnoresTheirLength) {
   Vector3<double> const normal(0, 0, 1);
   // Long hints whose angle differs from 90 degrees by about 1e-12.
