@@ -39,6 +39,13 @@ inline std::ostream& operator<<(std::ostream& os, Case const& c) {
 /// of its scalar type.
 constexpr long double kMaxErrorInEpsilons = 16;
 
+/// The fraction of the largest magnitude of an output below which the error
+/// of a component is measured relative to that fraction instead of the
+/// magnitude of the component itself. Rounding in the cancellations of small
+/// components of the Jacobians reaches up to a tenth of the largest
+/// magnitude, which this fraction leaves room for.
+constexpr long double kSmallComponentFraction = 0.25L;
+
 /// Returns the input of a case as a scalar or a column vector.
 template <class Tangent>
 Tangent input(Case const& c) {
@@ -54,32 +61,40 @@ Tangent input(Case const& c) {
   }
 }
 
-/// Returns the largest absolute difference between `actual`, read in
-/// row-major order, and `expected`, divided by the largest magnitude of
-/// `expected`, or by one if all expected values vanish.
+/**
+ * Returns the largest error of the components of `actual`, read in row-major
+ * order, relative to `expected`. Each difference is divided by the magnitude
+ * of its expected component, but by no less than `kSmallComponentFraction`
+ * of the largest magnitude of `expected`, or of one if all expected values
+ * vanish. Small components thus need more than the absolute accuracy of the
+ * largest one.
+ */
 template <class Derived>
 long double relativeError(Eigen::MatrixBase<Derived> const& actual,
                           std::vector<long double> const& expected) {
   if (static_cast<std::size_t>(actual.size()) != expected.size()) {
     return std::numeric_limits<long double>::infinity();
   }
-  long double difference = 0;
   long double magnitude = 0;
+  for (long double const reference : expected) {
+    magnitude = std::max(magnitude, std::abs(reference));
+  }
+  long double const floor =
+      kSmallComponentFraction * (magnitude > 0 ? magnitude : 1);
+  long double error = 0;
   std::size_t index = 0;
   for (Eigen::Index row = 0; row < actual.rows(); ++row) {
     for (Eigen::Index col = 0; col < actual.cols(); ++col) {
       long double const value = actual(row, col);
       long double const reference = expected[index];
       ++index;
+      long double const component =
+          std::abs(value - reference) / std::max(std::abs(reference), floor);
       // Written such that NaN propagates into the result.
-      difference = std::isnan(value) ? value
-                   : std::abs(value - reference) > difference
-                       ? std::abs(value - reference)
-                       : difference;
-      magnitude = std::max(magnitude, std::abs(reference));
+      error = std::isnan(value) ? value : component > error ? component : error;
     }
   }
-  return difference / (magnitude > 0 ? magnitude : 1);
+  return error;
 }
 
 /// The largest relative error `relativeError` accepts for results of type
