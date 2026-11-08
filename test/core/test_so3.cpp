@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <limits>
 #include <random>
+#include <tuple>
+#include <vector>
 
 #include <sophus/interpolate.hpp>
 #include <sophus/so3.hpp>
@@ -402,6 +404,50 @@ TYPED_TEST(SO3FloatingPointTest, LeftJacobianMatchesReference) {
 
 TYPED_TEST(SO3FloatingPointTest, DxExpXMatchesReference) {
   reference::expectAccurateDxExpX<SO3<TypeParam>>(reference::kSO3DxExpX);
+}
+
+/// Returns the cases with their outputs replaced by the norm of their
+/// inputs, or of their outputs if `of_output` holds.
+std::vector<reference::Case> withNormAsOutput(
+    std::vector<reference::Case> cases, bool of_output) {
+  for (reference::Case& c : cases) {
+    long double squared_norm = 0;
+    for (long double const value : of_output ? c.output : c.input) {
+      squared_norm += value * value;
+    }
+    c.output = {std::sqrt(squared_norm)};
+  }
+  return cases;
+}
+
+TYPED_TEST(SO3FloatingPointTest, LogAndThetaReturnsTheAngle) {
+  using Scalar = TypeParam;
+  // The negated quaternions represent the same rotations, with w < 0.
+  std::vector<reference::Case> cases = reference::kSO3Log;
+  for (reference::Case c : reference::kSO3Log) {
+    for (long double& value : c.input) {
+      value = -value;
+    }
+    cases.push_back(c);
+  }
+  reference::expectAccurate<Scalar>(
+      withNormAsOutput(cases, true), [](reference::Case const& c) {
+        auto const params = reference::input<Vector4<Scalar>>(c);
+        return Eigen::Map<SO3<Scalar> const>(params.data()).logAndTheta().theta;
+      });
+}
+
+TYPED_TEST(SO3FloatingPointTest, ExpAndThetaReturnsTheAngle) {
+  using Scalar = TypeParam;
+  using SO3Type = SO3<Scalar>;
+  reference::expectAccurate<Scalar>(
+      withNormAsOutput(reference::kSO3Exp, false),
+      [](reference::Case const& c) {
+        Scalar theta;
+        std::ignore = SO3Type::expAndTheta(
+            reference::input<typename SO3Type::Tangent>(c), &theta);
+        return theta;
+      });
 }
 
 }  // namespace

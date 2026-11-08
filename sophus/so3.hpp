@@ -275,7 +275,9 @@ class SO3Base {
     TangentAndTheta J;
     using std::abs;
     using std::atan2;
+    using std::copysign;
     using std::hypot;
+    using std::sqrt;
     Scalar squared_n = unit_quaternion().vec().squaredNorm();
     Scalar w = unit_quaternion().w();
 
@@ -298,7 +300,11 @@ class SO3Base {
       Scalar squared_w = w * w;
       two_atan_nbyw_by_n =
           Scalar(2) / w - Scalar(2.0 / 3.0) * (squared_n) / (w * squared_w);
-      J.theta = Scalar(2) * squared_n / w;
+      // The square root has no finite derivative at zero, which an automatic
+      // differentiation scalar would propagate.
+      Scalar const n =
+          squared_n > Scalar(0) ? Scalar(sqrt(squared_n)) : Scalar(0);
+      J.theta = abs(two_atan_nbyw_by_n) * n;
     } else {
       const auto& v = unit_quaternion().vec();
       Scalar n = hypot(v.x(), v.y(), v.z());
@@ -306,15 +312,15 @@ class SO3Base {
       // w < 0 ==> cos(theta/2) < 0 ==> theta > pi
       //
       // By convention, the condition |theta| < pi is imposed by wrapping theta
-      // to pi; The wrap operation can be folded inside evaluation of atan2
+      // to pi. Since q and -q represent the same rotation, the wrap negates
+      // n and w for w < 0, which copysign and abs fold into atan2:
       //
       // theta - pi = atan(sin(theta - pi), cos(theta - pi))
       //            = atan(-sin(theta), -cos(theta))
       //
-      Scalar atan_nbyw =
-          (w < Scalar(0)) ? Scalar(atan2(-n, -w)) : Scalar(atan2(n, w));
+      Scalar const atan_nbyw = atan2(copysign(n, w), abs(w));
       two_atan_nbyw_by_n = Scalar(2) * atan_nbyw / n;
-      J.theta = two_atan_nbyw_by_n * n;
+      J.theta = Scalar(2) * abs(atan_nbyw);
     }
 
     J.tangent = two_atan_nbyw_by_n * unit_quaternion().vec();
@@ -701,13 +707,16 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     using std::cos;
     using std::hypot;
     using std::sin;
+    using std::sqrt;
     Scalar theta_sq = omega.squaredNorm();
 
     Scalar imag_factor;
     Scalar real_factor;
     if (theta_sq <
         Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
-      *theta = Scalar(0);
+      // The square root has no finite derivative at zero, which an automatic
+      // differentiation scalar would propagate.
+      *theta = theta_sq > Scalar(0) ? Scalar(sqrt(theta_sq)) : Scalar(0);
       Scalar theta_po4 = theta_sq * theta_sq;
       imag_factor = Scalar(0.5) - Scalar(1.0 / 48.0) * theta_sq +
                     Scalar(1.0 / 3840.0) * theta_po4;
