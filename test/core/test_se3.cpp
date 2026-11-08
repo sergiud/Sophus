@@ -302,5 +302,9 @@ TYPED_TEST(SE3FloatingPointTest, LeftJacobianInverseMatchesReference) {
       });
 }
 
+TYPED_TEST(SE3FloatingPointTest, DxExpXMatchesReference) {
+  reference::expectAccurateDxExpX<SE3<TypeParam>>(reference::kSE3DxExpX);
+}
+
 }  // namespace
 }  // namespace Sophus
