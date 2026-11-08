@@ -194,6 +194,10 @@ class LieGroupCeresTests {
  private:
   static double epsilon() { return Constants<double>::epsilon(); }
 
+  /// The bound of squared norms of round-trip errors. Exact round trips
+  /// differ by rounding only, so their errors stay below epsilon.
+  static double squaredRoundTripTolerance() { return epsilon() * epsilon(); }
+
   static Tangentd zeroTangent() {
     Tangentd zero;
     setToZero(zero);
@@ -291,7 +295,7 @@ class LieGroupCeresTests {
     LieGroupd test_group;
     ASSERT_TRUE(manifold.Plus(x.data(), data(zero), test_group.data()));
     EXPECT_THAT((x.inverse() * test_group).log(),
-                HasSquaredNorm(Lt(epsilon())));
+                HasSquaredNorm(Lt(squaredRoundTripTolerance())));
   }
 
   static void xMinusXIsZero(LieGroupd const& x) {
@@ -299,7 +303,7 @@ class LieGroupCeresTests {
     Manifoldd const manifold;
     Tangentd test_tangent;
     ASSERT_TRUE(manifold.Minus(x.data(), x.data(), data(test_tangent)));
-    EXPECT_THAT(test_tangent, HasSquaredNorm(Lt(epsilon())));
+    EXPECT_THAT(test_tangent, HasSquaredNorm(Lt(squaredRoundTripTolerance())));
   }
 
   static void minusPlusIsIdentity(LieGroupd const& x, Tangentd const& delta) {
@@ -311,7 +315,7 @@ class LieGroupCeresTests {
     ASSERT_TRUE(
         manifold.Minus(test_group.data(), x.data(), data(test_tangent)));
     Tangentd const diff = test_tangent - delta;
-    EXPECT_THAT(diff, HasSquaredNorm(Lt(epsilon())));
+    EXPECT_THAT(diff, HasSquaredNorm(Lt(squaredRoundTripTolerance())));
   }
 
   static void plusMinusIsIdentity(LieGroupd const& x, LieGroupd const& y) {
@@ -322,7 +326,7 @@ class LieGroupCeresTests {
     ASSERT_TRUE(manifold.Minus(y.data(), x.data(), data(test_tangent)));
     ASSERT_TRUE(manifold.Plus(x.data(), data(test_tangent), test_group.data()));
     EXPECT_THAT((y.inverse() * test_group).log(),
-                HasSquaredNorm(Lt(epsilon())));
+                HasSquaredNorm(Lt(squaredRoundTripTolerance())));
   }
 
   static void minusJacobianTimesPlusJacobianIsIdentity(LieGroupd const& x) {
@@ -339,7 +343,7 @@ class LieGroupCeresTests {
     Eigen::Matrix<double, kDoF, kDoF> const product = Jminus * Jplus;
     EXPECT_THAT(
         (product - Eigen::Matrix<double, kDoF, kDoF>::Identity()).reshaped(),
-        HasSquaredNorm(::testing::Lt(epsilon())));
+        HasSquaredNorm(::testing::Lt(squaredRoundTripTolerance())));
   }
 
   static void averagingOnCompleteGraphReducesErrors(std::size_t num_vertices) {
