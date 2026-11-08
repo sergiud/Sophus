@@ -7,6 +7,7 @@
 #define SOPHUS_SE2_HPP
 
 #include "so2.hpp"
+#include "trig_details.hpp"
 
 namespace Sophus {
 template <class Scalar_, int Options = 0>
@@ -619,7 +620,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
     } else {
       sin_theta_by_theta = so2.unit_complex().y() / theta;
       one_minus_cos_theta_by_theta =
-          (Scalar(1.) - so2.unit_complex().x()) / theta;
+          theta * details::oneMinusCosOverThetaSq(theta);
     }
 
     Matrix<Scalar, 2, 2> A;
