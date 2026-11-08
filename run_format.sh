@@ -1,1 +1,5 @@
-find . -type d \( -path ./sympy -o -path ./doxyrest_b -o -path "./*/CMakeFiles/*" \) -prune -o \( -iname "*.hpp" -o -iname "*.cpp" \) -print | xargs clang-format -i
+#!/bin/bash
+# Formats the tracked C++ sources outside the generated code in sympy/.
+set -euo pipefail
+cd "$(dirname "$0")"
+git ls-files -z -- '*.hpp' '*.cpp' ':!:sympy/' | xargs -0 clang-format -i
