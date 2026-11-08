@@ -23,7 +23,8 @@ are supported are the ones which are used in the Continuous Integration (CI):
 See GitHubCI_ for details.
 
 However, it should work with no to minor modifications on many other modern
-configurations as long as they support C++17, CMake, Eigen 3.4.1 to 5 and fmt.
+configurations as long as they support C++17, CMake 3.28 or later, Eigen 3.4.1
+to 5 and fmt.
 Building the tests additionally requires GoogleTest 1.10 or later.
 
 .. _GitHubCI: https://github.com/sergiud/Sophus/actions
