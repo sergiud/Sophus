@@ -380,11 +380,16 @@ TYPED_TEST(RxSO3FloatingPointTest, LogMatchesReference) {
   reference::expectAccurateLog<RxSO3<TypeParam>>(reference::kRxSO3Log);
 }
 
-TEST(RxSO3DeathTest, SetQuaternionRejectsScalesBelowEpsilon) {
+TEST(RxSO3DeathTest, SetQuaternionRejectsScalesOutOfRange) {
+  // The scales |q|^2 lie below epsilon and above its inverse, the bounds of
+  // the class invariant.
+  double constexpr kTinyScale = 1e-15;
+  double constexpr kHugeScale = 1e15;
   RxSO3d T;
-  // The scale |q|^2 = 1e-15 is below the epsilon of the class invariant.
-  Eigen::Quaterniond const tiny(std::sqrt(1e-15), 0, 0, 0);
-  EXPECT_DEATH(T.setQuaternion(tiny), "Scale factor");
+  Eigen::Quaterniond const tiny(std::sqrt(kTinyScale), 0, 0, 0);
+  EXPECT_DEATH(T.setQuaternion(tiny), "must be greater-equal epsilon");
+  Eigen::Quaterniond const huge(std::sqrt(kHugeScale), 0, 0, 0);
+  EXPECT_DEATH(T.setQuaternion(huge), "must be less than the inverse epsilon");
 }
 
 TYPED_TEST(RxSO3FloatingPointTest, DxExpXFollowsTheScaleSaturation) {
