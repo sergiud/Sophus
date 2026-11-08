@@ -25,7 +25,6 @@ jobs:
     uses: ./.github/workflows/macos.yml
     permissions:
       contents: read
-    secrets: inherit
 
   windows:
     if: *skip-duplicate-pull-request
@@ -33,4 +32,3 @@ jobs:
     uses: ./.github/workflows/windows.yml
     permissions:
       contents: read
-    secrets: inherit
