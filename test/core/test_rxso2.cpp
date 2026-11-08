@@ -317,16 +317,22 @@ TYPED_TEST(RxSO2FloatingPointTest, DxExpXFollowsTheScaleSaturation) {
   using Scalar = TypeParam;
   using RxSO2Type = RxSO2<Scalar>;
   using Tangent = typename RxSO2Type::Tangent;
+  using Jacobian = Matrix<Scalar, RxSO2Type::num_parameters, RxSO2Type::DoF>;
   // exp saturates the scale beyond these log scales, where its derivative
   // with respect to the log scale vanishes.
   for (double const sigma : {-30.0, 30.0}) {
     Tangent const x(Scalar(0.3), Scalar(sigma));
-    Matrix<Scalar, RxSO2Type::num_parameters, RxSO2Type::DoF> const J_num =
+    Jacobian const J_num =
         vectorFieldNumDiff<Scalar, RxSO2Type::num_parameters, RxSO2Type::DoF>(
             [](Tangent const& t) { return RxSO2Type::exp(t).params(); }, x);
-    EXPECT_THAT(RxSO2Type::Dx_exp_x(x),
-                IsNear(J_num, relativeTolerance(
-                                  Constants<Scalar>::epsilonSqrt(), J_num)))
+    Jacobian const J = RxSO2Type::Dx_exp_x(x);
+    // The Jacobian is proportional to the saturated scale, which is far from
+    // one, so the tolerance is relative to its largest entry.
+    EXPECT_THAT(J, IsNear(J_num, Constants<Scalar>::epsilonSqrt() *
+                                     J_num.cwiseAbs().maxCoeff()))
+        << "sigma = " << sigma;
+    EXPECT_THAT(J.col(RxSO2Type::DoF - 1),
+                IsNear(Vector2<Scalar>::Zero().eval(), Scalar(0)))
         << "sigma = " << sigma;
   }
 }
