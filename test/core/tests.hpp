@@ -154,6 +154,19 @@ class LieGroupTests {
     return Scalar(kNumDiffEpsilonSqrts) * machineEpsSqrt();
   }
 
+  /// The error of a central difference of a spline relative to the
+  /// magnitude of its derivative, in units of the square root of the machine
+  /// epsilon. The steps of the difference are bounded by the length of a
+  /// segment, which raises the rounding error.
+  static constexpr int kSplineNumDiffEpsilonSqrts = 64;
+
+  template <class Derived>
+  static Scalar splineNumDiffTolerance(
+      Eigen::MatrixBase<Derived> const& reference) {
+    return relativeTolerance(
+        Scalar(kSplineNumDiffEpsilonSqrts) * machineEpsSqrt(), reference);
+  }
+
   static StdVector<LieGroup> elements() {
     return LieGroupTestData<LieGroup>::groupElements();
   }
@@ -550,9 +563,9 @@ class LieGroupTests {
                                              LieGroup const& T_world_bar) {
     BasisSplineImpl<LieGroup> const spline(
         splineControlPoses(T_world_foo, T_world_bar), Scalar(1));
-    EXPECT_THAT(spline.parent_T_spline(0, Scalar(1)),
-                IsNear(spline.parent_T_spline(1, Scalar(0)),
-                       Scalar(10) * smallEpsSqrt()));
+    EXPECT_THAT(
+        spline.parent_T_spline(0, Scalar(1)),
+        IsNear(spline.parent_T_spline(1, Scalar(0)), interpolationTolerance()));
   }
 
   static void splineDerivativesMatchNumericalDerivatives(
@@ -567,7 +580,8 @@ class LieGroupTests {
         },
         kU);
     EXPECT_THAT(spline.Dt_parent_T_spline(0, kU),
-                IsNear(Dt_parent_T_spline2, Scalar(100) * smallEpsSqrt()));
+                IsNear(Dt_parent_T_spline2,
+                       splineNumDiffTolerance(Dt_parent_T_spline2)));
 
     Transformation const Dt2_parent_T_spline2 = curveNumDiff(
         [&spline](Scalar u_bar) -> Transformation {
@@ -575,7 +589,8 @@ class LieGroupTests {
         },
         kU);
     EXPECT_THAT(spline.Dt2_parent_T_spline(0, kU),
-                IsNear(Dt2_parent_T_spline2, Scalar(20) * smallEpsSqrt()));
+                IsNear(Dt2_parent_T_spline2,
+                       splineNumDiffTolerance(Dt2_parent_T_spline2)));
   }
 
   static void basisSplineDerivativesMatchNumericalDerivatives(
@@ -599,8 +614,7 @@ class LieGroupTests {
         t, h);
     EXPECT_THAT(spline.Dt_parent_T_spline(t),
                 IsNear(Dt_parent_T_spline2,
-                       relativeTolerance(Scalar(80) * smallEpsSqrt(),
-                                         Dt_parent_T_spline2)));
+                       splineNumDiffTolerance(Dt_parent_T_spline2)));
 
     Transformation const Dt2_parent_T_spline2 = curveNumDiff(
         [&spline](Scalar t_bar) -> Transformation {
@@ -609,8 +623,7 @@ class LieGroupTests {
         t, h);
     EXPECT_THAT(spline.Dt2_parent_T_spline(t),
                 IsNear(Dt2_parent_T_spline2,
-                       relativeTolerance(Scalar(20) * smallEpsSqrt(),
-                                         Dt2_parent_T_spline2)));
+                       splineNumDiffTolerance(Dt2_parent_T_spline2)));
   }
 
   static void leftJacobianMatchesNumericalDerivative(Tangent const& x) {
