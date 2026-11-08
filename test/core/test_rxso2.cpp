@@ -309,5 +309,9 @@ TYPED_TEST(RxSO2FloatingPointTest, DxExpXMatchesReference) {
   reference::expectAccurateDxExpX<RxSO2<TypeParam>>(reference::kRxSO2DxExpX);
 }
 
+TYPED_TEST(RxSO2FloatingPointTest, LogMatchesReference) {
+  reference::expectAccurateLog<RxSO2<TypeParam>>(reference::kRxSO2Log);
+}
+
 }  // namespace
 }  // namespace Sophus

@@ -180,14 +180,11 @@ class RxSO2Base {
   ///
   [[nodiscard]] SOPHUS_FUNC Tangent log() const {
     using std::log1p;
-    // log(scale()) via log1p(scale() - 1) rather than log(scale()) directly:
-    // scale() - 1 is computed exactly (Sterbenz's lemma, scale() typically
-    // being within a factor of two of 1), and log1p is accurate for
-    // arguments close to zero, which log() is not guaranteed to be for
-    // arguments close to 1 (i.e. scale close to unity, the no-scaling
-    // case).
+    // log(scale) = log(|z|^2) / 2. Rounding |z| or |z|^2 would cost the log
+    // an absolute error of epsilon, which is large relative to the log of a
+    // scale close to 1, while |z|^2 - 1 is accurate.
     return (Tangent{} << SO2<Scalar>(complex()).log(),
-            log1p(scale() - Scalar(1)))
+            log1p(details::squaredNormMinusOne(complex())) / Scalar(2))
         .finished();
   }
 

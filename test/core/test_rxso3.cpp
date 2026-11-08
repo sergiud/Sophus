@@ -343,5 +343,9 @@ TEST(RxSO3DeathTest, RejectsScaledReflections) {
   EXPECT_DEATH(std::ignore = RxSO3d{scaled_reflection}, "scaled orthogonal");
 }
 
+TYPED_TEST(RxSO3FloatingPointTest, LogMatchesReference) {
+  reference::expectAccurateLog<RxSO3<TypeParam>>(reference::kRxSO3Log);
+}
+
 }  // namespace
 }  // namespace Sophus

@@ -169,6 +169,36 @@ class Transpose<Matrix<Scalar, M, N>> {
     return s.transpose();
   }
 };
+
+/**
+ * Returns @f$\|v\|^2 - 1@f$ without the cancellation of subtracting 1 from
+ * the rounded squared norm.
+ *
+ * With the largest magnitude @f$m@f$ of the coefficients, the result is
+ * @f$(m - 1)(m + 1) + \sum_{i \ne k} v_i^2@f$, where @f$m - 1@f$ is exact
+ * for @f$m@f$ near 1. This keeps the relative accuracy of the logarithm of
+ * a scale close to 1.
+ */
+template <class Derived>
+SOPHUS_FUNC typename Derived::Scalar squaredNormMinusOne(
+    Eigen::MatrixBase<Derived> const& v) {
+  using std::abs;
+  using Scalar = typename Derived::Scalar;
+  Eigen::Index largest = 0;
+  for (Eigen::Index i = 1; i < v.size(); ++i) {
+    if (abs(v[i]) > abs(v[largest])) {
+      largest = i;
+    }
+  }
+  Scalar rest(0);
+  for (Eigen::Index i = 0; i < v.size(); ++i) {
+    if (i != largest) {
+      rest += v[i] * v[i];
+    }
+  }
+  Scalar const m = abs(v[largest]);
+  return (m - Scalar(1)) * (m + Scalar(1)) + rest;
+}
 }  // namespace details
 
 /// Returns maximum metric between two points ``p0`` and ``p1``, with ``p0, p1``
