@@ -1,7 +1,6 @@
 ---
 name: Bug report
-about: 'Report a specific bug. For more general help and questions use discussions:
-  https://github.com/strasdat/Sophus/discussions/categories/q-a'
+about: Report a specific bug.
 title: ''
 labels: bug
 assignees: ''

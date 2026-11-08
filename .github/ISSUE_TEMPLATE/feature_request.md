@@ -1,7 +1,6 @@
 ---
 name: Feature request
-about: 'Suggest a specific feature for Sophus. For more general ideas, please use
-  discussions: https://github.com/strasdat/Sophus/discussions/categories/ideas'
+about: Suggest a specific feature for Sophus.
 title: ''
 labels: feature request
 assignees: ''
