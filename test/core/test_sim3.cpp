@@ -337,5 +337,12 @@ TEST(Sim3DeathTest, RejectsMatricesWithoutHomogeneousLastRow) {
   EXPECT_DEATH(std::ignore = Sim3<double>{T}, "Last row");
 }
 
+TYPED_TEST(Sim3FloatingPointTest, SetsRotationFromTemporaryMatrix) {
+  using Scalar = TypeParam;
+  Sim3<Scalar> T;
+  T.setRotationMatrix(Matrix3<Scalar>::Identity());
+  EXPECT_EQ(T.rotationMatrix(), Matrix3<Scalar>::Identity().eval());
+}
+
 }  // namespace
 }  // namespace Sophus
