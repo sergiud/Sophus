@@ -171,13 +171,39 @@ TYPED_TEST(GeometryTest, FrameOfLineWithNonUnitNormalLiesOnTheLine) {
                      Constants<Scalar>::epsilon()));
 }
 
+/// Expects both signs of a plane to be made unique as the expected
+/// coefficients, which flipping the sign computes exactly.
+template <class Scalar>
+void expectUniquePlane(Vector3<Scalar> const& normal, Scalar offset,
+                       Vector4<Scalar> const& expected) {
+  EXPECT_EQ(makeHyperplaneUnique(Plane3<Scalar>(normal, offset)).coeffs(),
+            expected)
+      << "for normal " << normal.transpose() << " and offset " << offset;
+  EXPECT_EQ(makeHyperplaneUnique(Plane3<Scalar>(-normal, -offset)).coeffs(),
+            expected)
+      << "for normal " << -normal.transpose() << " and offset " << -offset;
+}
+
 TYPED_TEST(GeometryTest, UniqueHyperplaneThroughOriginIgnoresNormalSign) {
   using Scalar = TypeParam;
-  Vector3<Scalar> const normal(Scalar(0), Scalar(-0.6), Scalar(0.8));
-  Plane3<Scalar> const plane(normal, Scalar(0));
-  Plane3<Scalar> const flipped(-normal, Scalar(0));
-  EXPECT_EQ(makeHyperplaneUnique(plane).coeffs(),
-            makeHyperplaneUnique(flipped).coeffs());
+  // The first nonzero coefficient of the normal becomes positive.
+  expectUniquePlane(
+      Vector3<Scalar>(Scalar(0), Scalar(-0.6), Scalar(0.8)), Scalar(0),
+      Vector4<Scalar>(Scalar(0), Scalar(0.6), Scalar(-0.8), Scalar(0)));
+  expectUniquePlane(
+      Vector3<Scalar>(Scalar(-0.6), Scalar(0.8), Scalar(0)), Scalar(0),
+      Vector4<Scalar>(Scalar(0.6), Scalar(-0.8), Scalar(0), Scalar(0)));
+  expectUniquePlane(
+      Vector3<Scalar>(Scalar(1), Scalar(0), Scalar(0)), Scalar(0),
+      Vector4<Scalar>(Scalar(1), Scalar(0), Scalar(0), Scalar(0)));
+}
+
+TYPED_TEST(GeometryTest, UniqueHyperplaneHasNonnegativeOffset) {
+  using Scalar = TypeParam;
+  // The plane z = 2, whose offset is negative for the normal along z.
+  expectUniquePlane(
+      Vector3<Scalar>(Scalar(0), Scalar(0), Scalar(1)), Scalar(-2),
+      Vector4<Scalar>(Scalar(0), Scalar(0), Scalar(-1), Scalar(2)));
 }
 
 TEST(GeometryDeathTest, PerpendicularityOfHintsIgnoresTheirLength) {
