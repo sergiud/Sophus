@@ -236,7 +236,9 @@ TYPED_TEST(Sim2Test, ConstructorsAndSetters) {
 
   StdVector<Sim2Type> const sim2_vec =
       LieGroupTestData<Sim2Type>::groupElements();
-  Sim2Type sim2 = sim2_vec.front();
+  // An element with a nonzero translation, so that each constructor is checked
+  // to keep it.
+  Sim2Type sim2 = sim2_vec[1];
   Point const translation = sim2.translation();
   RxSO2<Scalar> const rxso2 = sim2.rxso2();
 
@@ -248,9 +250,9 @@ TYPED_TEST(Sim2Test, ConstructorsAndSetters) {
   sim2.setScale(scale);
   EXPECT_THAT(sim2.scale(), IsNear(scale, kEpsilon)) << "setScale";
 
-  sim2.setComplex(sim2_vec[1].rxso2().complex());
+  sim2.setComplex(sim2_vec.front().rxso2().complex());
   EXPECT_THAT(sim2.rxso2().complex(),
-              IsNear(sim2_vec[1].rxso2().complex(), kEpsilon))
+              IsNear(sim2_vec.front().rxso2().complex(), kEpsilon))
       << "setComplex";
 }
 

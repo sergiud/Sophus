@@ -285,7 +285,9 @@ TYPED_TEST(Sim3Test, ConstructorsAndSetters) {
 
   StdVector<Sim3Type> const sim3_vec =
       LieGroupTestData<Sim3Type>::groupElements();
-  Sim3Type sim3 = sim3_vec.front();
+  // An element with a nonzero translation, so that each constructor is checked
+  // to keep it.
+  Sim3Type sim3 = sim3_vec[1];
   Point const translation = sim3.translation();
   RxSO3<Scalar> const rxso3 = sim3.rxso3();
 
@@ -304,9 +306,9 @@ TYPED_TEST(Sim3Test, ConstructorsAndSetters) {
   sim3.setScale(scale);
   EXPECT_THAT(sim3.scale(), IsNear(scale, kEpsilon)) << "setScale";
 
-  sim3.setQuaternion(sim3_vec[1].rxso3().quaternion());
+  sim3.setQuaternion(sim3_vec.front().rxso3().quaternion());
   EXPECT_THAT(sim3.rxso3().quaternion().coeffs(),
-              IsNear(sim3_vec[1].rxso3().quaternion().coeffs(), kEpsilon))
+              IsNear(sim3_vec.front().rxso3().quaternion().coeffs(), kEpsilon))
       << "setQuaternion";
 }
 
