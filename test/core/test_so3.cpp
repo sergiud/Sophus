@@ -391,5 +391,14 @@ TYPED_TEST(SO3FloatingPointTest, LeftJacobianInverseMatchesReference) {
       });
 }
 
+TYPED_TEST(SO3FloatingPointTest, LeftJacobianMatchesReference) {
+  using SO3Type = SO3<TypeParam>;
+  reference::expectAccurate<TypeParam>(
+      reference::kSO3LeftJacobian, [](reference::Case const& c) {
+        return SO3Type::leftJacobian(
+            reference::input<typename SO3Type::Tangent>(c));
+      });
+}
+
 }  // namespace
 }  // namespace Sophus

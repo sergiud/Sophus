@@ -7,7 +7,9 @@
 #include <sophus/num_diff.hpp>
 #include <sophus/se3.hpp>
 #include <sophus/spline.hpp>
+#include <sophus/trig_details.hpp>
 
+#include "reference.hpp"
 #include "tests.hpp"
 
 namespace Sophus {
@@ -29,6 +31,22 @@ TYPED_TEST(CommonTest, TransposeOfVectorIsARowVector) {
       transpose(Vector2<Scalar>(Scalar(1), Scalar(7)));
   Matrix<Scalar, 1, 2> const expected_row(Scalar(1), Scalar(7));
   EXPECT_EQ(row, expected_row);
+}
+
+TYPED_TEST(CommonTest, OneMinusCosOverThetaSqMatchesReference) {
+  using Scalar = TypeParam;
+  // Single-precision angles and their values from mpmath at 50 digits.
+  std::vector<reference::Case> const cases = {
+      {{0x0.0p+0L}, {0.5L}},
+      {{0x1.0c6f7ap-20L}, {0.4999999999999583333335437L}},
+      {{0x1.92a738p-19L}, {0.499999999999624999973472L}},
+      {{0x1.0624dep-10L}, {0.4999999583333307641014252L}},
+      {{0x1p+0L}, {0.4596976941318602825990634L}},
+      {{0x1.8p+1L}, {0.221110277400049495252397L}},
+  };
+  reference::expectAccurate<Scalar>(cases, [](reference::Case const& c) {
+    return details::oneMinusCosOverThetaSq(reference::input<Scalar>(c));
+  });
 }
 
 /// The time steps and spline parameters the derivatives of the spline basis

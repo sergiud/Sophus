@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "trig_details.hpp"
 #include "types.hpp"
 
 namespace Sophus {
@@ -39,16 +40,7 @@ Matrix<Scalar, N, N> calcW(Matrix<Scalar, N, N> const &Omega,
   // reformulation removes this cancellation entirely, so a small-angle
   // Taylor branch remains necessary.
   if (sigma_sq < Constants<Scalar>::epsilon()) {
-    // A = (1 - cos(theta)) / theta^2 == 2*sin(theta/2)^2 / theta^2 exactly;
-    // this half-angle form has no cancellation for any theta != 0, so,
-    // like C above, it only needs to handle the singularity at theta == 0.
-    if (fpclassify(theta) == FP_ZERO) {
-      A = half;
-    } else {
-      Scalar const half_theta = theta / Scalar(2);
-      Scalar const sin_half_theta = sin(half_theta);
-      A = Scalar(2) * sin_half_theta * sin_half_theta / theta_sq;
-    }
+    A = oneMinusCosOverThetaSq(theta);
     if (theta_sq < Constants<Scalar>::epsilon()) {
       B = Scalar(1. / 6.);
     } else {

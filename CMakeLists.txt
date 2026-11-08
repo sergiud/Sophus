@@ -67,6 +67,7 @@ target_sources (sophus INTERFACE
     sophus/so2.hpp
     sophus/so3.hpp
     sophus/spline.hpp
+    sophus/trig_details.hpp
     sophus/types.hpp
     sophus/velocities.hpp
 )

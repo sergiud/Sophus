@@ -280,5 +280,9 @@ TYPED_TEST(SE3FloatingPointTest, LogMatchesReference) {
   reference::expectAccurateLog<SE3<TypeParam>>(reference::kSE3Log);
 }
 
+TYPED_TEST(SE3FloatingPointTest, ExpMatchesReference) {
+  reference::expectAccurateExp<SE3<TypeParam>>(reference::kSE3Exp);
+}
+
 }  // namespace
 }  // namespace Sophus

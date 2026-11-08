@@ -9,6 +9,7 @@
 
 #include "rotation_matrix.hpp"
 #include "so2.hpp"
+#include "trig_details.hpp"
 #include "types.hpp"
 
 // Include only the selective set of Eigen headers that we need.
@@ -559,7 +560,6 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, DoF, DoF>
   leftJacobian(Tangent const& omega,
                std::optional<Scalar> const& theta_o = std::nullopt) {
-    using std::cos;
     using std::hypot;
     using std::sin;
 
@@ -574,8 +574,12 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
     } else {
       Scalar theta =
           theta_o ? *theta_o : hypot(omega.x(), omega.y(), omega.z());
+      // The coefficient of Omega needs the half-angle form, since its
+      // cancellation is weighted by theta only. The cancellation of the
+      // coefficient of Omega_sq is weighted by theta^2 and stays below the
+      // rounding error of the result.
       V = Matrix3<Scalar>::Identity() +
-          (Scalar(1) - cos(theta)) / theta_sq * Omega +
+          details::oneMinusCosOverThetaSq(theta) * Omega +
           (theta - sin(theta)) / (theta_sq * theta) * Omega_sq;
     }
     return V;
