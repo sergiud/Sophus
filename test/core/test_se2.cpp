@@ -263,6 +263,18 @@ TYPED_TEST(SE2FloatingPointTest, FitToSE2IsIdempotent) {
                             IsNear(Constants<Scalar>::epsilon()), fitted));
 }
 
+TYPED_TEST(SE2FloatingPointTest, FitToSE2RecoversTheElement) {
+  using Scalar = TypeParam;
+  using SE2Type = SE2<Scalar>;
+  StdVector<SE2Type> const elements =
+      LieGroupTestData<SE2Type>::groupElements();
+
+  EXPECT_THAT(
+      mapped(elements,
+             [](SE2Type const& g) { return SE2Type::fitToSE2(g.matrix()); }),
+      ::testing::Pointwise(IsNear(Constants<Scalar>::epsilon()), elements));
+}
+
 TYPED_TEST(SE2FloatingPointTest, LogMatchesReference) {
   reference::expectAccurateLog<SE2<TypeParam>>(reference::kSE2Log);
 }

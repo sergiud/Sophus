@@ -261,6 +261,18 @@ TYPED_TEST(SE3FloatingPointTest, FitToSE3IsIdempotent) {
                             IsNear(Constants<Scalar>::epsilon()), fitted));
 }
 
+TYPED_TEST(SE3FloatingPointTest, FitToSE3RecoversTheElement) {
+  using Scalar = TypeParam;
+  using SE3Type = SE3<Scalar>;
+  StdVector<SE3Type> const elements =
+      LieGroupTestData<SE3Type>::groupElements();
+
+  EXPECT_THAT(
+      mapped(elements,
+             [](SE3Type const& g) { return SE3Type::fitToSE3(g.matrix()); }),
+      ::testing::Pointwise(IsNear(Constants<Scalar>::epsilon()), elements));
+}
+
 TYPED_TEST(SE3FloatingPointTest, AnglesOfElementaryRotations) {
   using Scalar = TypeParam;
   using SE3Type = SE3<Scalar>;
