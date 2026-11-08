@@ -26,6 +26,13 @@ TEST(EnsureDeathTest, ReportsTheFormattedMessageOnStandardError) {
                "Sophus ensure failed .*\nexpected 2, got 1");
 }
 
+TEST(FormatTest, PrintIsASingleStatement) {
+  bool const print = false;
+  ::testing::internal::CaptureStdout();
+  if (print) SOPHUS_FMT_PRINT("printed {}", 1);
+  EXPECT_EQ(::testing::internal::GetCapturedStdout(), "");
+}
+
 TYPED_TEST(CommonTest, TransposeOfScalarIsTheScalar) {
   using Scalar = TypeParam;
   EXPECT_EQ(transpose(Scalar(42)), Scalar(42));

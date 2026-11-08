@@ -76,9 +76,11 @@
   fmt::format(SOPHUS_FMT_STRING(description), __VA_ARGS__)
 
 #define SOPHUS_FMT_PRINT(...) SOPHUS_FMT_PRINT_IMPL(__VA_ARGS__, 0)
-#define SOPHUS_FMT_PRINT_IMPL(description, ...)            \
-  fmt::print(SOPHUS_FMT_STRING(description), __VA_ARGS__); \
-  fmt::print("\n")
+#define SOPHUS_FMT_PRINT_IMPL(description, ...)              \
+  do {                                                       \
+    fmt::print(SOPHUS_FMT_STRING(description), __VA_ARGS__); \
+    fmt::print("\n");                                        \
+  } while (false)
 
 #endif  // !SOPHUS_USE_BASIC_LOGGING
 
