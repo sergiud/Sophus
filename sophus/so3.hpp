@@ -54,6 +54,39 @@ struct traits<Map<Sophus::SO3<Scalar_> const, Options_>>
 }  // namespace Eigen
 
 namespace Sophus {
+namespace details {
+
+/// Returns the derivative of the coefficients of ``q * exp(x)`` with respect
+/// to the rotation vector x at x = 0, where exp(x) is a unit quaternion.
+template <class Scalar>
+SOPHUS_FUNC Matrix<Scalar, 4, 3> quaternionDxThisMulExpXAt0(
+    Eigen::Quaternion<Scalar> const& q) {
+  Matrix<Scalar, 4, 3> J;
+  // clang-format off
+  J <<  q.w(), -q.z(),  q.y(),
+        q.z(),  q.w(), -q.x(),
+       -q.y(),  q.x(),  q.w(),
+       -q.x(), -q.y(), -q.z();
+  // clang-format on
+  return J / Scalar(2);
+}
+
+/// Returns the rotational rows of the derivative of ``log(q^{-1} * p)`` with
+/// respect to the coefficients of p at p = q for a unit quaternion q, up to
+/// the factor 2.
+template <class Scalar>
+SOPHUS_FUNC Matrix<Scalar, 3, 4> quaternionDxLogThisInvByXAtThis(
+    Eigen::Quaternion<Scalar> const& q) {
+  Matrix<Scalar, 3, 4> J;
+  // clang-format off
+  J << q.w(),  q.z(), -q.y(), -q.x(),
+      -q.z(),  q.w(),  q.x(), -q.y(),
+       q.y(), -q.x(),  q.w(), -q.z();
+  // clang-format on
+  return J;
+}
+
+}  // namespace details
 
 /// SO3 base type - implements SO3 class but is storage agnostic.
 ///
@@ -201,43 +234,17 @@ class SO3Base {
   ///
   [[nodiscard]] SOPHUS_FUNC Matrix<Scalar, num_parameters, DoF>
   Dx_this_mul_exp_x_at_0() const {
-    Matrix<Scalar, num_parameters, DoF> J;
-    Eigen::Quaternion<Scalar> const q = unit_quaternion();
-    Scalar const c0 = q.w() / Scalar(2);
-    Scalar const c1 = q.z() / Scalar(2);
-    Scalar const c2 = -c1;
-    Scalar const c3 = q.y() / Scalar(2);
-    Scalar const c4 = q.x() / Scalar(2);
-    Scalar const c5 = -c4;
-    Scalar const c6 = -c3;
-    J(0, 0) = c0;
-    J(0, 1) = c2;
-    J(0, 2) = c3;
-    J(1, 0) = c1;
-    J(1, 1) = c0;
-    J(1, 2) = c5;
-    J(2, 0) = c6;
-    J(2, 1) = c4;
-    J(2, 2) = c0;
-    J(3, 0) = c5;
-    J(3, 1) = c6;
-    J(3, 2) = c2;
-
-    return J;
+    return details::quaternionDxThisMulExpXAt0(
+        Eigen::Quaternion<Scalar>(unit_quaternion()));
   }
 
   /// Returns derivative of log(this^{-1} * x) by x at x=this.
   ///
   SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
       const {
-    auto& q = unit_quaternion();
-    Matrix<Scalar, DoF, num_parameters> J;
-    // clang-format off
-    J << q.w(),  q.z(), -q.y(), -q.x(),
-        -q.z(),  q.w(),  q.x(), -q.y(),
-         q.y(), -q.x(),  q.w(), -q.z();
-    // clang-format on
-    return J * Scalar(2.);
+    return details::quaternionDxLogThisInvByXAtThis(
+               Eigen::Quaternion<Scalar>(unit_quaternion())) *
+           Scalar(2);
   }
 
   /// Returns internal parameters of SO(3).

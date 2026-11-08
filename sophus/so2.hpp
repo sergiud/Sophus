@@ -50,6 +50,18 @@ struct traits<Map<Sophus::SO2<Scalar_> const, Options_>>
 }  // namespace Eigen
 
 namespace Sophus {
+namespace details {
+
+/// Returns the product of the complex numbers ``a`` and ``b``, given as
+/// vectors of their real and imaginary parts.
+template <class Result, class A, class B>
+SOPHUS_FUNC Vector2<Result> complexProduct(Eigen::MatrixBase<A> const& a,
+                                           Eigen::MatrixBase<B> const& b) {
+  return Vector2<Result>(a.x() * b.x() - a.y() * b.y(),
+                         a.x() * b.y() + a.y() * b.x());
+}
+
+}  // namespace details
 
 /// SO2 base type - implements SO2 class but is storage agnostic.
 ///
@@ -220,13 +232,10 @@ class SO2Base {
   [[nodiscard]] SOPHUS_FUNC SO2Product<OtherDerived> operator*(
       SO2Base<OtherDerived> const& other) const {
     using ResultT = ReturnScalar<OtherDerived>;
-    Scalar const lhs_real = unit_complex().x();
-    Scalar const lhs_imag = unit_complex().y();
-    typename OtherDerived::Scalar const& rhs_real = other.unit_complex().x();
-    typename OtherDerived::Scalar const& rhs_imag = other.unit_complex().y();
-    // complex multiplication
-    ResultT const result_real = lhs_real * rhs_real - lhs_imag * rhs_imag;
-    ResultT const result_imag = lhs_real * rhs_imag + lhs_imag * rhs_real;
+    Vector2<ResultT> const product =
+        details::complexProduct<ResultT>(unit_complex(), other.unit_complex());
+    ResultT const result_real = product.x();
+    ResultT const result_imag = product.y();
 
     ResultT const squared_norm =
         result_real * result_real + result_imag * result_imag;

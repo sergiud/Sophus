@@ -220,14 +220,8 @@ class RxSO2Base {
       RxSO2Base<OtherDerived> const& other) const {
     using ResultT = ReturnScalar<OtherDerived>;
 
-    Scalar lhs_real = complex().x();
-    Scalar lhs_imag = complex().y();
-    typename OtherDerived::Scalar const& rhs_real = other.complex().x();
-    typename OtherDerived::Scalar const& rhs_imag = other.complex().y();
-    /// complex multiplication
-    typename RxSO2Product<OtherDerived>::ComplexType result_complex(
-        lhs_real * rhs_real - lhs_imag * rhs_imag,
-        lhs_real * rhs_imag + lhs_imag * rhs_real);
+    typename RxSO2Product<OtherDerived>::ComplexType result_complex =
+        details::complexProduct<ResultT>(complex(), other.complex());
 
     const ResultT squared_scale = result_complex.squaredNorm();
 

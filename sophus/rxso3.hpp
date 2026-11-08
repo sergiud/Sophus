@@ -446,26 +446,8 @@ class RxSO3Base {
   Dx_this_mul_exp_x_at_0() const {
     Matrix<Scalar, num_parameters, DoF> J;
     Eigen::Quaternion<Scalar> const q = quaternion();
+    J.template leftCols<3>() = details::quaternionDxThisMulExpXAt0(q);
     J.col(3) = q.coeffs() / Scalar(2);
-    Scalar const c0 = q.w() / Scalar(2);
-    Scalar const c1 = q.z() / Scalar(2);
-    Scalar const c2 = -c1;
-    Scalar const c3 = q.y() / Scalar(2);
-    Scalar const c4 = q.x() / Scalar(2);
-    Scalar const c5 = -c4;
-    Scalar const c6 = -c3;
-    J(0, 0) = c0;
-    J(0, 1) = c2;
-    J(0, 2) = c3;
-    J(1, 0) = c1;
-    J(1, 1) = c0;
-    J(1, 2) = c5;
-    J(2, 0) = c6;
-    J(2, 1) = c4;
-    J(2, 2) = c0;
-    J(3, 0) = c5;
-    J(3, 1) = c6;
-    J(3, 2) = c2;
     return J;
   }
 
@@ -473,16 +455,11 @@ class RxSO3Base {
   ///
   SOPHUS_FUNC Matrix<Scalar, DoF, num_parameters> Dx_log_this_inv_by_x_at_this()
       const {
-    auto& q = quaternion();
+    Eigen::Quaternion<Scalar> const q = quaternion();
     Matrix<Scalar, DoF, num_parameters> J;
-    // clang-format off
-    J << q.w(),  q.z(), -q.y(), -q.x(),
-        -q.z(),  q.w(),  q.x(), -q.y(),
-         q.y(), -q.x(),  q.w(), -q.z(),
-         q.x(),  q.y(),  q.z(),  q.w();
-    // clang-format on
-    const Scalar scaler = Scalar(2.) / q.squaredNorm();
-    return J * scaler;
+    J.template topRows<3>() = details::quaternionDxLogThisInvByXAtThis(q);
+    J.row(3) = q.coeffs().transpose();
+    return J * Scalar(2) / q.squaredNorm();
   }
 
  private:
