@@ -387,6 +387,7 @@ class RxSO2Base {
   /// Sets scale and leaves rotation as is.
   ///
   SOPHUS_FUNC void setScale(Scalar const& scale) {
+    details::ensureScaleInRange(scale);
     complex_nonconst().normalize();
     complex_nonconst() *= scale;
   }

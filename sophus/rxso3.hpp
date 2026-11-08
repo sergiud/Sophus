@@ -402,6 +402,7 @@ class RxSO3Base {
   ///
   SOPHUS_FUNC
   void setScale(Scalar const& scale) {
+    details::ensureScaleInRange(scale);
     using std::sqrt;
     quaternion_nonconst().normalize();
     quaternion_nonconst().coeffs() *= sqrt(scale);

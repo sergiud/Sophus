@@ -331,5 +331,11 @@ TYPED_TEST(RxSO2FloatingPointTest, DxExpXFollowsTheScaleSaturation) {
   }
 }
 
+TEST(RxSO2DeathTest, SetScaleRejectsScalesOutOfRange) {
+  RxSO2d T;
+  EXPECT_DEATH(T.setScale(1e-15), "Scale factor 1e-15");
+  EXPECT_DEATH(T.setScale(1e15), "Scale factor 1e\\+15");
+}
+
 }  // namespace
 }  // namespace Sophus
