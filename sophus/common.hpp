@@ -113,7 +113,9 @@
 
 #if defined(SOPHUS_DISABLE_ENSURES)
 
-#define SOPHUS_ENSURE(expr, ...) ((void)0)
+// The unevaluated operand of sizeof references the variables that only the
+// condition uses, without evaluating it.
+#define SOPHUS_ENSURE(expr, ...) ((void)sizeof(expr))
 
 #elif defined(SOPHUS_ENABLE_ENSURE_HANDLER)
 
