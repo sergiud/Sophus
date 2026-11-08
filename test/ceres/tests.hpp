@@ -112,13 +112,9 @@ struct TestLieGroupCostFunctor {
     using Mapper = Mapper<typename LieGroupT::Tangent>;
     typename Mapper::Map residuals = Mapper::map(sResiduals);
 
-    // Sophus types mix with doubles and Jet types without a cast to T.
+    // Sophus types mix with doubles and Jet types without a cast to T, which
+    // mixedProductsMatchJetProducts checks.
     residuals = (T_aw * T_wa).log();
-    // The reverse order of multiplication verifies that both (Jet, double)
-    // and (double, Jet) multiplications compile and work.
-    residuals = (T_wa * T_aw).log();
-    // Finally, Jet-to-Jet multiplication.
-    residuals = (T_wa * T_aw.template cast<T>()).log();
     return true;
   }
 
@@ -143,16 +139,10 @@ struct TestPointCostFunctor {
     Eigen::Map<PointT const> point_b(spoint_b);
     Eigen::Map<PointT> residuals(sResiduals);
 
-    // Multiply the double group by a Jet point.
-    PointT point_b_prime = T_aw * point_b;
-    // Multiply the Jet group by a Jet point.
-    point_b_prime = T_aw.template cast<T>() * point_b;
-
-    // Multiply the Jet group by a double point.
-    PointT point_a_prime = T_wa * point_a;
-    // Multiply the Jet group by a Jet point.
-    point_a_prime = T_wa * point_a.template cast<T>();
-
+    // The double group acts on a Jet point and the Jet group on a double
+    // point, which mixedProductsMatchJetProducts checks.
+    PointT const point_b_prime = T_aw * point_b;
+    PointT const point_a_prime = T_wa * point_a;
     residuals = point_b_prime - point_a_prime;
     return true;
   }
@@ -175,7 +165,7 @@ struct TestGraphFunctor {
     using Mapper = Mapper<typename LieGroupT::Tangent>;
     typename Mapper::Map diff_log = Mapper::map(residuals);
 
-    // Jet group multiplied by the double group.
+    // The double group multiplied by a Jet group.
     diff_log = (diff * (B.inverse() * A)).log();
     return true;
   }
@@ -425,6 +415,56 @@ class LieGroupCeresTests {
                 Lt(kRequiredReduction * summary.initial_cost));
     EXPECT_THAT(final_error, Lt(kRequiredReduction * initial_error));
   }
+
+  /// Returns the values and the derivatives of Jet coefficients side by side.
+  template <class Derived>
+  static Eigen::MatrixXd valuesAndDerivatives(
+      Eigen::MatrixBase<Derived> const& jets) {
+    using Jet = typename Derived::Scalar;
+    Eigen::MatrixXd result(jets.size(), 1 + Jet::DIMENSION);
+    for (Eigen::Index i = 0; i < jets.size(); ++i) {
+      result(i, 0) = jets(i).a;
+      result.row(i).tail(Jet::DIMENSION) = jets(i).v.transpose();
+    }
+    return result;
+  }
+
+  /// Checks that products mixing double and Jet operands equal the products
+  /// of Jet operands, in values and derivatives.
+  static void mixedProductsMatchJetProducts(LieGroupd const& x,
+                                            LieGroupd const& y,
+                                            Pointd const& point) {
+    using Jet = ceres::Jet<double, kNumParameters>;
+    using LieGroupJet = Rebind<LieGroupd, Jet>;
+    using PointJet = typename LieGroupJet::Point;
+    Eigen::Matrix<Jet, kNumParameters, 1> y_params;
+    for (int i = 0; i < kNumParameters; ++i) {
+      y_params[i] = Jet(y.params()[i], i);
+    }
+    Eigen::Map<LieGroupJet const> const y_jet(y_params.data());
+    LieGroupJet const x_jet = x.template cast<Jet>();
+    PointJet const point_jet = y_jet * point.template cast<Jet>();
+
+    EXPECT_THAT(
+        valuesAndDerivatives(LieGroupJet(x * y_jet).params()),
+        IsNear(valuesAndDerivatives(LieGroupJet(x_jet * y_jet).params()),
+               epsilon()))
+        << "(double, Jet) product";
+    EXPECT_THAT(
+        valuesAndDerivatives(LieGroupJet(y_jet * x).params()),
+        IsNear(valuesAndDerivatives(LieGroupJet(y_jet * x_jet).params()),
+               epsilon()))
+        << "(Jet, double) product";
+    EXPECT_THAT(
+        valuesAndDerivatives(PointJet(x * point_jet)),
+        IsNear(valuesAndDerivatives(PointJet(x_jet * point_jet)), epsilon()))
+        << "double group acting on a Jet point";
+    EXPECT_THAT(valuesAndDerivatives(PointJet(y_jet * point)),
+                IsNear(valuesAndDerivatives(
+                           PointJet(y_jet * point.template cast<Jet>())),
+                       epsilon()))
+        << "Jet group acting on a double point";
+  }
 };
 
 template <class LieGroupd>
@@ -458,6 +498,10 @@ bool LieGroupCeresTests<LieGroupd>::registerAll(std::string const& group_name) {
       }
       add(suite, "PlusMinusIsIdentity/" + indexName(i, j), pair_value, __LINE__,
           [x = g[i], y = g[j]] { plusMinusIsIdentity(x, y); });
+      add(suite, "MixedProductsMatchJetProducts/" + indexName(i, j), pair_value,
+          __LINE__, [x = g[i], y = g[j], point = points.front()] {
+            mixedProductsMatchJetProducts(x, y, point);
+          });
 
       // log recovers delta = log(x^-1 * y) from x * exp(delta) only if the
       // rotational part of delta is below pi. Pairs rotated by more than
