@@ -28,9 +28,6 @@ class So2:
         """ logarithmic map"""
         return sympy.atan2(self.z.imag, self.z.real)
 
-    def calc_Dx_log_this(self):
-        return sympy.diff(self.log(), self[0])
-
     def calc_Dx_log_exp_x_times_this_at_0(self, x):
         return sympy.diff((So2.exp(x)*self).log(), x).limit(x, 0)
 
@@ -166,9 +163,6 @@ class TestSo2(unittest.TestCase):
             self, self.a.calc_Dx_this_mul_exp_x_at_0(self.theta),
             "cpp_gencode/So2_Dx_this_mul_exp_x_at_0.cpp")
 
-        check_cpp_gencode(
-            self, self.a.calc_Dx_log_this(),
-            "cpp_gencode/So2_Dx_log_this.cpp")
 
         check_cpp_gencode(
             self, self.a.calc_Dx_log_exp_x_times_this_at_0( self.theta),

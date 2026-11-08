@@ -32,10 +32,6 @@ class So3:
         n = sympy.sqrt(squared_norm(self.q.vec))
         return 2 * sympy.atan(n / self.q.real) / n * self.q.vec
 
-    def calc_Dx_log_this(self):
-        return sympy.Matrix(3, 3, lambda r, c: sympy.diff(self.log()[r],
-                                                          self[c]))
-
     def calc_Dx_log_exp_x_times_this_at_0(self, x):
         return sympy.Matrix(3, 3, lambda r, c:
                             sympy.diff((So3.exp(x)*self).log()[r], x[c])).subs(
@@ -127,11 +123,6 @@ class So3:
     def calc_Dx_this_mul_exp_x_at_0(self, x):
         return sympy.Matrix(4, 3, lambda r, c:
                             sympy.diff((self * So3.exp(x))[r], x[c]))\
-            .subs(x[0], 0).subs(x[1], 0).limit(x[2], 0)
-
-    def calc_Dx_exp_x_mul_this_at_0(self, x):
-        return sympy.Matrix(3, 4, lambda r, c:
-                            sympy.diff((self * So3.exp(x))[c], x[r, 0]))\
             .subs(x[0], 0).subs(x[1], 0).limit(x[2], 0)
 
     @staticmethod
@@ -239,9 +230,6 @@ class TestSo3(unittest.TestCase):
             self, self.a.calc_Dx_this_mul_exp_x_at_0(self.omega),
             "cpp_gencode/So3_Dx_this_mul_exp_x_at_0.cpp")
 
-        check_cpp_gencode(
-            self, self.a.calc_Dx_log_this(),
-            "cpp_gencode/So3_Dx_log_this.cpp")
 
         check_cpp_gencode(
             self, self.a.calc_Dx_log_exp_x_times_this_at_0( self.omega),
