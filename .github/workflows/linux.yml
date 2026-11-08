@@ -132,6 +132,7 @@ jobs:
                 -DCMAKE_CXX_STANDARD_REQUIRED=ON \
                 -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install \
                 -DEigen3_ROOT=${{runner.temp}}/eigen \
+                ${{ matrix.ceres && '-DCMAKE_REQUIRE_FIND_PACKAGE_Ceres=ON' || '' }} \
                 -G Ninja \
                 -Werror=author
 
