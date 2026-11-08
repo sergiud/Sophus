@@ -32,7 +32,7 @@ find_package (fmt ${SOPHUS_FMT_VERSION} REQUIRED CONFIG)
 
 if (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
   # Ceres follows Eigen3 since its package configuration searches for Eigen3.
-  find_package (Ceres 2.1.0 CONFIG)
+  find_package (Ceres 2.2.0 CONFIG)
   find_package (GTest 1.10 REQUIRED CONFIG)
 endif (PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
 
