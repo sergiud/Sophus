@@ -10,6 +10,8 @@
 namespace Eigen {
 template class Map<Sophus::SE2<double>>;
 template class Map<Sophus::SE2<double> const>;
+template class Map<Sophus::SE2<double>, Eigen::Aligned>;
+template class Map<Sophus::SE2<double> const, Eigen::Aligned>;
 }  // namespace Eigen
 
 namespace Sophus {

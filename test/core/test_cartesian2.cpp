@@ -9,6 +9,8 @@
 namespace Eigen {
 template class Map<Sophus::Cartesian<double, 2>>;
 template class Map<Sophus::Cartesian<double, 2> const>;
+template class Map<Sophus::Cartesian<double, 2>, Eigen::Aligned>;
+template class Map<Sophus::Cartesian<double, 2> const, Eigen::Aligned>;
 }  // namespace Eigen
 
 namespace Sophus {

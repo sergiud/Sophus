@@ -10,6 +10,8 @@
 namespace Eigen {
 template class Map<Sophus::SE3<double>>;
 template class Map<Sophus::SE3<double> const>;
+template class Map<Sophus::SE3<double>, Eigen::Aligned>;
+template class Map<Sophus::SE3<double> const, Eigen::Aligned>;
 }  // namespace Eigen
 
 namespace Sophus {
@@ -304,6 +306,16 @@ TYPED_TEST(SE3FloatingPointTest, LeftJacobianInverseMatchesReference) {
 
 TYPED_TEST(SE3FloatingPointTest, DxExpXMatchesReference) {
   reference::expectAccurateDxExpX<SE3<TypeParam>>(reference::kSE3DxExpX);
+}
+
+TEST(SE3MapTest, AlignedMapAccessesTheUnderlyingData) {
+  alignas(16) double raw[SE3d::num_parameters] = {0, 0, 0, 1, 1, 2, 3};
+  Eigen::Map<SE3d, Eigen::Aligned> map(raw);
+  EXPECT_EQ(map.translation(), Eigen::Vector3d(1, 2, 3));
+
+  map.translation() = Eigen::Vector3d(4, 5, 6);
+  EXPECT_EQ(raw[4], 4);
+  EXPECT_EQ(raw[6], 6);
 }
 
 }  // namespace

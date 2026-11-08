@@ -476,13 +476,13 @@ class Map<Sophus::Cartesian<Scalar_, M>, Options>
 
   /// Mutator of params vector
   ///
-  SOPHUS_FUNC Map<Sophus::Vector<Scalar, M, Options>>& params() {
+  SOPHUS_FUNC Map<Sophus::Vector<Scalar, M>, Options>& params() {
     return params_;
   }
 
   /// Accessor of params vector
   ///
-  SOPHUS_FUNC Map<Sophus::Vector<Scalar, M, Options>> const& params() const {
+  SOPHUS_FUNC Map<Sophus::Vector<Scalar, M>, Options> const& params() const {
     return params_;
   }
 
