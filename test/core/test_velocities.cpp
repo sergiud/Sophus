@@ -69,7 +69,7 @@ TYPED_TEST(VelocitiesTest, TransformsRotationalVelocitiesBetweenFrames) {
   // Not too tight, because of the finite difference approximation.
   Scalar const kTolerance = sqrt(Constants<Scalar>::epsilon());
   // The velocities in frames foo and bar differ by more than this.
-  Scalar const kMinFrameDifference(1e-3);
+  Scalar const kMinFrameDifference = Scalar(1e-3);
   std::vector<Scalar> const ts = {Scalar(0), Scalar(0.3), Scalar(1)};
 
   // One parameter subgroup of SE3, motion through space given time t.

@@ -263,7 +263,7 @@ TYPED_TEST(RxSO3Test, ConstructorsAndSetters) {
   Scalar const kEpsilon = Constants<Scalar>::epsilon();
 
   RxSO3Type rxso3;
-  Scalar const scale(1.2);
+  Scalar const scale = Scalar(1.2);
   rxso3.setScale(scale);
   EXPECT_THAT(rxso3.scale(), IsNear(scale, kEpsilon)) << "setScale";
   SO3<Scalar> const so3 =

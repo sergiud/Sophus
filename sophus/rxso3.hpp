@@ -414,6 +414,7 @@ class RxSO3Base {
   ///               and have a positive determinant.
   ///
   SOPHUS_FUNC void setScaledRotationMatrix(Transformation const& sR) {
+    using std::sqrt;
     SOPHUS_ENSURE(
         isScaledOrthogonalAndPositive(sR),
         "sR must be scaled orthogonal with positive determinant:\n {}",

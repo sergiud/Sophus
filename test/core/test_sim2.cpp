@@ -247,7 +247,7 @@ TYPED_TEST(Sim2Test, ConstructorsAndSetters) {
   EXPECT_THAT(Sim2Type(rxso2.complex(), translation), IsNear(sim2, kEpsilon));
   EXPECT_THAT(Sim2Type(sim2.matrix()), IsNear(sim2, kEpsilon));
 
-  Scalar const scale(1.2);
+  Scalar const scale = Scalar(1.2);
   sim2.setScale(scale);
   EXPECT_THAT(sim2.scale(), IsNear(scale, kEpsilon)) << "setScale";
 

@@ -303,7 +303,7 @@ TYPED_TEST(Sim3Test, ConstructorsAndSetters) {
   EXPECT_THAT(Sim3Type(sim3.matrix()), IsNear(sim3, kEpsilon))
       << "Sim3(matrix)";
 
-  Scalar const scale(1.2);
+  Scalar const scale = Scalar(1.2);
   sim3.setScale(scale);
   EXPECT_THAT(sim3.scale(), IsNear(scale, kEpsilon)) << "setScale";
 

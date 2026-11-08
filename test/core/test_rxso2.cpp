@@ -236,10 +236,10 @@ TYPED_TEST(RxSO2Test, ConstructorsAndSetters) {
   Scalar const kEpsilon = Constants<Scalar>::epsilon();
 
   RxSO2Type rxso2;
-  Scalar const scale(1.2);
+  Scalar const scale = Scalar(1.2);
   rxso2.setScale(scale);
   EXPECT_THAT(rxso2.scale(), IsNear(scale, kEpsilon)) << "setScale";
-  Scalar const angle(0.2);
+  Scalar const angle = Scalar(0.2);
   rxso2.setAngle(angle);
   EXPECT_THAT(rxso2.angle(), IsNear(angle, kEpsilon)) << "setAngle";
   EXPECT_THAT(rxso2.scale(), IsNear(scale, kEpsilon))

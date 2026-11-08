@@ -290,8 +290,8 @@ class LieGroupTests {
 
   static void mapsPlaneThroughTransformedPoints(
       LieGroup const& g, StdVector<Point> const& plane_points) {
-    int constexpr kPointDim = Point::RowsAtCompileTime;
-    ASSERT_EQ(plane_points.size(), static_cast<std::size_t>(kPointDim));
+    std::size_t constexpr kPointDim = Point::RowsAtCompileTime;
+    ASSERT_EQ(plane_points.size(), kPointDim);
     Point through_points[kPointDim];
     std::copy(plane_points.begin(), plane_points.end(), through_points);
     Hyperplane const plane = through(through_points);
@@ -554,7 +554,7 @@ class LieGroupTests {
   static void basisSplineDerivativesMatchNumericalDerivatives(
       LieGroup const& T_world_foo, LieGroup const& T_world_bar, Scalar frac) {
     Scalar const kT0(1);
-    Scalar const kDeltaT(0.1);
+    Scalar const kDeltaT = Scalar(0.1);
     BasisSpline<LieGroup> const spline(
         splineControlPoses(T_world_foo, T_world_bar), kT0, kDeltaT);
     Scalar const t = kT0 + frac * kDeltaT;
@@ -633,8 +633,8 @@ bool LieGroupTests<LieGroup>::registerGeneric(std::string const& group_name) {
           });
     }
     for (std::size_t j = 0; j + kPointDim <= p.size(); ++j) {
-      StdVector<Point> const plane_points(p.begin() + j,
-                                          p.begin() + j + kPointDim);
+      auto const first = p.begin() + static_cast<std::ptrdiff_t>(j);
+      StdVector<Point> const plane_points(first, first + kPointDim);
       add(suite, "MapsPlanesThroughTransformedPoints/" + indexName(i, j),
           value + ", points from #" + std::to_string(j), __LINE__,
           [e = g[i], plane_points] {
@@ -840,14 +840,15 @@ StdVector<SE2<T>> getTestSE2s() {
   T const kPi = Constants<T>::pi();
   StdVector<SE2<T>> se2_vec;
   se2_vec.push_back(SE2<T>());
-  se2_vec.push_back(SE2<T>(SO2<T>(0.2), Vector2<T>(10, 0)));
+  se2_vec.push_back(SE2<T>(SO2<T>(T(0.2)), Vector2<T>(10, 0)));
   se2_vec.push_back(SE2<T>::transY(100));
   se2_vec.push_back(SE2<T>::trans(Vector2<T>(1, 2)));
   se2_vec.push_back(SE2<T>(SO2<T>(-1.), Vector2<T>(20, -1)));
   se2_vec.push_back(
-      SE2<T>(SO2<T>(0.00001), Vector2<T>(-0.00000001, 0.0000000001)));
-  se2_vec.push_back(SE2<T>(SO2<T>(0.3), Vector2<T>(2, 0)) * SE2<T>::rot(kPi) *
-                    SE2<T>(SO2<T>(-0.3), Vector2<T>(0, 6)));
+      SE2<T>(SO2<T>(T(0.00001)), Vector2<T>(-0.00000001, 0.0000000001)));
+  se2_vec.push_back(SE2<T>(SO2<T>(T(0.3)), Vector2<T>(2, 0)) *
+                    SE2<T>::rot(kPi) *
+                    SE2<T>(SO2<T>(T(-0.3)), Vector2<T>(0, 6)));
   return se2_vec;
 }
 

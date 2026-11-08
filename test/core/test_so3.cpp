@@ -333,8 +333,10 @@ TYPED_TEST(SO3FloatingPointTest, SampleUniformIsSymmetric) {
 
     double const expected_count = static_cast<double>(kNumSamples) / 2.0;
     chi_square_sum +=
-        std::pow(positive_count - expected_count, 2.0) / expected_count +
-        std::pow(negative_count - expected_count, 2.0) / expected_count;
+        std::pow(static_cast<double>(positive_count) - expected_count, 2.0) /
+            expected_count +
+        std::pow(static_cast<double>(negative_count) - expected_count, 2.0) /
+            expected_count;
   }
 
   EXPECT_THAT(chi_square_sum, Lt(kChiSquareCriticalValue));

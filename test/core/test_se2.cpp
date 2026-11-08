@@ -108,7 +108,7 @@ TYPED_TEST(SE2Test, ExpInvertsLogForSmallAngles) {
   using SE2Type = SE2<Scalar>;
   using Point = typename SE2Type::Point;
 
-  Scalar const theta(0.0001);
+  Scalar const theta = Scalar(0.0001);
   Point const translation(Scalar(0.1), Scalar(-0.05));
   SE2Type const T(SO2<Scalar>(theta), translation);
   EXPECT_THAT(SE2Type::exp(T.log()), IsNear(T, Constants<Scalar>::epsilon()));
