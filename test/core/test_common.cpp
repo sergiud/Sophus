@@ -20,6 +20,12 @@ class CommonTest : public ::testing::Test {};
 
 TYPED_TEST_SUITE(CommonTest, FloatingPointScalars, ScalarNameGenerator);
 
+TEST(EnsureDeathTest, ReportsTheFormattedMessageOnStandardError) {
+  int const actual = 1;
+  EXPECT_DEATH(SOPHUS_ENSURE(actual == 2, "expected {}, got {}", 2, actual),
+               "Sophus ensure failed .*\nexpected 2, got 1");
+}
+
 TYPED_TEST(CommonTest, TransposeOfScalarIsTheScalar) {
   using Scalar = TypeParam;
   EXPECT_EQ(transpose(Scalar(42)), Scalar(42));

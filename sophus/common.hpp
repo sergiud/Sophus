@@ -128,13 +128,15 @@ void ensureFailed(char const* function, char const* file, int line,
                                    SOPHUS_FMT_CSTR(__VA_ARGS__)))
 #else
 
+// The report goes to the unbuffered standard error, since std::abort does not
+// flush the buffer of standard output, which loses the report when standard
+// output is not a terminal.
 #define SOPHUS_DEDAULT_ENSURE_FAILURE_IMPL(function, file, line, ...) \
   do {                                                                \
-    std::printf(                                                      \
-        "Sophus ensure failed in function '%s', "                     \
-        "file '%s', line %d.\n",                                      \
-        function, file, line);                                        \
-    SOPHUS_FMT_PRINT(__VA_ARGS__);                                    \
+    std::fprintf(stderr,                                              \
+                 "Sophus ensure failed in function '%s', "            \
+                 "file '%s', line %d.\n%s\n",                         \
+                 function, file, line, SOPHUS_FMT_CSTR(__VA_ARGS__)); \
     std::abort();                                                     \
   } while (false)
 
