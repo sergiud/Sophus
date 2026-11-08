@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+version = 1
+
+# The copyright holders of LICENSE.txt. They are added to the holders that a
+# file names in its header, if any.
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = [
+  "2011-2017 Hauke Strasdat",
+  "2012-2017 Steven Lovegrove",
+  "The Sophus contributors",
+]
+SPDX-License-Identifier = "MIT"
+
+# Files whose SPDX tags in their headers are complete.
+[[annotations]]
+path = [
+  ".github/coverage/**",
+  "sympy/requirements.txt",
+  ".github/workflows/ci.yml",
+  ".github/workflows/linux.yml",
+  ".github/workflows/lint.yml",
+  ".github/workflows/macos.yml",
+  ".github/workflows/windows.yml",
+  "REUSE.toml",
+  "test/support/**",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Sergiu Deitsch <sergiu.deitsch@gmail.com>"
+SPDX-License-Identifier = "MIT"
