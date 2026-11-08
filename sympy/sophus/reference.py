@@ -34,7 +34,8 @@ NUM_PARAMETERS = {"SO2": 2, "RxSO2": 2, "SE2": 4, "Sim2": 4,
 TRANSLATING = ("SE2", "SE3", "Sim2", "Sim3")
 SCALING = ("RxSO2", "RxSO3", "Sim2", "Sim3")
 
-ANGLES = ["0", "1e-12", "1e-9", "1e-7", "1e-5", "1e-3", "0.1", "1", "3"]
+ANGLES = ["0", "1e-12", "1e-9", "1e-7", "3e-6", "1e-5", "1e-3", "0.1", "1",
+          "3"]
 SIGMAS = ["0", "1e-9", "1e-5", "0.2", "-1"]
 # A unit vector with components exactly representable in binary.
 DIRECTION = ["0.48", "-0.6", "0.64"]

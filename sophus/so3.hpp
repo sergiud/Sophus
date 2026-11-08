@@ -618,48 +618,34 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, num_parameters, DoF>
   Dx_exp_x(Tangent const& omega) {
     using std::cos;
-    using std::exp;
     using std::hypot;
     using std::sin;
-    Scalar const c0 = omega[0] * omega[0];
-    Scalar const c1 = omega[1] * omega[1];
-    Scalar const c2 = omega[2] * omega[2];
-    Scalar const c3 = c0 + c1 + c2;
+    Scalar const theta_sq = omega.squaredNorm();
+    Sophus::Matrix<Scalar, num_parameters, DoF> J;
 
-    if (c3 < Constants<Scalar>::epsilon()) {
-      return Dx_exp_x_at_0();
+    // The closed form below is accurate down to angles where its powers of
+    // theta underflow. Below this threshold, the terms of second order in
+    // theta are beyond the precision of Scalar.
+    if (theta_sq <
+        Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
+      J = Dx_exp_x_at_0();
+      J.row(3) = -omega.transpose() / Scalar(4);
+      return J;
     }
 
-    Scalar const c4 = hypot(omega[0], omega[1], omega[2]);
-    Scalar const c5 = 1.0 / c4;
-    Scalar const c6 = 0.5 * c4;
-    Scalar const c7 = sin(c6);
-    Scalar const c8 = c5 * c7;
-    Scalar const c9 = pow(c3, -3.0L / 2.0L);
-    Scalar const c10 = c7 * c9;
-    Scalar const c11 = Scalar(1.0) / c3;
-    Scalar const c12 = cos(c6);
-    Scalar const c13 = Scalar(0.5) * c11 * c12;
-    Scalar const c14 = c7 * c9 * omega[0];
-    Scalar const c15 = Scalar(0.5) * c11 * c12 * omega[0];
-    Scalar const c16 = -c14 * omega[1] + c15 * omega[1];
-    Scalar const c17 = -c14 * omega[2] + c15 * omega[2];
-    Scalar const c18 = omega[1] * omega[2];
-    Scalar const c19 = -c10 * c18 + c13 * c18;
-    Scalar const c20 = Scalar(0.5) * c5 * c7;
-    Sophus::Matrix<Scalar, num_parameters, DoF> J;
-    J(0, 0) = -c0 * c10 + c0 * c13 + c8;
-    J(0, 1) = c16;
-    J(0, 2) = c17;
-    J(1, 0) = c16;
-    J(1, 1) = -c1 * c10 + c1 * c13 + c8;
-    J(1, 2) = c19;
-    J(2, 0) = c17;
-    J(2, 1) = c19;
-    J(2, 2) = -c10 * c2 + c13 * c2 + c8;
-    J(3, 0) = -c20 * omega[0];
-    J(3, 1) = -c20 * omega[1];
-    J(3, 2) = -c20 * omega[2];
+    // The derivative of the vector part sin(theta/2)/theta omega of the
+    // quaternion and of its real part cos(theta/2). The difference in the
+    // coefficient of omega omega^T cancels for small angles, but its error is
+    // weighted by theta^2.
+    Scalar const theta = hypot(omega[0], omega[1], omega[2]);
+    Scalar const half_theta = theta / Scalar(2);
+    Scalar const sin_half_theta_by_theta = sin(half_theta) / theta;
+    Scalar const outer_coefficient =
+        (cos(half_theta) / Scalar(2) - sin_half_theta_by_theta) / theta_sq;
+    J.template topRows<3>() =
+        outer_coefficient * omega * omega.transpose() +
+        sin_half_theta_by_theta * Matrix3<Scalar>::Identity();
+    J.row(3) = -sin_half_theta_by_theta / Scalar(2) * omega.transpose();
     return J;
   }
 
