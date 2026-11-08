@@ -102,7 +102,9 @@ jobs:
                 -B ${{runner.temp}}/build-eigen \
                 -DBUILD_TESTING=OFF \
                 -DCMAKE_INSTALL_PREFIX=${{runner.temp}}/eigen \
+                -DEIGEN_BUILD_BLAS=OFF \
                 -DEIGEN_BUILD_DOC=OFF \
+                -DEIGEN_BUILD_LAPACK=OFF \
                 -DEIGEN_BUILD_TESTING=OFF \
                 -G Ninja
           cmake --install ${{runner.temp}}/build-eigen
@@ -225,7 +227,9 @@ jobs:
                 -B ${{runner.temp}}/build-eigen \
                 -DBUILD_TESTING=OFF \
                 -DCMAKE_INSTALL_PREFIX=${{runner.temp}}/eigen \
+                -DEIGEN_BUILD_BLAS=OFF \
                 -DEIGEN_BUILD_DOC=OFF \
+                -DEIGEN_BUILD_LAPACK=OFF \
                 -DEIGEN_BUILD_TESTING=OFF \
                 -G Ninja
           cmake --install ${{runner.temp}}/build-eigen
