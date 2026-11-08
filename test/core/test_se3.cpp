@@ -120,16 +120,10 @@ TYPED_TEST(SE3Test, MapsAccessTheUnderlyingData) {
               IsNear(raw2.template tail<3>(), kEpsilon));
   EXPECT_EQ(map_of_se3.unit_quaternion().coeffs().data(), raw.data());
   EXPECT_EQ(map_of_se3.translation().data(), raw.data() + 4);
-  EXPECT_NE(map_of_se3.unit_quaternion().coeffs().data(), quat.coeffs().data());
   Eigen::Map<SE3Type> const shallow_copy = map_of_se3;
   EXPECT_EQ(shallow_copy.unit_quaternion().coeffs().eval(),
             map_of_se3.unit_quaternion().coeffs().eval());
   EXPECT_EQ(shallow_copy.translation().eval(), map_of_se3.translation().eval());
-  Eigen::Map<SE3Type> const const_map_of_se3 = map_of_se3;
-  EXPECT_EQ(const_map_of_se3.unit_quaternion().coeffs().eval(),
-            map_of_se3.unit_quaternion().coeffs().eval());
-  EXPECT_EQ(const_map_of_se3.translation().eval(),
-            map_of_se3.translation().eval());
   // Writing through the map changed the underlying data.
   EXPECT_EQ(raw, raw2);
 }

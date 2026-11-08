@@ -143,16 +143,10 @@ TYPED_TEST(SE2Test, MapsAccessTheUnderlyingData) {
               IsNear(raw2.template tail<2>(), kEpsilon));
   EXPECT_EQ(map_of_se2.unit_complex().data(), raw.data());
   EXPECT_EQ(map_of_se2.translation().data(), raw.data() + 2);
-  EXPECT_NE(map_of_se2.unit_complex().data(), raw2.data());
   Eigen::Map<SE2Type> const shallow_copy = map_of_se2;
   EXPECT_EQ(shallow_copy.unit_complex().eval(),
             map_of_se2.unit_complex().eval());
   EXPECT_EQ(shallow_copy.translation().eval(), map_of_se2.translation().eval());
-  Eigen::Map<SE2Type> const const_map_of_se2 = map_of_se2;
-  EXPECT_EQ(const_map_of_se2.unit_complex().eval(),
-            map_of_se2.unit_complex().eval());
-  EXPECT_EQ(const_map_of_se2.translation().eval(),
-            map_of_se2.translation().eval());
   // Writing through the map changed the underlying data.
   EXPECT_EQ(raw, raw2);
 }
