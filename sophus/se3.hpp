@@ -564,32 +564,37 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
     Scalar const theta_sq = omega.squaredNorm();
     Matrix3<Scalar> const Upsilon = SO3<Scalar>::hat(upsilon);
 
-    Matrix3<Scalar> Q;
-    if (theta_sq <
-        Constants<Scalar>::epsilon() * Constants<Scalar>::epsilon()) {
-      Q = k1By2 * Upsilon;
-
+    // The coefficients
+    //   c1 = (theta - sin(theta)) / theta^3,
+    //   c2 = (theta^2 / 2 + cos(theta) - 1) / theta^4,
+    //   c3 = (theta + theta cos(theta) / 2 - 3 sin(theta) / 2) / theta^5
+    // cancel for small angles faster than the powers of Omega they multiply
+    // vanish, so their Taylor series replace them there.
+    Scalar c1;
+    Scalar c2;
+    Scalar c3;
+    if (theta_sq < Scalar(details::kSeriesThetaSqBound)) {
+      c1 = details::alternatingSeries(theta_sq, 3, [](int) { return 1; });
+      c2 = details::alternatingSeries(theta_sq, 4, [](int) { return 1; });
+      c3 = details::alternatingSeries(theta_sq, 5, [](int k) { return k + 1; });
     } else {
       Scalar const theta = hypot(omega.x(), omega.y(), omega.z());
-      Scalar const i_theta = Scalar(1) / theta;
-      Scalar const i_theta_sq = i_theta * i_theta;
-      Scalar const i_theta_po4 = i_theta_sq * i_theta_sq;
+      Scalar const theta_po4 = theta_sq * theta_sq;
       Scalar const st = sin(theta);
       Scalar const ct = cos(theta);
-      Scalar const c1 = i_theta_sq - st * i_theta_sq * i_theta;
-      Scalar const c2 = k1By2 * i_theta_sq + ct * i_theta_po4 - i_theta_po4;
-      Scalar const c3 = i_theta_po4 + k1By2 * ct * i_theta_po4 -
-                        Scalar(1.5) * st * i_theta * i_theta_po4;
-
-      Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
-      Matrix3<Scalar> const OmegaUpsilon = Omega * Upsilon;
-      Matrix3<Scalar> const OmegaUpsilonOmega = OmegaUpsilon * Omega;
-      Q = k1By2 * Upsilon +
-          c1 * (OmegaUpsilon + Upsilon * Omega + OmegaUpsilonOmega) -
-          c2 * (theta_sq * Upsilon + Scalar(2) * OmegaUpsilonOmega) +
-          c3 * (OmegaUpsilonOmega * Omega + Omega * OmegaUpsilonOmega);
+      c1 = (theta - st) / (theta_sq * theta);
+      c2 = (k1By2 * theta_sq + ct - Scalar(1)) / theta_po4;
+      c3 =
+          (theta + k1By2 * theta * ct - Scalar(1.5) * st) / (theta_po4 * theta);
     }
-    return Q;
+
+    Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
+    Matrix3<Scalar> const OmegaUpsilon = Omega * Upsilon;
+    Matrix3<Scalar> const OmegaUpsilonOmega = OmegaUpsilon * Omega;
+    return k1By2 * Upsilon +
+           c1 * (OmegaUpsilon + Upsilon * Omega + OmegaUpsilonOmega) -
+           c2 * (theta_sq * Upsilon + Scalar(2) * OmegaUpsilonOmega) +
+           c3 * (OmegaUpsilonOmega * Omega + Omega * OmegaUpsilonOmega);
   }
 
   [[nodiscard]] SOPHUS_FUNC static Sophus::Matrix<Scalar, DoF, DoF>

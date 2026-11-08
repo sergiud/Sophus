@@ -284,5 +284,23 @@ TYPED_TEST(SE3FloatingPointTest, ExpMatchesReference) {
   reference::expectAccurateExp<SE3<TypeParam>>(reference::kSE3Exp);
 }
 
+TYPED_TEST(SE3FloatingPointTest, LeftJacobianMatchesReference) {
+  using SE3Type = SE3<TypeParam>;
+  reference::expectAccurate<TypeParam>(
+      reference::kSE3LeftJacobian, [](reference::Case const& c) {
+        return SE3Type::leftJacobian(
+            reference::input<typename SE3Type::Tangent>(c));
+      });
+}
+
+TYPED_TEST(SE3FloatingPointTest, LeftJacobianInverseMatchesReference) {
+  using SE3Type = SE3<TypeParam>;
+  reference::expectAccurate<TypeParam>(
+      reference::kSE3LeftJacobianInverse, [](reference::Case const& c) {
+        return SE3Type::leftJacobianInverse(
+            reference::input<typename SE3Type::Tangent>(c));
+      });
+}
+
 }  // namespace
 }  // namespace Sophus
