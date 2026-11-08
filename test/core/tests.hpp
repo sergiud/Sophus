@@ -223,15 +223,23 @@ class LieGroupTests {
     return interp_details::Traits<LieGroup>::hasShortestPathAmbiguity(g);
   }
 
-  /// Control poses of a spline that interpolates between two elements.
+  /// Control poses of a spline that interpolates between two elements. The
+  /// intermediate poses are moved off the geodesic between the elements in
+  /// different directions, so that the factors of a segment do not commute.
   static std::vector<LieGroup> splineControlPoses(LieGroup const& T_world_foo,
                                                   LieGroup const& T_world_bar) {
     int constexpr kNumIntermediatePoses = 4;
+    int constexpr kOffsetDivisor = 10;
+    StdVector<Tangent> const offsets = tangents();
     std::vector<LieGroup> control_poses;
     control_poses.push_back(interpolate(T_world_foo, T_world_bar, Scalar(0)));
     for (int i = 1; i <= kNumIntermediatePoses; ++i) {
       Scalar const p = Scalar(i) / Scalar(kNumIntermediatePoses + 1);
-      control_poses.push_back(interpolate(T_world_foo, T_world_bar, p));
+      Tangent const offset =
+          offsets[static_cast<std::size_t>(i) % offsets.size()] /
+          Scalar(kOffsetDivisor);
+      control_poses.push_back(interpolate(T_world_foo, T_world_bar, p) *
+                              LieGroup::exp(offset));
     }
     return control_poses;
   }
