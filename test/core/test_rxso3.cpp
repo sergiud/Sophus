@@ -347,5 +347,12 @@ TYPED_TEST(RxSO3FloatingPointTest, LogMatchesReference) {
   reference::expectAccurateLog<RxSO3<TypeParam>>(reference::kRxSO3Log);
 }
 
+TEST(RxSO3DeathTest, SetQuaternionRejectsScalesBelowEpsilon) {
+  RxSO3d T;
+  // The scale |q|^2 = 1e-15 is below the epsilon of the class invariant.
+  Eigen::Quaterniond const tiny(std::sqrt(1e-15), 0, 0, 0);
+  EXPECT_DEATH(T.setQuaternion(tiny), "Scale factor");
+}
+
 }  // namespace
 }  // namespace Sophus

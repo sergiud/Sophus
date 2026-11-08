@@ -359,13 +359,16 @@ class RxSO3Base {
   ///
   /// Precondition: ``quat`` must not be close to either zero or infinity
   SOPHUS_FUNC void setQuaternion(Eigen::Quaternion<Scalar> const& quat) {
-    SOPHUS_ENSURE(quat.squaredNorm() > Constants<Scalar>::epsilon() *
-                                           Constants<Scalar>::epsilon(),
-                  "Scale factor must be greater-equal epsilon.");
+    // The scale is the squared norm, which the class invariant bounds.
+    SOPHUS_ENSURE(quat.squaredNorm() >= Constants<Scalar>::epsilon(),
+                  "Scale factor {} must be greater-equal epsilon {}.",
+                  SOPHUS_FMT_ARG(quat.squaredNorm()),
+                  SOPHUS_FMT_ARG(Constants<Scalar>::epsilon()));
     SOPHUS_ENSURE(
-        quat.squaredNorm() < Scalar(1.) / (Constants<Scalar>::epsilon() *
-                                           Constants<Scalar>::epsilon()),
-        "Inverse scale factor must be greater-equal epsilon.");
+        quat.squaredNorm() < Scalar(1.) / Constants<Scalar>::epsilon(),
+        "Scale factor {} must be less than the inverse epsilon {}.",
+        SOPHUS_FMT_ARG(quat.squaredNorm()),
+        SOPHUS_FMT_ARG(Scalar(1.) / Constants<Scalar>::epsilon()));
     static_cast<Derived*>(this)->quaternion_nonconst() = quat;
   }
 
