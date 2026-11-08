@@ -184,8 +184,9 @@ struct TestGraphFunctor {
 };
 
 /// Registers the tests of optimization with Ceres over the parameters of a
-/// Lie group, and of the invariants of its Ceres manifold, which
-/// `ceres/manifold_test_utils.h` checks as well. Ceres optimizes `double`
+/// Lie group, and of the invariants of its Ceres manifold that relate Plus
+/// and Minus. The derivative of Minus is checked against a numerical
+/// derivative by the generic tests of the group. Ceres optimizes `double`
 /// parameter blocks only, so the tests of a group named `SO3` form the suite
 /// `SO3/LieGroupCeresTest/double`, with one test per entry of its
 /// `LieGroupCeresTestData`, such as `XMinusXIsZero/3`.

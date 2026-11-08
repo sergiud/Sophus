@@ -379,6 +379,25 @@ class LieGroupTests {
                           smallEpsSqrt()));
   }
 
+  static void dxLogThisInvByXAtThisMatchesNumericalDerivative(
+      LieGroup const& T) {
+    LieGroup const T_inv = T.inverse();
+    // The parameters are perturbed in every direction, including those that
+    // leave the group, such as the norm of a unit quaternion. The product
+    // with T^{-1} defines the derivative in those directions, as Ceres
+    // manifolds expect of their Minus operation.
+    Eigen::Matrix<Scalar, kDoF, kNumParameters> const J_num =
+        vectorFieldNumDiff<Scalar, kDoF, kNumParameters>(
+            [T_inv](Vector<Scalar, kNumParameters> const& x)
+                -> Vector<Scalar, kDoF> {
+              return Vector<Scalar, kDoF>(
+                  (T_inv * Eigen::Map<LieGroup const>(x.data())).log());
+            },
+            T.params());
+    EXPECT_THAT(T.Dx_log_this_inv_by_x_at_this(),
+                IsNear(J_num, smallEpsSqrt()));
+  }
+
   static void dxiExpXMatrixAt0MatchesNumericalDerivative(int i) {
     Transformation const Gi = LieGroup().Dxi_exp_x_matrix_at_0(i);
     Transformation const Gi2 = curveNumDiff(
@@ -682,6 +701,10 @@ bool LieGroupTests<LieGroup>::registerFloatingPoint(
     add(suite, "DxLogThisInvByXAtThisInvertsDxThisMulExpXAt0/" + indexName(i),
         value, __LINE__,
         [e = g[i]] { dxLogThisInvByXAtThisInvertsDxThisMulExpXAt0(e); });
+    add(suite,
+        "DxLogThisInvByXAtThisMatchesNumericalDerivative/" + indexName(i),
+        value, __LINE__,
+        [e = g[i]] { dxLogThisInvByXAtThisMatchesNumericalDerivative(e); });
     add(suite, "InterpolateHitsTheEndpoints/" + indexName(i), value, __LINE__,
         [e = g[i]] { interpolateHitsTheEndpoints(e); });
 
