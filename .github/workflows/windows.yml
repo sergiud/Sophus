@@ -14,7 +14,10 @@ jobs:
       contents: read
     defaults:
       run:
-        shell: powershell
+        # Windows PowerShell ignores the exit codes of native commands such as
+        # cmake, so that a step succeeded although one of its commands
+        # failed. PowerShell 7 stops at such a failure with this preference.
+        shell: pwsh -NoProfile -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
     env:
       CXXFLAGS: /WX /permissive-
     strategy:
