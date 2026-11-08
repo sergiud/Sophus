@@ -1,3 +1,5 @@
+#include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include "sophus/geometry.hpp"
 
@@ -35,4 +37,24 @@ int main() {
   // Note that the order of coefficients of Eigen's quaternion class is
   // (imag0, imag1, imag2, real)
   std::cout << std::endl;
+
+  // The rotation around the x axis has a closed form, and the product of
+  // rotations is the product of their matrices. The example fails unless
+  // both hold.
+  double constexpr kTolerance = 1e-12;
+  double const c = std::cos(kPi / 4);
+  double const s = std::sin(kPi / 4);
+  Eigen::Matrix3d R1_closed_form;
+  R1_closed_form << 1, 0, 0, 0, c, -s, 0, s, c;
+  bool const matches_closed_form =
+      (R1.matrix() - R1_closed_form).norm() < kTolerance;
+  bool const multiplies_like_matrices =
+      ((R1 * R2 * R3).matrix() - R1.matrix() * R2.matrix() * R3.matrix())
+          .norm() < kTolerance;
+  std::cout << std::boolalpha
+            << "R1 matches its closed form: " << matches_closed_form << '\n'
+            << "R1*R2*R3 is the product of their matrices: "
+            << multiplies_like_matrices << std::endl;
+  return matches_closed_form && multiplies_like_matrices ? EXIT_SUCCESS
+                                                         : EXIT_FAILURE;
 }
