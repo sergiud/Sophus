@@ -40,13 +40,16 @@ TYPED_TEST(VelocitiesTest, TransformsLinearVelocitiesBetweenFrames) {
   using Scalar = TypeParam;
   using std::sqrt;
   int constexpr kNumPoses = 10;
+  // Long enough that rotating the steps changes them by far more than the
+  // tolerance.
+  Scalar const kStepLength(1);
   SE3<Scalar> const foo_T_bar = fooTBar<Scalar>();
 
   StdVector<SE3<Scalar>> bar_Ts_baz;
   for (int i = 0; i < kNumPoses; ++i) {
     bar_Ts_baz.push_back(SE3<Scalar>::rotX(Scalar(i * 0.001)) *
                          SE3<Scalar>::rotY(Scalar(i * 0.001)) *
-                         SE3<Scalar>::transX(Scalar(0.01 * i)));
+                         SE3<Scalar>::transX(kStepLength * Scalar(i)));
   }
   auto const foo_Ts_baz =
       mapped(bar_Ts_baz, [&foo_T_bar](SE3<Scalar> const& bar_T_baz) {
