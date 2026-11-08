@@ -117,7 +117,7 @@ TYPED_TEST(RxSO2Test, ProductOfSmallElementsSaturatesTheScale) {
               IsNear(small1.so2() * small2.so2(), kEpsilon));
 }
 
-TYPED_TEST(RxSO2Test, ExpOfLargeScaleCanBeMultiplied) {
+TYPED_TEST(RxSO2Test, ProductOfLargeElementsSaturatesTheScale) {
   using Scalar = TypeParam;
   using RxSO2Type = RxSO2<Scalar>;
   using Tangent = typename RxSO2Type::Tangent;
@@ -126,9 +126,16 @@ TYPED_TEST(RxSO2Test, ExpOfLargeScaleCanBeMultiplied) {
   Tangent const regular_log(Scalar(2.), Scalar(0.));
   RxSO2Type const large = RxSO2Type::exp(large_log);
   RxSO2Type const regular = RxSO2Type::exp(regular_log);
-  RxSO2Type const product = regular * large;
-  EXPECT_THAT(large.scale(), IsFinite());
-  EXPECT_THAT(product.scale(), IsFinite());
+  Scalar const kInverseEpsilonPlus =
+      Scalar(1) / Constants<Scalar>::epsilonPlus();
+  EXPECT_THAT(large.scale(), IsNear(kInverseEpsilonPlus,
+                                    saturationTolerance(kInverseEpsilonPlus)));
+  EXPECT_THAT(
+      (regular * large).scale(),
+      IsNear(kInverseEpsilonPlus, saturationTolerance(kInverseEpsilonPlus)));
+  EXPECT_THAT(
+      (large * large).scale(),
+      IsNear(kInverseEpsilonPlus, saturationTolerance(kInverseEpsilonPlus)));
 }
 
 TYPED_TEST(RxSO2Test, ExpSaturatesTheScaleDespiteRoundingOfTheRotation) {
