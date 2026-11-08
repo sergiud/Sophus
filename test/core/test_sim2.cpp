@@ -269,5 +269,9 @@ TYPED_TEST(Sim2FloatingPointTest, LogMatchesReference) {
   reference::expectAccurateLog<Sim2<TypeParam>>(reference::kSim2Log);
 }
 
+TYPED_TEST(Sim2FloatingPointTest, DxExpXMatchesReference) {
+  reference::expectAccurateDxExpX<Sim2<TypeParam>>(reference::kSim2DxExpX);
+}
+
 }  // namespace
 }  // namespace Sophus

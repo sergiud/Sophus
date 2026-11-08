@@ -501,26 +501,22 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
       const Tangent& a) {
     Scalar const theta = a[2];
     Scalar const sigma = a[3];
-
     Matrix2<Scalar> const Omega = SO2<Scalar>::hat(theta);
-    Matrix2<Scalar> const Omega_dtheta = SO2<Scalar>::hat(Scalar{1});
-    Matrix2<Scalar> const Omega2 = Omega * Omega;
-    Matrix2<Scalar> const Omega2_dtheta = Scalar{2} * Omega_dtheta * Omega;
-    Matrix2<Scalar> const W = details::calcW<Scalar, 2>(Omega, theta, sigma);
     Vector2<Scalar> const upsilon = a.template head<2>();
 
-    Scalar A, B, C, A_dtheta, B_dtheta, A_dsigma, B_dsigma, C_dsigma;
-    details::calcW_derivatives(theta, sigma, A, B, C, A_dsigma, B_dsigma,
-                               C_dsigma, A_dtheta, B_dtheta);
-
     Sophus::Matrix<Scalar, num_parameters, DoF> J;
-    // clang-format off
-    J << Matrix2<Scalar>::Zero(), RxSO2<Scalar>::Dx_exp_x(a.template tail<2>()),
-         W,
-         (A_dtheta * Omega + A * Omega_dtheta + B_dtheta * Omega2 + B * Omega2_dtheta) * upsilon,
-         (A_dsigma * Omega + B_dsigma * Omega2 + C_dsigma * Matrix2<Scalar>::Identity()) * upsilon;
-    // clang-format on
-
+    J.template topLeftCorner<2, 2>().setZero();
+    J.template topRightCorner<2, 2>() =
+        RxSO2<Scalar>::Dx_exp_x(a.template tail<2>());
+    J.template bottomLeftCorner<2, 2>() =
+        details::calcW<Scalar, 2>(Omega, theta, sigma);
+    J.template block<2, 1>(2, 2) = details::calcWDerivative<Scalar, 2>(
+                                       Omega, sigma, SO2<Scalar>::generator()) *
+                                   upsilon;
+    J.template block<2, 1>(2, 3) =
+        details::calcWDerivative<Scalar, 2>(Omega, sigma,
+                                            Matrix2<Scalar>::Identity()) *
+        upsilon;
     return J;
   }
 

@@ -524,49 +524,24 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
     Vector3<Scalar> const upsilon = a.template head<3>();
     Scalar const sigma = a[6];
     Scalar const theta = hypot(omega.x(), omega.y(), omega.z());
-
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
-    Matrix3<Scalar> const Omega2 = Omega * Omega;
-    Vector3<Scalar> theta_domega;
-    if (theta < Constants<Scalar>::epsilon()) {
-      theta_domega = Vector3<Scalar>::Zero();
-    } else {
-      theta_domega = omega / theta;
-    }
-    static Matrix3<Scalar> const Omega_domega[3] = {
-        SO3<Scalar>::hat(Vector3<Scalar>::UnitX()),
-        SO3<Scalar>::hat(Vector3<Scalar>::UnitY()),
-        SO3<Scalar>::hat(Vector3<Scalar>::UnitZ())};
-
-    Matrix3<Scalar> const Omega2_domega[3] = {
-        Omega_domega[0] * Omega + Omega * Omega_domega[0],
-        Omega_domega[1] * Omega + Omega * Omega_domega[1],
-        Omega_domega[2] * Omega + Omega * Omega_domega[2]};
-
-    Matrix3<Scalar> const W = details::calcW<Scalar, 3>(Omega, theta, sigma);
-
-    Scalar A, B, C, A_dtheta, B_dtheta, A_dsigma, B_dsigma, C_dsigma;
-    details::calcW_derivatives(theta, sigma, A, B, C, A_dsigma, B_dsigma,
-                               C_dsigma, A_dtheta, B_dtheta);
 
     Sophus::Matrix<Scalar, num_parameters, DoF> J;
     J.template block<4, 3>(0, 0).setZero();
     J.template block<4, 4>(0, 3) =
         RxSO3<Scalar>::Dx_exp_x(a.template tail<4>());
-    J.template block<3, 4>(4, 3).setZero();
-    J.template block<3, 3>(4, 0) = W;
-
+    J.template block<3, 3>(4, 0) =
+        details::calcW<Scalar, 3>(Omega, theta, sigma);
     for (int i = 0; i < 3; ++i) {
       J.template block<3, 1>(4, 3 + i) =
-          (A_dtheta * theta_domega[i] * Omega + A * Omega_domega[i] +
-           B_dtheta * theta_domega[i] * Omega2 + B * Omega2_domega[i]) *
+          details::calcWDerivative<Scalar, 3>(Omega, sigma,
+                                              SO3<Scalar>::generator(i)) *
           upsilon;
     }
-
-    J.template block<3, 1>(4, 6) = (A_dsigma * Omega + B_dsigma * Omega2 +
-                                    C_dsigma * Matrix3<Scalar>::Identity()) *
-                                   upsilon;
-
+    J.template block<3, 1>(4, 6) =
+        details::calcWDerivative<Scalar, 3>(Omega, sigma,
+                                            Matrix3<Scalar>::Identity()) *
+        upsilon;
     return J;
   }
 
