@@ -144,13 +144,11 @@ using Sim3Scalars = ::testing::Types<double, float
                                      >;
 TYPED_TEST_SUITE(Sim3Test, Sim3Scalars, ScalarNameGenerator);
 
-// Catastrophic cancellation in calcWInv() of sim_details.hpp: for theta
-// around 1e-4, the coefficient b was computed from a formula with quartic
-// cancellation in theta, gated by a threshold calibrated for a much lower
-// order, which gave a wrong W_inv and hence a wrong log(). These elements are
-// separate from LieGroupTestData, so that their tolerance is not diluted by
-// the pairwise interpolation and mean checks against the much larger elements
-// there.
+// For an angle around 1e-4 and a vanishing log scale, W and its inverse come
+// from their Taylor series, since their closed forms cancel catastrophically
+// there. These elements are separate from LieGroupTestData, so that their
+// tolerance is not diluted by the pairwise interpolation and mean checks
+// against the much larger elements there.
 TYPED_TEST(Sim3Test, ExpInvertsLogForSmallAngles) {
   using Scalar = TypeParam;
   using Sim3Type = Sim3<Scalar>;
@@ -162,10 +160,9 @@ TYPED_TEST(Sim3Test, ExpInvertsLogForSmallAngles) {
   EXPECT_THAT(Sim3Type::exp(T.log()), IsNear(T, Constants<Scalar>::epsilon()));
 }
 
-// The generic branch of calcWInv(), where neither theta nor sigma alone is
-// small enough for the dedicated small-value branches, but both together are
-// small enough that terms shared by the numerators and denominators nearly
-// cancel.
+// Where the angle and the log scale are both small, W and its inverse also
+// come from their Taylor series, since terms shared by the numerators and
+// denominators of their closed forms nearly cancel.
 TYPED_TEST(Sim3Test, ExpInvertsLogForSmallAnglesAndScales) {
   using Scalar = TypeParam;
   using Sim3Type = Sim3<Scalar>;
