@@ -468,8 +468,9 @@ class BasisSpline {
       return index_and_u;
     }
 
-    // u ~=~ 0.0
-    if (t < 0.5 * this->tmax()) {
+    // u ~=~ 0.0. The spline parameter s counts segments from t0, so its
+    // midpoint is half the number of segments.
+    if (s < double(this->getNumSegments()) / 2) {
       // First half of spline, keep as is (i, 0.0).
       return index_and_u;
     }

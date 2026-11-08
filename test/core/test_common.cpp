@@ -126,6 +126,25 @@ BasisSplineImpl<SE3<Scalar>> se3Spline() {
   return BasisSplineImpl<SE3Type>(control_poses, Scalar(1));
 }
 
+TEST(BasisSplineTest, EndsMapToFirstAndLastSegments) {
+  // The start times are ordered such that the midpoint of the spline lies
+  // on either side of half its end time.
+  for (double const t0 : {-20.0, 0.0, 100.0}) {
+    BasisSplineImpl<SE3d> const impl = se3Spline<double>();
+    std::vector<SE3d> const control_poses(impl.parent_Ts_control_point());
+    BasisSpline<SE3d> const spline(control_poses, t0, impl.delta_t());
+    int const last_segment = spline.getNumSegments() - 1;
+
+    IndexAndU const start = spline.index_and_u(spline.t0());
+    EXPECT_EQ(start.i, 0) << "t0 = " << t0;
+    EXPECT_EQ(start.u, 0.0) << "t0 = " << t0;
+
+    IndexAndU const end = spline.index_and_u(spline.tmax());
+    EXPECT_EQ(end.i, last_segment) << "t0 = " << t0;
+    EXPECT_EQ(end.u, 1.0) << "t0 = " << t0;
+  }
+}
+
 TYPED_TEST(CommonTest, SE3SplineSegmentsJoinContinuously) {
   using Scalar = TypeParam;
   Scalar const kEpsSqrt = Constants<Scalar>::epsilonSqrt();
