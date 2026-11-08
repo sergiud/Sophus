@@ -26,10 +26,13 @@ using ::testing::Not;
 using ::testing::PrintToString;
 using ::testing::StringMatchResultListener;
 
+//! The line the test registered by kRegistered is located at.
+constexpr int kRegisteredLine = __LINE__;
+
 [[maybe_unused]] bool const kRegistered =
-    (registerTest(
-         {"RegisteredTest", "Name/0", "float", "value", __FILE__, __LINE__},
-         [] {}),
+    (registerTest({"RegisteredTest", "Name/0", "float", "value", __FILE__,
+                   kRegisteredLine},
+                  [] {}),
      true);
 
 /// Returns the test registered by kRegistered, or null if there is none.
@@ -173,6 +176,9 @@ TYPED_TEST(MatchersTest, PrintsVectorsOnOneLine) {
   using Scalar = TypeParam;
   EXPECT_EQ(PrintToString(Vector3<Scalar>(Scalar(1), Scalar(2), Scalar(3))),
             "[1, 2, 3]");
+  EXPECT_EQ(
+      PrintToString(Matrix<Scalar, 1, 3>(Scalar(1), Scalar(2), Scalar(3))),
+      "[1, 2, 3]");
 }
 
 TYPED_TEST(MatchersTest, PrintsLieGroupsAsTheirMatrices) {
@@ -239,6 +245,7 @@ TEST(RegisterTest, RegistersTheTestWithItsNamesAndParameters) {
   EXPECT_STREQ(info->type_param(), "float");
   EXPECT_STREQ(info->value_param(), "value");
   EXPECT_STREQ(info->file(), __FILE__);
+  EXPECT_EQ(info->line(), kRegisteredLine);
 }
 
 TEST(RegisterTest, FunctionTestRunsItsBodyOnce) {
