@@ -1,4 +1,7 @@
 build
+build_*/
+html-dir/
+xml-dir/
 CMakeLists.txt.user
 *.pyc
 .vscode/settings.json
