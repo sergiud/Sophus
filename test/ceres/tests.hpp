@@ -198,6 +198,9 @@ class LieGroupCeresTests {
   /// differ by rounding only, so their errors stay below epsilon.
   static double squaredRoundTripTolerance() { return epsilon() * epsilon(); }
 
+  //! The bound of squared norms of errors of optimized group elements.
+  static double squaredOptimizationTolerance() { return 10. * epsilon(); }
+
   static Tangentd zeroTangent() {
     Tangentd zero;
     setToZero(zero);
@@ -284,7 +287,7 @@ class LieGroupCeresTests {
         }
       }
     }
-    EXPECT_THAT(squared_errors, Each(Lt(10. * epsilon())))
+    EXPECT_THAT(squared_errors, Each(Lt(squaredOptimizationTolerance())))
         << "for each ordered pair of distinct points";
   }
 
@@ -497,7 +500,10 @@ bool LieGroupCeresTests<LieGroupd>::registerAll(std::string const& group_name) {
     for (std::size_t j = 0; j < g.size(); ++j) {
       std::string const pair_value =
           "x = " + describe(g[i]) + ", y = " + describe(g[j]);
-      if (i != j) {
+      // An initial element within the bound of the target already passes
+      // without any optimization step, so such pairs have no test.
+      if (squaredNorm((g[i].inverse() * g[j]).log()) >=
+          squaredOptimizationTolerance()) {
         add(suite, "PoseOptimizationConvergesToTarget/" + indexName(i, j),
             "target " + describe(g[i]) + ", initial " + describe(g[j]),
             __LINE__, [target = g[i], initial = g[j], points] {
